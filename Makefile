@@ -13,7 +13,7 @@ clean:
 fclean: clean
 	rm -f $(NAME)
 re: fclean all
-BRANCH = main
+BRANCH = sodahani
 p:
 	@read -p "Commit message: " msg; \
 	git add . && git commit -m "$$msg" && git push origin $(BRANCH)
