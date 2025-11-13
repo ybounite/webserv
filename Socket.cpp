@@ -16,23 +16,14 @@ Socket::Socket()
         throw std::runtime_error(std::string("listen() failed: ") + strerror(errno));
     while (true)
     {
-        sockaddr_in clientAddr;
-        socklen_t clientLen = sizeof(clientAddr);
-
-        int clientFd = accept(_SockeFd, (struct sockaddr *)&clientAddr, &clientLen);
-        if (clientFd < 0)
-        {
-            std::cerr << "accept() failed: " << strerror(errno) << std::endl;
-            continue;
-        }
-
-        std::cout << "Client connected!" << std::endl;
-
-        // Simple response
-        const char *msg = "Hello from server!\n";
-        send(clientFd, msg, strlen(msg), 0);
-
-        close(clientFd);
+        sockaddr_in clientSockAdd;
+        socklen_t len = sizeof(sockaddr_in);
+        _ClientFd = accept(_SockeFd, (struct sockaddr *)&clientSockAdd, &len);
+        if (_ClientFd < 0)
+            throw std::runtime_error(std::string("accept() failed:") + strerror(errno));
+        send(_ClientFd, "hello from server hiihihihi.\n", 30, 0);
+        recv(_ClientFd, _buffer, sizeof(_buffer), 0);
+        std::cout << "server receive: " << _buffer << std::endl;
     }
 }
 
