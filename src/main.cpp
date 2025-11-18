@@ -1,27 +1,37 @@
 #include "../includes/Webserv.hpp"
 
-// int main(int argc, char const *argv[])
-// {
-//     if (argc == 1 || argc == 2)
-//     {
-
-//     }
-//     else
-//     {
-
-//     }
-//     return 0;
-// }
-
-
-int main()
+int main(int argc, char const *argv[])
 {
-    Msg::info("Reading configuration file...");
-    Msg::success("Server started on port 8080");
-    Msg::warning("Missing index directive");
-    Msg::error("Failed to open file!");
-    Msg::debug("Token count = 153");
-    Msg::print("Hello sodahani!", LIGHTMAGENTA);
-    Msg::print("Danger!", BLINK);
-    Msg::print("Sky Blue!", LIGHT_BLUE);
+    if (argc == 1 || argc == 2)
+    {
+        try
+        {
+            std::string		config;
+            config = (argc == 1 ? "configs/default.conf" : argv[1]);
+            Msg::success("Done");
+        }
+        catch(const std::exception& e)
+        {
+            std::cerr << e.what() << std::endl;
+        }
+    }
+    else
+    {
+        Msg::error("Bad arguments, should be ./webserv [configuration file], ");
+        return 1;
+    }
+    return 0;
 }
+
+
+// int main()
+// {
+//     Msg::info("Reading configuration file...");
+//     Msg::success("Server started on port 8080");
+//     Msg::warning("Missing index directive");
+//     Msg::error("Failed to open file!");
+//     Msg::debug("Token count = 153");
+//     Msg::print("Hello sodahani!", LIGHTMAGENTA);
+//     Msg::print("Danger!", BLINK);
+//     Msg::print("Sky Blue!", LIGHT_BLUE);
+// }

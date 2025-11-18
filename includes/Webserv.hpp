@@ -59,7 +59,7 @@
 class Msg {
 public:
     // Generic printer with any color
-    static void print(const std::string& msg, const std::string& color);
+    static void print(const std::string& mode, const std::string& msg, const std::string& color);
 
     // Fixed log types
     static void info(const std::string& msg);
