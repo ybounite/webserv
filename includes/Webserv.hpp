@@ -1,7 +1,74 @@
 #pragma once
-#include <iostream>
-#include <vector>
-#include <map>
+# include <iostream>
+// # include <fstream>
+# include <fcntl.h>
+# include <cstring>
+# include <string> 
+# include <unistd.h>
+# include <dirent.h>
+# include <sstream>
+// # include <bits/stdc++.h>
+# include <cstdlib>
+# include <fstream>
+# include <sstream>
+# include <cctype>
+# include <ctime>
+# include <cstdarg>
+
+/* STL Containers */
+# include <map>
+# include <set>
+# include <vector>
+# include <algorithm>
+# include <iterator>
+# include <list>
+
+/* System */
+# include <sys/types.h>
+# include <sys/wait.h>
+# include <sys/stat.h>
+# include <sys/time.h>
+# include <unistd.h>
+// # include <machine/types.h>
+# include <signal.h>
+
+/* Network */
+# include <sys/socket.h>
+# include <netinet/in.h>
+# include <sys/select.h>
+# include <arpa/inet.h>
+
+// colors
+
+#define RESET          "\x1B[0m"
+#define RED            "\x1B[31m"
+#define LIGHT_RED      "\x1B[91m"
+#define WHITE          "\x1B[37m"
+#define BLINK           "\x1b[5m"
+#define YELLOW         "\x1B[33m"
+#define LIGHT_BLUE     "\x1B[94m"
+#define CYAN           "\x1B[36m"
+#define DARK_GREY      "\x1B[90m"
+#define LIGHTMAGENTA   "\x1B[95m"
+#define GREEN          "\x1B[32m"
+#define LIGHT_GREEN    "\x1B[92m"
+
+
+// classes
+
+class Msg {
+public:
+    // Generic printer with any color
+    static void print(const std::string& msg, const std::string& color);
+
+    // Fixed log types
+    static void info(const std::string& msg);
+    static void success(const std::string& msg);
+    static void warning(const std::string& msg);
+    static void error(const std::string& msg);
+    static void debug(const std::string& msg);
+};
+
 
 
 class ConfigFileReader {
