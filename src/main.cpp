@@ -1,14 +1,29 @@
 #include "../includes/Webserv.hpp"
 
+void printVector(const std::vector<std::string>& vec, const std::string& name)
+{
+    std::cout << name << ": ";
+    std::cout << std::endl;
+    for (size_t i = 0; i < vec.size(); i++)
+    {
+        std::cout << vec[i] ;
+        std::cout << std::endl;
+    }
+}
+
 int main(int argc, char const *argv[])
 {
+    std::vector <std::string> vector;
     if (argc == 1 || argc == 2)
     {
         try
         {
-            std::string		config;
-            config = (argc == 1 ? "configs/default.conf" : argv[1]);
-            Msg::success("Done");
+            std::string		config_path;
+            Tokenizer token;
+            config_path = (argc == 1 ? "configs/default.conf" : argv[1]);
+            vector = token.tokenize(ConfigFileReader::read(config_path));
+            printVector(vector, "vector");
+            // std::cout << ConfigFileReader::read(config_path) << std::endl;
         }
         catch(const std::exception& e)
         {
