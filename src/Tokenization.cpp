@@ -5,7 +5,7 @@ bool skip_spaces_and_found_line(const std::string &content)
     unsigned long i = 0;
     while (i < content.length() && (content[i] == 32 || (content[i] <= 9 && content[i] >= 1)))
         i++;
-    if (content[i] == '\n')
+    if (content[i] == '\n' || content[i] == '}')
         return true;
     else
         return false;
