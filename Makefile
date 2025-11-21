@@ -1,7 +1,7 @@
 CC = c++
 CFLAGS = -Wall -Wextra -Werror -std=c++98
 NAME = webserv
-SRC = src/main.cpp src/Print.cpp src/Tokenization.cpp src/read.cpp src/Parser.cpp
+SRC = src/main.cpp src/Print.cpp src/Tokenization.cpp src/read.cpp src/Parser.cpp src/Config.cpp
 OBJ = $(SRC:.cpp=.o)
 all: $(NAME)
 $(NAME): $(OBJ)

@@ -114,6 +114,6 @@ class Parser {
 public:
     Config parse(const std::vector<std::string> &tokens);
 private:
-    ServerConfig parseServer();
+    ServerConfig parseServer(const std::vector<std::string> &tokens);
     LocationConfig parseLocation();
 };
