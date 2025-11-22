@@ -20,13 +20,13 @@ int main(int argc, char const *argv[])
         {
             std::string		config_path;
             Tokenizer token;
-            // Parser Parser;
+            Parser Parser;
             config_path = (argc == 1 ? "configs/default.conf" : argv[1]);
             vector = token.tokenize(ConfigFileReader::read(config_path));
-            // Parser.parse(vector);
+            Parser.parse(vector);
 
             printVector(vector, "vector");
-            // std::cout << ConfigFileReader::read(config_path) << std::endl;
+            std::cout << ConfigFileReader::read(config_path) << std::endl;
         }
         catch(const std::exception& e)
         {
