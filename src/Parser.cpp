@@ -12,8 +12,9 @@ Config Parser::parse(const std::vector<std::string> &tokens)
             throw std::runtime_error("Unexpected token: " + tokens[i]);
         i++;
     }
-    
+    return config;
 }
+
 int parseListen(const std::vector<std::string> &tokens, unsigned long &i)
 {
     i++;
@@ -29,6 +30,7 @@ int parseListen(const std::vector<std::string> &tokens, unsigned long &i)
         i++;
         return number;
     }
+    throw std::runtime_error("Unexpected token: " + tokens[i]);
 }
 
 size_t parseSizeDirective2(const std::vector<std::string> &tokens, unsigned long &i)
@@ -40,7 +42,7 @@ size_t parseSizeDirective2(const std::vector<std::string> &tokens, unsigned long
     if (tok.size() < 2)
         throw std::runtime_error("Invalid size format: " + tok);
 
-    if (tok.back() != 'M')
+    if (tok[tok.size() - 1] != 'M')
         throw std::runtime_error("Size must end with 'M': " + tok);
 
     std::string number = tok.substr(0, tok.size() - 1);
@@ -74,40 +76,75 @@ void parseErrorPage(ServerConfig &server, const std::vector<std::string> &tokens
     server.error_pages[error] = path;
 }
 
- ServerConfig Parser::parseServer(const std::vector<std::string> &tokens, unsigned long &i)
- {
+void expect(const std::vector<std::string> &tokens, unsigned long &i)
+{
+    if (tokens[i] == ";")
+        i++;
+    else
+        throw std::runtime_error("Should be : |;| but token is : " + tokens[i]);
+}
+ServerConfig Parser::parseServer(const std::vector<std::string> &tokens, unsigned long &i)
+{
     ServerConfig server;
     if (tokens[i] != "server")
-    throw std::runtime_error("Unexpected token: " + tokens[i]);
+        throw std::runtime_error("Unexpected token: " + tokens[i]);
     if (tokens[i + 1] != "{")
-    throw std::runtime_error("Unexpected token: " + tokens[i + 1]);
+        throw std::runtime_error("Unexpected token: " + tokens[i + 1]);
     i += 2;
     while (tokens[i] != "}")
     {
         if (tokens[i] == "listen")
+        {
             server.listen_port = parseListen(tokens, i);
+            expect(tokens, i);
+        }
         else if (tokens[i] == "root")
         {
-            server.root = tokens[i++];
+            server.root = tokens[++i];
+            // std::cout << server.root << std::endl;
             i++;
+            // std::cout << tokens[i] << std::endl;
+            // std::cout << "1" << std::endl;
+            expect(tokens, i);
+            // exit(1);
+        }
+        else if (tokens[i] == "index")
+        {
+            server.index = tokens[++i];
+            i++;
+            // std::cout << "2" << std::endl;
+            expect(tokens, i);
         }
         else if (tokens[i] == "server_name")
         {
-            server.server_name = tokens[i++];
+            server.server_name = tokens[++i];
             i++;
+            // std::cout << "3" << std::endl;
+            expect(tokens, i);
         }
         else if (tokens[i] == "client_max_body_size")
+        {
             server.client_max_body_size = parseSizeDirective2(tokens, i);
+            // std::cout << "4" << std::endl;
+            expect(tokens, i);
+        }
         else if (tokens[i] == "error_page")
+        {
             parseErrorPage(server, tokens, i);
+            // std::cout << "5" << std::endl;
+            expect(tokens, i);
+        }
         else if (tokens[i] == "location")
+        {
             server.locations.push_back(parseLocation(tokens, i));
+            // std::cout << "6" << std::endl;
+            // expect(tokens, i);
+        }
         else
-            throw std::runtime_error("Unknown directive: " + tokens[i]);
-        i++;
+            throw std::runtime_error("Unexpected token in parseServer: " + tokens[i]);
     }
     if (tokens[i] != "}")
-        throw std::runtime_error("Unexpected token: " + tokens[i]);
+        throw std::runtime_error("Unexpected token in parseServer: " + tokens[i]);
     return server;
  }
 
@@ -115,18 +152,66 @@ void parseErrorPage(ServerConfig &server, const std::vector<std::string> &tokens
  {
     LocationConfig location;
     if (tokens[i] != "location")
-    throw std::runtime_error("Unexpected token: " + tokens[i]);
-    if (tokens[i + 1] != "{")
-    throw std::runtime_error("Unexpected token: " + tokens[i + 1]);
-    i += 2;
+        throw std::runtime_error("Unexpected token: " + tokens[i]);
+    if (tokens[i + 2] != "{")
+        throw std::runtime_error("Unexpected token: " + tokens[i + 2]);
+    location.path = tokens[i + 1];
+    i += 3;
     while (tokens[i] != "}")
     {
-        if (tokens[i] == "listen")
+        if (tokens[i] == "autoindex")
+        {
+            i++;
+            if (tokens[i] == "off")
+                location.autoindex = false;
+            else if (tokens[i] == "on")
+                location.autoindex = true; 
+            else
+                throw std::runtime_error("Unknown directive: " + tokens[i]);
+            i++;
+            expect(tokens, i);
+        }
+        else if (tokens[i] == "upload_path")
+        {
+            i++;
+            location.upload_path = tokens[i];
+            i++;
+            expect(tokens, i);
+        }
+        else if (tokens[i] == "cgi_path")
+        {
+            i++;
+            location.cgi_path = tokens[i];
+            i++;
+            expect(tokens, i);
+        }
+        else if (tokens[i] == "root")
+        {
+            location.root = tokens[++i];
+            i++;
+            expect(tokens, i);
+        }
+        else if (tokens[i] == "index")
+        {
+            location.index = tokens[++i];
+            i++;
+            expect(tokens, i);
+        }
+        else if (tokens[i] == "methods")
+        {
+            i++;
+            while (tokens.size() > i && tokens[i] != ";")
+            {
+                location.methods.push_back(tokens[i]);
+                i++;
+            }
+            expect(tokens, i);
+        }
         else
             throw std::runtime_error("Unknown directive: " + tokens[i]);
-        i++;
     }
     if (tokens[i] != "}")
         throw std::runtime_error("Unexpected token: " + tokens[i]);
+    i++;
     return location;
  }

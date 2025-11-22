@@ -26,7 +26,6 @@ int main(int argc, char const *argv[])
             Parser.parse(vector);
 
             printVector(vector, "vector");
-            std::cout << ConfigFileReader::read(config_path) << std::endl;
         }
         catch(const std::exception& e)
         {

@@ -96,6 +96,7 @@ public:
 class ServerConfig {
 public:
     int listen_port;
+    std::string index;
     std::string server_name;
     std::string root;
     size_t client_max_body_size;
