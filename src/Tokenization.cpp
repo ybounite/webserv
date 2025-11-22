@@ -24,17 +24,14 @@ std::vector<std::string> Tokenizer::tokenize(const std::string &content)
         flag = false;
         flag_str = false;
 
-        // Skip all whitespace first
         while (i < content.length() && 
               (content[i] == '\n' || content[i] == 32 || (content[i] <= 9 && content[i] >= 1)))
         {
             i++;
         }
-
         if (i >= content.length())
             break;
 
-        // Single-character tokens
         if ((content[i] == '{' && content[i - 1] == ' ')|| content[i] == '}' || content[i] == ';')
         {
             vector.push_back(std::string(1, content[i]));
@@ -45,15 +42,15 @@ std::vector<std::string> Tokenizer::tokenize(const std::string &content)
         // Build token
         while (i < content.length())
         {
-            if (content[i] == '\n')
-                break;
-            if (content[i] == '#')
+            while (content[i] == '#')
             {
                 while (content[i] != '\n' && i < content.length())
                     i++;
                 if (content[i] == '\n')
                     i++;
             }
+            if (content[i] == '\n')
+                break;
             if (content[i] == '\"')
             {
                 i++;
