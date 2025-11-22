@@ -9,7 +9,7 @@ Config Parser::parse(const std::vector<std::string> &tokens)
         if (tokens[i] == "server")
             config.servers.push_back(parseServer(tokens, i));
         else
-            throw std::runtime_error("Unexpected token: " + tokens[i]);
+            throw std::runtime_error("Unexpected token: in `parse` " + tokens[i]);
         i++;
     }
     return config;
@@ -19,14 +19,14 @@ int parseListen(const std::vector<std::string> &tokens, unsigned long &i)
 {
     i++;
     if (tokens[i].find_first_not_of("0123456789 ") != std::string::npos)
-        throw std::runtime_error("Unexpected token: " + tokens[i]);
+        throw std::runtime_error("Unexpected token: should be 0123456789 but token is " + tokens[i]);
     char *end ;
     double result = std::strtod(tokens[i].c_str(), &end);
     int number = static_cast<int>(result);
     if (*end == '\0')
     {
         if (number > 65535 || number < 1)
-            throw std::runtime_error("Unexpected token: " + tokens[i]);
+            throw std::runtime_error("Unexpected token: should be number > 65535 || number < 1 but token is " + tokens[i]);
         i++;
         return number;
     }
@@ -61,14 +61,14 @@ void parseErrorPage(ServerConfig &server, const std::vector<std::string> &tokens
     std::string path;
     unsigned long error;
     if (tokens[i].find_first_not_of("0123456789 ") != std::string::npos)
-        throw std::runtime_error("Unexpected token: " + tokens[i]);
+        throw std::runtime_error("Unexpected token: should be 0123456789 but token is " + tokens[i]);
     char *end ;
     double result = std::strtod(tokens[i].c_str(), &end);
     error = static_cast<int>(result);
     if (*end == '\0')
     {
         if (error > 599 || error < 400)
-            throw std::runtime_error("Unexpected token: " + tokens[i]);
+            throw std::runtime_error("Unexpected token: should be error > 599 || error < 400 but token is " + tokens[i]);
         i++;
     }
     path = tokens[i];
@@ -87,9 +87,9 @@ ServerConfig Parser::parseServer(const std::vector<std::string> &tokens, unsigne
 {
     ServerConfig server;
     if (tokens[i] != "server")
-        throw std::runtime_error("Unexpected token: " + tokens[i]);
+        throw std::runtime_error("Unexpected token: should be `server` but token is " + tokens[i]);
     if (tokens[i + 1] != "{")
-        throw std::runtime_error("Unexpected token: " + tokens[i + 1]);
+        throw std::runtime_error("Unexpected token: should be `{` but token is" + tokens[i + 1]);
     i += 2;
     while (tokens[i] != "}")
     {
@@ -144,7 +144,7 @@ ServerConfig Parser::parseServer(const std::vector<std::string> &tokens, unsigne
             throw std::runtime_error("Unexpected token in parseServer: " + tokens[i]);
     }
     if (tokens[i] != "}")
-        throw std::runtime_error("Unexpected token in parseServer: " + tokens[i]);
+        throw std::runtime_error("Unexpected token in parseServer: should be `}` but token is " + tokens[i]);
     return server;
  }
 
@@ -152,9 +152,9 @@ ServerConfig Parser::parseServer(const std::vector<std::string> &tokens, unsigne
  {
     LocationConfig location;
     if (tokens[i] != "location")
-        throw std::runtime_error("Unexpected token: " + tokens[i]);
+        throw std::runtime_error("Unexpected token in parseLocation: should be `location` but token is  " + tokens[i]);
     if (tokens[i + 2] != "{")
-        throw std::runtime_error("Unexpected token: " + tokens[i + 2]);
+        throw std::runtime_error("Unexpected token in parseLocation: should be { but token is  " + tokens[i + 2]);
     location.path = tokens[i + 1];
     i += 3;
     while (tokens[i] != "}")
@@ -167,7 +167,7 @@ ServerConfig Parser::parseServer(const std::vector<std::string> &tokens, unsigne
             else if (tokens[i] == "on")
                 location.autoindex = true; 
             else
-                throw std::runtime_error("Unknown directive: " + tokens[i]);
+                throw std::runtime_error("Unexpected token in parseLocation: should be `off or on ` but " + tokens[i]);
             i++;
             expect(tokens, i);
         }
@@ -208,10 +208,10 @@ ServerConfig Parser::parseServer(const std::vector<std::string> &tokens, unsigne
             expect(tokens, i);
         }
         else
-            throw std::runtime_error("Unknown directive: " + tokens[i]);
+            throw std::runtime_error("Unexpected token in parseLocation: " + tokens[i]);
     }
     if (tokens[i] != "}")
-        throw std::runtime_error("Unexpected token: " + tokens[i]);
+        throw std::runtime_error("Unexpected token in parseLocation: should be `}` but token is " + tokens[i]);
     i++;
     return location;
  }
