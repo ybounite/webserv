@@ -25,7 +25,6 @@ int main(int argc, char const *argv[])
             config_path = (argc == 1 ? "configs/default.conf" : argv[1]);
             vector = token.tokenize(ConfigFileReader::read(config_path));
             config = parser.parse(vector);
-            parse_config(config);
             printVector(vector, "vector");
         }
         catch(const std::exception& e)

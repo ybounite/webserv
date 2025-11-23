@@ -12,6 +12,7 @@ Config Parser::parse(const std::vector<std::string> &tokens)
             throw std::runtime_error("Unexpected token: in `parse` " + tokens[i]);
         i++;
     }
+    parse_config(config);
     return config;
 }
 
@@ -91,7 +92,33 @@ void expect(const std::vector<std::string> &tokens, unsigned long &i)
         throw std::runtime_error("Should be : |;| but token is : " + tokens[i]);
 }
 
+void init_map(std::map<std::string, bool> &directive_flags)
+{
+    directive_flags["listen"] = false;
+    directive_flags["root"] = false;
+    directive_flags["client_max_body_size"] = false;
+    directive_flags["server_name"] = false;
+}
 
+void check_map(std::map<std::string, bool> &directive_flags, std::string directive)
+{
+    if (directive_flags[directive] == false)
+        directive_flags[directive] = true;
+    else
+        throw std::runtime_error("Unexpected token: must appear exactly once " + directive);
+}
+
+void last_check_in_map(std::map<std::string, bool> &directive_flags)
+{
+    std::map<std::string, bool>::const_iterator it = directive_flags.begin();
+    while (it != directive_flags.end())
+    {
+        if (!it->second)
+            throw std::runtime_error("This directives are set to false :" + it->first);
+        it++;
+    }
+    
+}
 
 ServerConfig Parser::parseServer(const std::vector<std::string> &tokens, unsigned long &i)
 {
@@ -101,15 +128,19 @@ ServerConfig Parser::parseServer(const std::vector<std::string> &tokens, unsigne
     if (tokens[i + 1] != "{")
         throw std::runtime_error("Unexpected token: should be `{` but token is" + tokens[i + 1]);
     i += 2;
+    std::map<std::string, bool> directive_flags;
+    init_map(directive_flags);
     while (tokens[i] != "}")
     {
         if (tokens[i] == "listen")
         {
+            check_map(directive_flags, tokens[i]);
             server.listen_port = parseListen(tokens, i);
             expect(tokens, i);
         }
         else if (tokens[i] == "root")
         {
+            check_map(directive_flags, tokens[i]);
             server.root = strip_quotes(tokens[++i]);
             i++;
             expect(tokens, i);
@@ -122,12 +153,14 @@ ServerConfig Parser::parseServer(const std::vector<std::string> &tokens, unsigne
         }
         else if (tokens[i] == "server_name")
         {
+            check_map(directive_flags, tokens[i]);
             server.server_name = strip_quotes(tokens[++i]);
             i++;
             expect(tokens, i);
         }
         else if (tokens[i] == "client_max_body_size")
         {
+            check_map(directive_flags, tokens[i]);
             server.client_max_body_size = parseSizeDirective2(tokens, i);
             expect(tokens, i);
         }
@@ -143,6 +176,7 @@ ServerConfig Parser::parseServer(const std::vector<std::string> &tokens, unsigne
     }
     if (tokens[i] != "}")
         throw std::runtime_error("Unexpected token in parseServer: should be `}` but token is " + tokens[i]);
+    last_check_in_map(directive_flags);
     return server;
  }
 
