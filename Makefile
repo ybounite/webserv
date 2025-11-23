@@ -10,10 +10,11 @@ UP		=	\033[A
 CUT		=	\033[K
 
 CXX = c++
-FLAGS = -Wall -Wextra -Werror -std=c++98
+FLAGS =  -std=c++98 -Wall -Wextra -Werror
 RM = rm -rf
 
-SRC = main.cpp 
+SRC = main.cpp\
+      Request.cpp
 
 OBJ_DIR = obj/
 OBJ = $(addprefix $(OBJ_DIR), $(SRC:.cpp=.o))
