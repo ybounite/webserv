@@ -55,6 +55,13 @@ size_t parseSizeDirective2(const std::vector<std::string> &tokens, unsigned long
     return size;
 }
 
+std::string strip_quotes(const std::string &s) {
+    if (s.length() >= 2 && s[0] == '"' && s[s.length() - 1] == '"') {
+        return s.substr(1, s.length() - 2);
+    }
+    return s;
+}
+
 void parseErrorPage(ServerConfig &server, const std::vector<std::string> &tokens, unsigned long &i)
 {
     i++;
@@ -71,7 +78,7 @@ void parseErrorPage(ServerConfig &server, const std::vector<std::string> &tokens
             throw std::runtime_error("Unexpected token: should be error > 599 || error < 400 but token is " + tokens[i]);
         i++;
     }
-    path = tokens[i];
+    path = strip_quotes(tokens[i]);
     i++;
     server.error_pages[error] = path;
 }
@@ -83,6 +90,9 @@ void expect(const std::vector<std::string> &tokens, unsigned long &i)
     else
         throw std::runtime_error("Should be : |;| but token is : " + tokens[i]);
 }
+
+
+
 ServerConfig Parser::parseServer(const std::vector<std::string> &tokens, unsigned long &i)
 {
     ServerConfig server;
@@ -100,7 +110,7 @@ ServerConfig Parser::parseServer(const std::vector<std::string> &tokens, unsigne
         }
         else if (tokens[i] == "root")
         {
-            server.root = tokens[++i];
+            server.root = strip_quotes(tokens[++i]);
             // std::cout << server.root << std::endl;
             i++;
             // std::cout << tokens[i] << std::endl;
@@ -110,14 +120,14 @@ ServerConfig Parser::parseServer(const std::vector<std::string> &tokens, unsigne
         }
         else if (tokens[i] == "index")
         {
-            server.index = tokens[++i];
+            server.index = strip_quotes(tokens[++i]);
             i++;
             // std::cout << "2" << std::endl;
             expect(tokens, i);
         }
         else if (tokens[i] == "server_name")
         {
-            server.server_name = tokens[++i];
+            server.server_name = strip_quotes(tokens[++i]);
             i++;
             // std::cout << "3" << std::endl;
             expect(tokens, i);
@@ -174,20 +184,20 @@ ServerConfig Parser::parseServer(const std::vector<std::string> &tokens, unsigne
         else if (tokens[i] == "upload_path")
         {
             i++;
-            location.upload_path = tokens[i];
+            location.upload_path = strip_quotes(tokens[i]);
             i++;
             expect(tokens, i);
         }
         else if (tokens[i] == "cgi_path")
         {
             i++;
-            location.cgi_path = tokens[i];
+            location.cgi_path = strip_quotes(tokens[i]);
             i++;
             expect(tokens, i);
         }
         else if (tokens[i] == "root")
         {
-            location.root = tokens[++i];
+            location.root = strip_quotes(tokens[++i]);
             i++;
             expect(tokens, i);
         }
