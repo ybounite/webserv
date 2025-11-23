@@ -8,8 +8,8 @@
       "args": [],
       "stopAtEntry": false,
       "externalConsole": false,
-      "cwd": "/home/sodahani/Desktop/webserv",
-      "program": "/home/sodahani/Desktop/webserv/build/Debug/outDebug",
+      "cwd": "/home/sodahani/Desktop/webserv/src",
+      "program": "/home/sodahani/Desktop/webserv/src/build/Debug/outDebug",
       "MIMode": "gdb",
       "miDebuggerPath": "gdb",
       "setupCommands": [

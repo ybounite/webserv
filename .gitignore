@@ -16,7 +16,7 @@ a.out
 *.pid
 
 # Editor files
-.vscode/
+.vscode
 *.swp
 *.swo
 
