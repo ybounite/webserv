@@ -90,6 +90,9 @@ public:
     std::vector<std::string> methods;
     std::string upload_path;
     std::string cgi_path;
+    // (bonus)
+    int return_code;
+    std::string return_url;
 };
 
 

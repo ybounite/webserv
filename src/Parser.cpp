@@ -18,7 +18,7 @@ Config Parser::parse(const std::vector<std::string> &tokens)
 int parseListen(const std::vector<std::string> &tokens, unsigned long &i)
 {
     i++;
-    if (tokens[i].find_first_not_of("0123456789 ") != std::string::npos)
+    if (tokens[i].find_first_not_of("+0123456789 ") != std::string::npos)
         throw std::runtime_error("Unexpected token: should be 0123456789 but token is " + tokens[i]);
     char *end ;
     double result = std::strtod(tokens[i].c_str(), &end);
@@ -67,7 +67,7 @@ void parseErrorPage(ServerConfig &server, const std::vector<std::string> &tokens
     i++;
     std::string path;
     unsigned long error;
-    if (tokens[i].find_first_not_of("0123456789 ") != std::string::npos)
+    if (tokens[i].find_first_not_of("+0123456789 ") != std::string::npos)
         throw std::runtime_error("Unexpected token: should be 0123456789 but token is " + tokens[i]);
     char *end ;
     double result = std::strtod(tokens[i].c_str(), &end);
@@ -111,45 +111,33 @@ ServerConfig Parser::parseServer(const std::vector<std::string> &tokens, unsigne
         else if (tokens[i] == "root")
         {
             server.root = strip_quotes(tokens[++i]);
-            // std::cout << server.root << std::endl;
             i++;
-            // std::cout << tokens[i] << std::endl;
-            // std::cout << "1" << std::endl;
             expect(tokens, i);
-            // exit(1);
         }
         else if (tokens[i] == "index")
         {
             server.index = strip_quotes(tokens[++i]);
             i++;
-            // std::cout << "2" << std::endl;
             expect(tokens, i);
         }
         else if (tokens[i] == "server_name")
         {
             server.server_name = strip_quotes(tokens[++i]);
             i++;
-            // std::cout << "3" << std::endl;
             expect(tokens, i);
         }
         else if (tokens[i] == "client_max_body_size")
         {
             server.client_max_body_size = parseSizeDirective2(tokens, i);
-            // std::cout << "4" << std::endl;
             expect(tokens, i);
         }
         else if (tokens[i] == "error_page")
         {
             parseErrorPage(server, tokens, i);
-            // std::cout << "5" << std::endl;
             expect(tokens, i);
         }
         else if (tokens[i] == "location")
-        {
             server.locations.push_back(parseLocation(tokens, i));
-            // std::cout << "6" << std::endl;
-            // expect(tokens, i);
-        }
         else
             throw std::runtime_error("Unexpected token in parseServer: " + tokens[i]);
     }
@@ -217,6 +205,26 @@ ServerConfig Parser::parseServer(const std::vector<std::string> &tokens, unsigne
             }
             expect(tokens, i);
         }
+        else if (tokens[i] == "return")
+        {
+            i++;
+            if (tokens[i].find_first_not_of("+0123456789 ") != std::string::npos)
+                throw std::runtime_error("Unexpected token: should be 0123456789 but token is " + tokens[i]);
+            unsigned long error;
+            char *end ;
+            double result = std::strtod(tokens[i].c_str(), &end);
+            error = static_cast<int>(result);
+            if (*end == '\0')
+            {
+                if (error > 399 || error < 300)
+                    throw std::runtime_error("Unexpected token: should be error > 599 || error < 400 but token is " + tokens[i]);
+                i++;
+            }
+            location.return_url = strip_quotes(tokens[i]);
+            location.return_code = error;
+            i++;
+            expect(tokens, i);
+        }
         else
             throw std::runtime_error("Unexpected token in parseLocation: " + tokens[i]);
     }
@@ -224,4 +232,4 @@ ServerConfig Parser::parseServer(const std::vector<std::string> &tokens, unsigne
         throw std::runtime_error("Unexpected token in parseLocation: should be `}` but token is " + tokens[i]);
     i++;
     return location;
- }
+}
