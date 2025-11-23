@@ -210,18 +210,18 @@ ServerConfig Parser::parseServer(const std::vector<std::string> &tokens, unsigne
             i++;
             if (tokens[i].find_first_not_of("+0123456789 ") != std::string::npos)
                 throw std::runtime_error("Unexpected token: should be 0123456789 but token is " + tokens[i]);
-            unsigned long error;
+            unsigned long return_code;
             char *end ;
             double result = std::strtod(tokens[i].c_str(), &end);
-            error = static_cast<int>(result);
+            return_code = static_cast<int>(result);
             if (*end == '\0')
             {
-                if (error > 399 || error < 300)
-                    throw std::runtime_error("Unexpected token: should be error > 599 || error < 400 but token is " + tokens[i]);
+                if (return_code > 399 || return_code < 300)
+                    throw std::runtime_error("Unexpected token: should be return_code > 399 || return_code < 300 but token is " + tokens[i]);
                 i++;
             }
             location.return_url = strip_quotes(tokens[i]);
-            location.return_code = error;
+            location.return_code = return_code;
             i++;
             expect(tokens, i);
         }

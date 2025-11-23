@@ -121,3 +121,8 @@ private:
     ServerConfig parseServer(const std::vector<std::string> &tokens, unsigned long &i);
     LocationConfig parseLocation(const std::vector<std::string> &tokens, unsigned long &i);
 };
+
+
+// helper function
+
+void parse_config(Config &config);
