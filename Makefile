@@ -13,7 +13,7 @@ CXX = c++
 FLAGS = -Wall -Wextra -Werror -std=c++98
 RM = rm -rf
 
-SRC = main.cpp 
+SRC = Socket.cpp main.cpp
 
 OBJ_DIR = obj/
 OBJ = $(addprefix $(OBJ_DIR), $(SRC:.cpp=.o))
@@ -38,3 +38,7 @@ fclean: clean
 	$(RM) $(NAME)
 
 re: fclean all
+
+.PHONY: clean fclean re all
+
+.SECONDARY: $(OBJS)
