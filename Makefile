@@ -1,30 +1,40 @@
-
 NAME = webserv
 
 RESET		=	\033[0m
 GREEN		=	\033[32m
 YELLOW		=	\033[33m
 BLUE		=	\033[34m
-RED		=	\033[31m
-UP		=	\033[A
-CUT		=	\033[K
+RED			=	\033[31m
+UP			=	\033[A
+CUT			=	\033[K
 
 CXX = c++
 FLAGS = -Wall -Wextra -Werror -std=c++98
 RM = rm -rf
 
-SRC = Socket.cpp main.cpp
+CONFIG_PARSER_DIR = src/config_parser
+REQUEST_PARSER_DIR = src/request
+SOCKET_DIR = src/socket
+
+SRC = src/main.cpp \
+      $(CONFIG_PARSER_DIR)/Print.cpp \
+      $(CONFIG_PARSER_DIR)/Tokenization.cpp \
+      $(CONFIG_PARSER_DIR)/read.cpp \
+      $(CONFIG_PARSER_DIR)/Parser.cpp \
+      $(CONFIG_PARSER_DIR)/Config.cpp \
+	  $(SOCKET_DIR)/Socket.cpp \
+	  $(REQUEST_PARSER_DIR)/Request.cpp
 
 OBJ_DIR = obj/
-OBJ = $(addprefix $(OBJ_DIR), $(SRC:.cpp=.o))
+OBJ = $(SRC:src/%.cpp=$(OBJ_DIR)%.o)
 
 all: $(NAME)
 
 $(NAME): $(OBJ)
 	$(CXX) $(FLAGS) -o $(NAME) $(OBJ)
 
-$(OBJ_DIR)%.o: %.cpp
-	@mkdir -p $(OBJ_DIR)
+$(OBJ_DIR)%.o: src/%.cpp
+	@mkdir -p $(dir $@)
 	@echo "$(YELLOW)Compiling [$@]...$(RESET)"
 	@$(CXX) $(FLAGS) -c $< -o $@
 	@printf "$(UP)$(CUT)"

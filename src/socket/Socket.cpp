@@ -18,7 +18,7 @@ Socket::Socket()
     memset((void *)&_address, 0, sizeof(sockaddr_in));
     _address.sin_family = AF_INET;
     _address.sin_addr.s_addr = INADDR_ANY;
-    _address.sin_port = htons(8401);
+    _address.sin_port = htons(PORT);
 
     if (_SockeFd < 0)
         throwing("socket()");
@@ -46,7 +46,6 @@ void Socket::sendHttpResponse(int clientFd)
         "<h1>Hello</h1>\r\n"
         "</body>\r\n"
         "</html>\r\n";
-    // Send header then body
     send(clientFd, body, strlen(body), 0);
 }
 
@@ -69,7 +68,7 @@ void Socket::addClientInEppol()
 void Socket::readClientRequest(epoll_event client)
 {
     size_t bytesRead;
-    char buffer[1024];
+    char buffer[MAXREAD];
 
     bytesRead = recv(client.data.fd, buffer, sizeof(buffer), 0);
     if (bytesRead == 0)

@@ -17,6 +17,11 @@
 #include <vector>
 #include <map>
 
+# include "../../includes/Webserv.hpp"
+
+#define PORT 8080
+#define MAXREAD 4086
+
 typedef struct {
     int id;
     std::string inBuffer;
@@ -36,6 +41,7 @@ private:
 
 public:
     Socket();
+    // Socket(Config	&config );
     int getSocketFd();
     void addClientInEppol();
     void readClientRequest(epoll_event client);
