@@ -1,3 +1,11 @@
+/* ************************************************************************** */
+/*                    file: main.cpp                                          */
+/*                    by: ybounite <ybounite@student.1337.ma>                 */
+/*                                                                            */
+/*                    Created: 2025/11/26 13:25 by ybounite                   */
+/*                    Updated: 2025/11/26 13:25 by ybounite                   */
+/* ************************************************************************** */
+
 #include "../includes/Webserv.hpp"
 
 void printVector(const std::vector<std::string>& vec, const std::string& name)
@@ -11,33 +19,30 @@ void printVector(const std::vector<std::string>& vec, const std::string& name)
     }
 }
 
-int main(int argc, char const *argv[])
-{
-    std::vector <std::string> vector;
-    if (argc == 1 || argc == 2)
-    {
-        try
-        {
-            std::string		config_path;
-            Tokenizer token;
-            Parser parser;
-            Config config;
-            config_path = (argc == 1 ? "configs/default.conf" : argv[1]);
-            vector = token.tokenize(ConfigFileReader::read(config_path));
-            config = parser.parse(vector);
-            printVector(vector, "vector");
-        }
-        catch(const std::exception& e)
-        {
-            std::cerr << e.what() << std::endl;
-        }
-    }
-    else
-    {
-        Msg::error("Bad arguments, should be ./webserv [configuration file], ");
-        return 1;
-    }
-    return 0;
+int main(int argc, char const *argv[]) {
+
+	std::vector <std::string> vector;
+	if (argc == 1 || argc == 2) {
+		try {
+			std::string	config_path;
+			Tokenizer	token;
+			Parser	parser;
+			Config	config;
+			config_path = (argc == 1 ? "configs/default.conf" : argv[1]);
+			vector = token.tokenize(ConfigFileReader::read(config_path));
+			config = parser.parse(vector);
+			// printVector(vector, "vector");
+			Socket sct;
+			sct.run();
+		} catch(const std::exception& e) {
+			std::cerr << e.what() << std::endl;
+		}
+	}
+	else {
+		Msg::error("Bad arguments, should be ./webserv [configuration file], ");
+		return 1;
+	}
+	return 0;
 }
 
 
