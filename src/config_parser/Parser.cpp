@@ -1,4 +1,4 @@
-#include "../includes/Webserv.hpp"
+#include "../../includes/Webserv.hpp"
 
 Config Parser::parse(const std::vector<std::string> &tokens)
 {

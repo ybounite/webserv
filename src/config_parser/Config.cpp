@@ -1,4 +1,4 @@
-#include "../includes/Webserv.hpp"
+#include "../../includes/Webserv.hpp"
 
 void parse_config(Config &config)
 {

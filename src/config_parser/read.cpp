@@ -1,4 +1,4 @@
-#include "../includes/Webserv.hpp"
+#include "../../includes/Webserv.hpp"
 
 std::string ConfigFileReader::read(const std::string &path)
 {
