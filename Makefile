@@ -13,13 +13,17 @@ FLAGS = -Wall -Wextra -Werror -std=c++98
 RM = rm -rf
 
 CONFIG_PARSER_DIR = src/config_parser
+REQUEST_PARSER_DIR = src/request
+SOCKET_DIR = src/socket
 
 SRC = src/main.cpp \
       $(CONFIG_PARSER_DIR)/Print.cpp \
       $(CONFIG_PARSER_DIR)/Tokenization.cpp \
       $(CONFIG_PARSER_DIR)/read.cpp \
       $(CONFIG_PARSER_DIR)/Parser.cpp \
-      $(CONFIG_PARSER_DIR)/Config.cpp
+      $(CONFIG_PARSER_DIR)/Config.cpp \
+	  $(SOCKET_DIR)/Socket.cpp \
+	  $(REQUEST_PARSER_DIR)/Request.cpp
 
 OBJ_DIR = obj/
 OBJ = $(SRC:src/%.cpp=$(OBJ_DIR)%.o)

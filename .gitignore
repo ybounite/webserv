@@ -5,7 +5,7 @@ obj/
 *.o
 *.a
 *.so
-
+.vscode
 # Executables
 webserv
 a.out
