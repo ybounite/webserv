@@ -13,6 +13,9 @@ Request::Request( void ) {
 
 }
 
+Request::Request( std::string &raw ) {
+	this->handleRequest(raw);
+}
 Request::Request( const  Request &Other ) {
 	*this = Other;
 }
