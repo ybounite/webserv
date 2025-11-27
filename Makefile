@@ -52,3 +52,6 @@ re: fclean all
 .PHONY: clean fclean re all
 
 .SECONDARY: $(OBJS)
+
+run: $(NAME)
+	@./$(NAME)
