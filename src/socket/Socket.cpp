@@ -1,4 +1,5 @@
 #include "Socket.hpp"
+# include "../request/Request.hpp"
 
 bool running = 0;
 
@@ -13,19 +14,17 @@ void throwing(std::string fct)
 
 Socket::Socket()
 {
-    // signal(SIGINT, handler);
-    _SockeFd = socket(AF_INET, SOCK_STREAM, 0);
-    memset((void *)&_address, 0, sizeof(sockaddr_in));
-    _address.sin_family = AF_INET;
-    _address.sin_addr.s_addr = INADDR_ANY;
-    _address.sin_port = htons(PORT);
+	// signal(SIGINT, handler);
+	_SockeFd = socket(AF_INET, SOCK_STREAM, 0);
+	memset((void *)&_address, 0, sizeof(sockaddr_in));
+	_address.sin_family = AF_INET;
+	_address.sin_addr.s_addr = INADDR_ANY;
+	_address.sin_port = htons(PORT);
 
-    if (_SockeFd < 0)
-        throwing("socket()");
-    if (bind(_SockeFd, (const struct sockaddr *)&_address, sizeof(struct sockaddr_in)) < 0)
-        throwing("bind()");
-    if (listen(_SockeFd, 1) < 0)
-        throwing("listen()");
+	if (_SockeFd < 0) throwing("socket()");
+	if (bind(_SockeFd, (const struct sockaddr *)&_address, sizeof(struct sockaddr_in)) < 0) throwing("bind()");
+	if (listen(_SockeFd, 1) < 0) throwing("listen()");
+	std::cout << "Server running on http://localhost:" << PORT << std::endl;
 }
 
 void Socket::sendHttpResponse(int clientFd)
@@ -67,32 +66,32 @@ void Socket::addClientInEppol()
 
 void Socket::readClientRequest(epoll_event client)
 {
-    size_t bytesRead;
-    char buffer[MAXREAD];
+	size_t bytesRead;
+	char buffer[MAXREAD];
 
-    bytesRead = recv(client.data.fd, buffer, sizeof(buffer), 0);
-    if (bytesRead == 0)
-    {
-        epoll_ctl(_epollInstance, EPOLL_CTL_DEL, client.data.fd, NULL);
-        close(client.data.fd);
-        _ClientsMap.erase(client.data.fd);
-        return;
-    }
-    else if (bytesRead < 0)
-    {
-        if (errno == EAGAIN || errno == EWOULDBLOCK)
-            return;
-        else
-            throwing("recv()");
-    }
-    else
-        buffer[bytesRead] = '\0';
-    std::cout << buffer << std::endl;
-    // parsaingObject(std::string(buffer));
-    sendHttpResponse(client.data.fd);
-
-    close(client.data.fd);
-    _ClientsMap.erase(client.data.fd);
+	bytesRead = recv(client.data.fd, buffer, sizeof(buffer), 0);
+	if (bytesRead == 0) {
+		epoll_ctl(_epollInstance, EPOLL_CTL_DEL, client.data.fd, NULL);
+		close(client.data.fd);
+		_ClientsMap.erase(client.data.fd);
+		return;
+	}
+	else if (bytesRead < 0) {
+		if (errno == EAGAIN || errno == EWOULDBLOCK)
+		    return;
+		else
+		    throwing("recv()");
+	}
+	else
+	buffer[bytesRead] = '\0';
+	std::cout << buffer << std::endl;
+	// parsaingObject(std::string(buffer));
+	//sendHttpResponse(client.data.fd);
+	std::string BurStr = buffer;
+	Request	RequestHandle(BurStr);
+	//handleRequest( std::string &raw);
+	close(client.data.fd);
+	_ClientsMap.erase(client.data.fd);
 }
 
 void Socket::run()
