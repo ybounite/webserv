@@ -7,10 +7,8 @@
 /* ************************************************************************** */
 
 # pragma once
-# include <iostream>
-# include <string>
-# include <map>
-# include <sstream>
+# include "../../includes/Webserv.hpp"
+
 /* ************************************************************************** */
 /*                          Request Class                                     */
 /* ************************************************************************** */
@@ -21,6 +19,7 @@ class Request {
 public:
 
 	Request( void );
+	Request( std::string &raw );
 	Request( const  Request &Other );
 	Request &operator=( const  Request &Other );
 	~Request( void );
