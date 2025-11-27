@@ -1,22 +1,4 @@
-#ifndef SOCKET_HPP
-#define SOCKET_HPP
-
-#include <iostream>
-#include <sys/socket.h>
-#include <string.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <netinet/in.h>
-#include <errno.h>
-#include <arpa/inet.h>
-#include <signal.h>
-#include <stdexcept>
-#include <fcntl.h>
-#include <poll.h>
-#include <sys/epoll.h>
-#include <vector>
-#include <map>
-
+# pragma once
 # include "../../includes/Webserv.hpp"
 
 #define PORT 8080
@@ -51,4 +33,3 @@ public:
     ~Socket();
 };
 
-#endif
