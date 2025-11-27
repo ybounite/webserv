@@ -38,10 +38,12 @@
 # include <sys/select.h>
 # include <arpa/inet.h>
 
-// colors
+// epoll
+#include <sys/epoll.h>
 
 #include "../src/socket/Socket.hpp"
 
+// colors
 #define RESET          "\x1B[0m"
 #define RED            "\x1B[31m"
 #define LIGHT_RED      "\x1B[91m"
