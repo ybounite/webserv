@@ -2,7 +2,7 @@ FLAGS = -Wall -Wextra -Werror -std=c++98
 
 NAME = webServe
 
-SRCS = Socket.cpp main.cpp
+SRCS = Client.cpp Server.cpp main.cpp 
 
 OBJS = $(SRCS:.cpp=.o)
 

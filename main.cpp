@@ -1,10 +1,10 @@
-#include "Socket.hpp"
+#include "Server.hpp"
 
 int main()
 {
     try
     {
-        Socket sct;
+        Server sct;
         sct.run();
 
     }
