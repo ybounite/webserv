@@ -18,6 +18,7 @@
 #include <map>
 
 #define MAX_CLIENTS_EVENTS 1000
+#define PORT 4446
 
 class Server
 {
@@ -25,7 +26,7 @@ private:
     int _epollInstance;
     int _ServerFd;
     struct sockaddr_in _address;
-    std::vector<int> _ClientsFds;
+    std::map<int, int> _ClientsFds;
     epoll_event _clients[MAX_CLIENTS_EVENTS];
 
 public:
@@ -37,7 +38,7 @@ public:
     void sendHttpResponse(int clientFd);
     void CreateEpollInstance();
     void run();
-    std::vector<int> getClients() const;
+    std::map<int, int> getClients() const;
     ~Server();
 };
 
