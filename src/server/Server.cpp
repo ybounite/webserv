@@ -34,6 +34,7 @@ void Server::CreateEpollInstance()
 void Server::run()
 {
     CreateEpollInstance();
+    std::cout << "Server running on http://localhost:" << _data.servers[0].listen_port << std::endl;
     while (true)
     {
         readyClients = epoll_wait(_epollInstance, _clients, MAX_CLIENTS_EVENTS, -1);
