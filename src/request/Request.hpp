@@ -33,6 +33,9 @@ public:
 
 	void	handleRequest( std::string &raw );
 	void	parseRequestLine( const std::string &line );
+	void	parseHeaders( std::istringstream &stream );
+	void	parseBady( std::istringstream &stream );
+
 private:
 	std::string				_Method; // GET , POST DELETE
 	std::string				_URI; // /index.html
