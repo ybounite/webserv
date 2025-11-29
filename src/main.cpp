@@ -33,7 +33,7 @@ int main(int argc, char const *argv[]) {
 			vector = token.tokenize(ConfigFileReader::read(config_path));
 			config = parser.parse(vector);
 			// printVector(vector, "vector");
-			Socket sct;
+			Server sct(config);
 			sct.run();
 		} catch(const std::exception& e) {
 			std::cerr << e.what() << std::endl;

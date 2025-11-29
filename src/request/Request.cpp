@@ -13,7 +13,7 @@ Request::Request( void ) {
 
 }
 
-Request::Request( std::string &raw ) {
+Request::Request( std::string raw ) {
 	this->handleRequest(raw);
 }
 Request::Request( const  Request &Other ) {
@@ -46,9 +46,9 @@ std::string	Request::getPath( void ) { return _Path;}
 void	Request::parseRequestLine( const std::string &line ) {
 	std::istringstream ss(line);
 	ss >> _Method >> _URI >> _HTTPversion;
-	std::cout << "* Method : " << _Method << std::endl;
-	std::cout << "* URI : " << _URI << std::endl;
-	std::cout << "* HTTPversion : " << _HTTPversion << std::endl;
+	// std::cout << "* Method : " << _Method << std::endl;
+	// std::cout << "* URI : " << _URI << std::endl;
+	// std::cout << "* HTTPversion : " << _HTTPversion << std::endl;
 }
 
 

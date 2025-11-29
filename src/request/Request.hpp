@@ -19,7 +19,7 @@ class Request {
 public:
 
 	Request( void );
-	Request( std::string &raw );
+	Request( std::string raw );
 	Request( const  Request &Other );
 	Request &operator=( const  Request &Other );
 	~Request( void );

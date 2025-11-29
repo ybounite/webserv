@@ -14,7 +14,7 @@ RM = rm -rf
 
 CONFIG_PARSER_DIR = src/config_parser
 REQUEST_PARSER_DIR = src/request
-SOCKET_DIR = src/socket
+SERVER_DIR = src/server
 
 SRC = src/main.cpp \
       $(CONFIG_PARSER_DIR)/Print.cpp \
@@ -22,7 +22,8 @@ SRC = src/main.cpp \
       $(CONFIG_PARSER_DIR)/read.cpp \
       $(CONFIG_PARSER_DIR)/Parser.cpp \
       $(CONFIG_PARSER_DIR)/Config.cpp \
-	  $(SOCKET_DIR)/Socket.cpp \
+	  $(SERVER_DIR)/Server.cpp \
+	  $(SERVER_DIR)/Client.cpp \
 	  $(REQUEST_PARSER_DIR)/Request.cpp
 
 OBJ_DIR = obj/

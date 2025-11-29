@@ -41,7 +41,8 @@
 // epoll
 #include <sys/epoll.h>
 
-#include "../src/socket/Socket.hpp"
+# include "../src/server/Server.hpp"
+# include "../src/request/Request.hpp"
 
 // colors
 #define RESET          "\x1B[0m"
