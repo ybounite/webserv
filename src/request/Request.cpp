@@ -16,6 +16,8 @@ Request::Request( void ) {
 Request::Request( std::string raw ) {
 	this->handleRequest(raw);
 }
+
+
 Request::Request( const  Request &Other ) {
 	*this = Other;
 }
@@ -51,16 +53,69 @@ void	Request::parseRequestLine( const std::string &line ) {
 	// std::cout << "* HTTPversion : " << _HTTPversion << std::endl;
 }
 
+void	Request::parseHeaders( std::istringstream &stream ) {
+	std::cout << GREEN << "Hendling HTTP request" << RESET << std::endl;
+	std::string	Line;
+	while (getline(stream, Line)) {
+
+		if (!Line.empty() && Line[Line.length() - 1] == '\r') // this '\r' trailing 
+			Line.erase(Line.length() - 1);
+
+		if (Line.empty())
+			break ;
+		size_t	pos = Line.find(":");
+		if (pos == std::string::npos) throw std::runtime_error("invalid header field");
+
+		std::string	key = Line.substr(0, pos);
+		std::string	value = Line.substr(pos + 1);
+
+		if (!value.empty() && value[0] == ' ')
+			value.erase(0, 1);
+		std::cout << "this key :" << key << std::endl;
+		std::cout << "this value :" << value << std::endl;
+		this->_Headers[key] = value;
+	}
+}
+
+void	printRequest(std::string &row) {
+	std::cout << YELLOW << "****************Request************" << RESET << std::endl;
+	std::cout << row << std::endl;
+	std::cout << YELLOW << "****************END****************" << RESET << std::endl;
+}
+/*
+		* ⚠ Important limitations
+	✔ This function only works for Content-Length, not for:
+	✔ Transfer-Encoding: chunked
+	✔ multipart form decoding
+	✔ file uploads (multipart/form-data)
+	✔ I can show you how to add support for those too.
+*/
+void	Request::parseBody( std::istringstream &stream ){
+
+	std::cout << GREEN << "Bady HTTP request" << RESET << std::endl;
+	std::string contentLengthStr = _Headers["Content-Length"];
+	if (contentLengthStr.empty()) 
+		return;
+
+	size_t contentLength = std::atoi(contentLengthStr.c_str());
+	_Body.resize(contentLength);
+
+	stream.read(&_Body[0], contentLength);
+	std::cout << _Body << std::endl;
+}
 
 void	Request::handleRequest( std::string &raw) {
-
 	std::istringstream	stream(raw);
 	std::string		line;
+	printRequest(raw);
 
 	if (!std::getline(stream, line))
 		throw std::runtime_error("invalid request");
 
 	if (!line.empty() && line[line.length() - 1] == '\r')
 		line.erase(line.length() - 1);
+
 	parseRequestLine(line);
+	parseHeaders(stream); 
+	parseBody(stream);
 }
