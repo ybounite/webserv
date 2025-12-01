@@ -7,6 +7,7 @@
 /* ************************************************************************** */
 
 # include "Request.hpp"
+# include "RequestHandler.hpp"
 
 
 Request::Request( void ) {
@@ -118,4 +119,7 @@ void	Request::handleRequest( std::string &raw) {
 	parseRequestLine(line);
 	parseHeaders(stream); 
 	parseBody(stream);
+	
+	RequestHandler	rqshd(*this);
+	rqshd.handle(GbConfig);
 }

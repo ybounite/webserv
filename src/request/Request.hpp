@@ -12,6 +12,7 @@
 /* ************************************************************************** */
 /*                          Request Class                                     */
 /* ************************************************************************** */
+// class	RequestHandler;
 
 # define LINE_BREAK "\r\n"
 
@@ -37,11 +38,11 @@ public:
 	void	parseBody(std::istringstream &stream);
 
 private:
-	std::string				_Method; // GET , POST DELETE
-	std::string				_URI; // /index.html
-	std::string				_HTTPversion;
+	std::string							_Method; // GET , POST DELETE
+	std::string							_URI; // /index.html
+	std::string							_HTTPversion;
 //	std::string				_Server;
 	std::map<std::string, std::string>	_Headers;
-	std::string				_Body;
-	std::string				_Path;
+	std::string							_Body;
+	std::string							_Path;
 };
