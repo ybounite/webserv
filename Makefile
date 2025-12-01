@@ -14,6 +14,7 @@ RM = rm -rf
 
 CONFIG_PARSER_DIR = src/config_parser
 REQUEST_PARSER_DIR = src/request
+REQUEST_RESPONSE_DIR = src/response
 SERVER_DIR = src/server
 
 SRC = src/main.cpp \
@@ -24,7 +25,9 @@ SRC = src/main.cpp \
       $(CONFIG_PARSER_DIR)/Config.cpp \
 	  $(SERVER_DIR)/Server.cpp \
 	  $(SERVER_DIR)/Client.cpp \
-	  $(REQUEST_PARSER_DIR)/Request.cpp
+	  $(REQUEST_PARSER_DIR)/Request.cpp\
+	  $(REQUEST_PARSER_DIR)/RequestHandler.cpp\
+	  $(REQUEST_RESPONSE_DIR)/Response.cpp
 
 OBJ_DIR = obj/
 OBJ = $(SRC:src/%.cpp=$(OBJ_DIR)%.o)
