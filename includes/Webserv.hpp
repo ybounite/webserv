@@ -131,6 +131,6 @@ private:
 // helper function
 
 void parse_config(Config &config);
-// global class
 
+// global class
 extern class   Config  GbConfig;
