@@ -49,9 +49,11 @@ std::string	Request::getPath( void ) { return _Path;}
 void	Request::parseRequestLine( const std::string &line ) {
 	std::istringstream ss(line);
 	ss >> _Method >> _URI >> _HTTPversion;
+	// std::cout << GREEN << "**********************" << RESET << std::endl;
 	// std::cout << "* Method : " << _Method << std::endl;
 	// std::cout << "* URI : " << _URI << std::endl;
 	// std::cout << "* HTTPversion : " << _HTTPversion << std::endl;
+	// std::cout << GREEN << "**********************" << RESET << std::endl;
 }
 
 void	Request::parseHeaders( std::istringstream &stream ) {
@@ -72,8 +74,8 @@ void	Request::parseHeaders( std::istringstream &stream ) {
 
 		if (!value.empty() && value[0] == ' ')
 			value.erase(0, 1);
-		std::cout << "this key :" << key << std::endl;
-		std::cout << "this value :" << value << std::endl;
+		// std::cout << "this key :" << key << std::endl;
+		// std::cout << "this value :" << value << std::endl;
 		this->_Headers[key] = value;
 	}
 }
@@ -83,6 +85,7 @@ void	printRequest(std::string &row) {
 	std::cout << row << std::endl;
 	std::cout << YELLOW << "****************END****************" << RESET << std::endl;
 }
+
 /*
 		* ⚠ Important limitations
 	✔ This function only works for Content-Length, not for:
@@ -91,6 +94,7 @@ void	printRequest(std::string &row) {
 	✔ file uploads (multipart/form-data)
 	✔ I can show you how to add support for those too.
 */
+
 void	Request::parseBody( std::istringstream &stream ){
 
 	std::cout << GREEN << "Bady HTTP request" << RESET << std::endl;
@@ -119,7 +123,11 @@ void	Request::handleRequest( std::string &raw) {
 	parseRequestLine(line);
 	parseHeaders(stream); 
 	parseBody(stream);
-	
+}
+
+void	Request::sendResponse(int clientFd) {
+
 	RequestHandler	rqshd(*this);
-	rqshd.handle(GbConfig);
+	std::string Body = rqshd.handle(GbConfig);
+	send(clientFd, Body.c_str(), Body.length(), 0);
 }
