@@ -8,74 +8,92 @@
 
 # include "RequestHandler.hpp"
 
-RequestHandler::RequestHandler( void ) {
+RequestHandler::RequestHandler( void ) {}
 
-}
 RequestHandler::RequestHandler( const Request &Other ) : Request(Other) {}
 
-RequestHandler::RequestHandler( const  RequestHandler &Other ){
-    *this = Other;
+RequestHandler::RequestHandler( const RequestHandler &Other ){
+	*this = Other;
 }
 
-RequestHandler::~RequestHandler( void ) {
+RequestHandler::~RequestHandler( void ) {}
 
+std::string	readFile(const std::string &path) {
+
+	std::ifstream file(path.c_str());
+	if (!file.is_open()) return "";
+
+	std::stringstream buffer;
+	buffer << file.rdbuf();
+	return buffer.str();
 }
 
-void    RequestHandler::handle(const Config &config) {
-
-    (void)config;
-    std::cout << "Method is : " << this->getMethod() << std::endl;
+std::string	getStatusText( int statusCode ) {
+	switch (statusCode) {
+		case 200: return "OK";
+		case 201: return "Created";
+		case 204: return "No Content";
+		case 400: return "Bad Request";
+		case 403: return "Forbidden";
+		case 404: return "Not Found";
+		case 405: return "Method Not Allowed";
+		case 413: return "Payload Too Large";
+		case 500: return "Internal Server Error";
+		case 501: return "Not Implemented";
+		default:  return "Unknown";
+	}
 }
 
-// Response    RequestHandler::handleGET(const Request req, const ServerConfig &config)
-// {
-//     (void)req;(void)config;
-//     // std::cout << req.getUri() << std::endl;
-//     Response res;
-//     // // res.uri = "asdg";
-//     // // ---------------------------------------------------------
-//     // // 1. Build the real file path from URI
-//     // // ---------------------------------------------------------
-//     // std::string path = config.root + req.getUri();
-    
-//     // // If URI is directory → add index file
-//     // if (req.uri.back() == '/')
-//     //     path += "index.html";
+std::string	RequestHandler::buildHttpResponse(int statusCode, const std::string &body) {
 
-//     // // ---------------------------------------------------------
-//     // // 2. Check if file exists
-//     // // ---------------------------------------------------------
-//     // struct stat st;
-//     // if (stat(path.c_str(), &st) == -1) {
-//     //     res.StatusCode = 404;
-//     //     res.Body = "<h1>404 Not Found</h1>";
-//     //     res.Headers["Content-Type"] = "text/html";
-//     //     res.Headers["Content-Length"] = std::to_string(res.Body.size());
-//     //     return res;
-//     // }
+	const std::string statusText = getStatusText(statusCode);
 
-//     // // ---------------------------------------------------------
-//     // // 3. Read file content
-//     // // ---------------------------------------------------------
-//     // std::ifstream file(path.c_str(), std::ios::binary);
-//     // if (!file) {
-//     //     res.StatusCode = 500;
-//     //     res.Body = "<h1>500 Internal Server Error</h1>";
-//     //     res.Headers["Content-Type"] = "text/html";
-//     //     res.Headers["Content-Length"] = std::to_string(res.Body.size());
-//     //     return res;
-//     // }
+	std::ostringstream response;
+	// Status line: "HTTP/1.1 200 OK"
+	response << getHTTPversion() << " " << statusCode << " " << statusText << "\r\n";
 
-//     // std::ostringstream buffer;
-//     // buffer << file.rdbuf();
-//     // res.Body = buffer.str();
+	response << getHTTPversion() << statusCode << " " << statusText << "\r\n";
+	response << "Content-Length: " << body.size() << "\r\n";
+	response << "Content-Type: text/html\r\n";
+	response << "\r\n"; // blank line before body
+	response << body;
 
-//     // // ---------------------------------------------------------
-//     // // 4. Build successful response
-//     // // ---------------------------------------------------------
-//     // res.StatusCode = 200;
-//     // res.Headers["Content-Type"] = "text/html";     // you can add MIME detection later
-//     // res.Headers["Content-Length"] = std::to_string(res.Body.size());
+	return response.str();
+}
 
-//     return res;
-// }
+std::string     RequestHandler::handle(const Config &config) {
+	// Response     res;
+	std::cout << "Method is : " << this->getMethod() << std::endl;
+	int 		status;
+	std::string	body;
+	std::string Path = config.servers[0].root + this->getUri();
+	if (Path[Path.length() - 1] == '/')
+			Path += config.servers[0].index;
+	std::cout << GREEN << Path << RESET << std::endl;
+// struct       stat st;
+// if (stat(Path.c_str(), &st) == -1) 
+//      std::cout << RED <<  "file is not fond !" << RESET << std::endl;
+	if (getMethod() == "GET") {
+		status = 200;
+		body = readFile(Path);
+	}else if (getMethod() == "POST"){
+		status = 200;
+		// Handler POST
+		// std::string body = readFile(Path);
+	}else if (getMethod() == "DELETE") {
+		// Handler DELETE
+		status = 200;
+	}else {
+		status = 405;
+		body = readFile("errors/405.html");
+		// body = "<html><body><h1>405 Method Not Allowed</h1></body></html>";
+	}
+
+	if (body.empty()) {
+		status = 404;
+		body = readFile("errors/404.html");
+		// body = "<html><body><h1>404 Not Found</h1></body></html>";
+	}
+	// Response	response(status, body);
+	return  buildHttpResponse(status, body);
+}
