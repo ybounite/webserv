@@ -26,9 +26,9 @@ public:
 	RequestHandler( const  RequestHandler &Other );
 	~RequestHandler( void );
 
-	void    handle(const Config &config);
-	
+	std::string		handle(const Config &config);
+	std::string		buildHttpResponse(int statusCode, const std::string &body);
 private:
-	Response	rsp;
+	// Response		rsp;
 	// Response		handleGET(const Request req, const ServerConfig &config);
 };
