@@ -125,9 +125,16 @@ void	Request::handleRequest( std::string &raw) {
 	parseBody(stream);
 }
 
-void	Request::sendResponse(int clientFd) {
+std::string		Request::response(){
 
 	RequestHandler	rqshd(*this);
 	std::string Body = rqshd.handle(GbConfig);
-	send(clientFd, Body.c_str(), Body.length(), 0);
+	return Body;
 }
+
+// void	Request::sendResponse(int clientFd) {
+
+// 	RequestHandler	rqshd(*this);
+// 	std::string Body = rqshd.handle(GbConfig);
+// 	send(clientFd, Body.c_str(), Body.length(), 0);
+// }
