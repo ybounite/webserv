@@ -31,6 +31,7 @@ public:
 	std::map<std::string , std::string>	&getHeaders( void );
 	std::string	getBody( void );
 	std::string	getPath( void );
+	std::string response;
 
 	void	handleRequest( std::string &raw );
 	void	parseRequestLine( const std::string &line );

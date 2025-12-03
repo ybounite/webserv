@@ -13,7 +13,7 @@ void Server::addClientInEppol()
         throwing("accept()");
     epoll_event newClient;
     newClient.data.fd = clientFd;
-    newClient.events = EPOLLIN;
+    newClient.events = EPOLLIN | EPOLLOUT;
     if (epoll_ctl(_epollInstance, EPOLL_CTL_ADD, clientFd, &newClient) < 0)
         throwing("epoll_ctl()");
     _ClientsFds[clientFd] = clientFd;
@@ -41,27 +41,11 @@ void Server::readClientRequest(epoll_event client)
     else
         buffer[bytesRead] = '\0';
     Request request(buffer);
-    std::cout << buffer << std::endl;
 }
 
 // void Server::sendHttpResponse(int clientFd)
 // {
-//     const char *body =
-//         "HTTP/1.1 200 OK\r\n"
-//         "Content-Type: text/html\r\n"
-//         "Content-Length: %zu\r\n"
-//         "Connection: close\r\n"
-//         "\r\n"
-//         "<!DOCTYPE html>\r\n"
-//         "<html>\r\n"
-//         "<head>\r\n"
-//         "<title>Hello</title>\r\n"
-//         "</head>\r\n"
-//         "<body>\r\n"
-//         "<h1>Hello</h1>\r\n"
-//         "</body>\r\n"
-//         "</html>\r\n";
-//     send(clientFd, body, strlen(body), 0);
+//     send(clientFd, _response.c_str(), strlen(_response.c_str()), 0);
 //     close(clientFd);
 //     _ClientsFds.erase(clientFd);
 // }

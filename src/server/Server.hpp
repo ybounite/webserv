@@ -31,6 +31,7 @@ private:
     struct sockaddr_in _address;
     std::map<int, int> _ClientsFds;
     epoll_event _clients[MAX_CLIENTS_EVENTS];
+    std::string _response;
 
 public:
     int readyClients;

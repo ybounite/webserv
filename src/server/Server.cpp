@@ -44,8 +44,10 @@ void Server::run()
         {
             if (_clients[i].data.fd == _ServerFd) // a new client request need to be accepted.
                 addClientInEppol();
-            else if (_clients[i].events & EPOLLIN) // client wanna send data to the server.
+            if (_clients[i].events & EPOLLIN) // client wanna send data to the server.
                 readClientRequest(_clients[i]);   // here i read what the client sent
+            // if (_clients[i].events & EPOLLOUT)
+            //     sendHttpResponse(_clients[i].data.fd);
         }
     }
 }
