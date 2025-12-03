@@ -41,7 +41,7 @@ void Server::readClientRequest(epoll_event client)
     else
         buffer[bytesRead] = '\0';
     Request request(buffer);
-    std::cout << buffer << std::endl;
+    request.response(); // this string body of HTTP request 
 }
 
 // void Server::sendHttpResponse(int clientFd)
