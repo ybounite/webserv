@@ -43,9 +43,9 @@ void Server::readClientRequest(epoll_event client)
     Request request(buffer);
 }
 
-// void Server::sendHttpResponse(int clientFd)
-// {
-//     send(clientFd, _response.c_str(), strlen(_response.c_str()), 0);
-//     close(clientFd);
-//     _ClientsFds.erase(clientFd);
-// }
+void Server::sendHttpResponse(int clientFd)
+{
+    send(clientFd, _response.c_str(), strlen(_response.c_str()), 0);
+    close(clientFd);
+    _ClientsFds.erase(clientFd);
+}
