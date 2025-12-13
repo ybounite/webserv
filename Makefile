@@ -62,4 +62,4 @@ run: $(NAME)
 BRANCH = main
 p:
 	@read -p "Commit message: " msg; \
-	git add . && git commit -m "$$msg" && git push origin $(BRANCH)
+	git add . && git commit -m "$$msg" && git push --force origin $(BRANCH)
