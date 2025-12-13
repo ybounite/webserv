@@ -23,7 +23,7 @@ public:
 
 	RequestHandler( void );
 	RequestHandler( const Request &Other );
-	RequestHandler( const  RequestHandler &Other );
+	// RequestHandler( const  RequestHandler &Other );
 	~RequestHandler( void );
 
 	std::string		handle(const Config &config);

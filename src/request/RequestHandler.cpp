@@ -12,9 +12,9 @@ RequestHandler::RequestHandler( void ) {}
 
 RequestHandler::RequestHandler( const Request &Other ) : Request(Other) {}
 
-RequestHandler::RequestHandler( const RequestHandler &Other ){
-	*this = Other;
-}
+// RequestHandler::RequestHandler( const RequestHandler &Other ){
+// 	*this = Other;
+// }
 
 RequestHandler::~RequestHandler( void ) {}
 
@@ -44,21 +44,19 @@ std::string	getStatusText( int statusCode ) {
 	}
 }
 
-std::string	RequestHandler::buildHttpResponse(int statusCode, const std::string &body) {
+std::string RequestHandler::buildHttpResponse(int statusCode, const std::string &body) {
 
-	const std::string statusText = getStatusText(statusCode);
+    const std::string statusText = getStatusText(statusCode);
 
-	std::ostringstream response;
-	// Status line: "HTTP/1.1 200 OK"
-	response << getHTTPversion() << " " << statusCode << " " << statusText << "\r\n";
+    std::ostringstream response;
 
-	response << getHTTPversion() << statusCode << " " << statusText << "\r\n";
-	response << "Content-Length: " << body.size() << "\r\n";
-	response << "Content-Type: text/html\r\n";
-	response << "\r\n"; // blank line before body
-	response << body;
+    response << getHTTPversion() << " " << statusCode << " " << statusText << "\r\n";
+    response << "Content-Length: " << body.size() << "\r\n";
+    response << "Content-Type: text/html\r\n";
+    response << "\r\n";
+    response << body;
 
-	return response.str();
+    return response.str();
 }
 
 std::string     RequestHandler::handle(const Config &config) {
@@ -76,10 +74,23 @@ std::string     RequestHandler::handle(const Config &config) {
 	if (getMethod() == "GET") {
 		status = 200;
 		body = readFile(Path);
-	}else if (getMethod() == "POST"){
-		status = 200;
-		// Handler POST
-		// std::string body = readFile(Path);
+	}
+	else if (getMethod() == "POST") {
+
+		std::string bodyData = this->getBody();
+
+		if (bodyData.empty()) {
+			status = 400;
+			body = readFile("errors/400.html");
+		}
+		else {
+			status = 200;
+			body =
+				"<html><body>"
+				"<h1>POST received</h1>"
+				"<pre>" + bodyData + "</pre>"
+				"</body></html>";
+		}
 	}else if (getMethod() == "DELETE") {
 		// Handler DELETE
 		status = 200;

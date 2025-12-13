@@ -37,7 +37,10 @@ public:
 	void								parseHeaders( std::istringstream &stream );
 	void								parseBody( std::istringstream &stream );
 	std::string							response( void );
-	// void		sendResponse(int clientFd);
+	void								sendResponse(int clientFd);
+	std::string getHeader(const std::string &key) const;
+	size_t      getContentLength() const;
+
 
 private:
 	std::string							_Method; // GET , POST DELETE

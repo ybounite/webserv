@@ -95,18 +95,24 @@ void	printRequest(std::string &row) {
 	✔ I can show you how to add support for those too.
 */
 
-void	Request::parseBody( std::istringstream &stream ){
+void Request::parseBody(std::istringstream &stream)
+{
+    std::string lenStr = _Headers["Content-Length"];
+    if (lenStr.empty())
+        return;
 
-	std::cout << GREEN << "Bady HTTP request" << RESET << std::endl;
-	std::string contentLengthStr = _Headers["Content-Length"];
-	if (contentLengthStr.empty()) 
-		return;
+    size_t len = std::atoi(lenStr.c_str());
+    if (len == 0)
+        return;
 
-	size_t contentLength = std::atoi(contentLengthStr.c_str());
-	_Body.resize(contentLength);
+    _Body.resize(len);
 
-	stream.read(&_Body[0], contentLength);
-	std::cout << _Body << std::endl;
+    stream.read(&_Body[0], len);
+    if (stream.gcount() != static_cast<std::streamsize>(len))
+    {
+        _Body.clear(); // invalid body
+        return;
+    }
 }
 
 void	Request::handleRequest( std::string &raw) {
@@ -132,9 +138,25 @@ std::string		Request::response(){
 	return Body;
 }
 
-// void	Request::sendResponse(int clientFd) {
+void	Request::sendResponse(int clientFd) {
 
-// 	RequestHandler	rqshd(*this);
-// 	std::string Body = rqshd.handle(GbConfig);
-// 	send(clientFd, Body.c_str(), Body.length(), 0);
-// }
+	RequestHandler	rqshd(*this);
+	std::string Body = rqshd.handle(GbConfig);
+	send(clientFd, Body.c_str(), Body.length(), 0);
+}
+
+std::string Request::getHeader(const std::string &key) const
+{
+    std::map<std::string, std::string>::const_iterator it = _Headers.find(key);
+    if (it != _Headers.end())
+        return it->second;
+    return "";
+}
+
+size_t Request::getContentLength() const
+{
+    std::string len = getHeader("Content-Length");
+    if (len.empty())
+        return 0;
+    return std::atoi(len.c_str());
+}
