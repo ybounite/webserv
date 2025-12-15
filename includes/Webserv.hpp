@@ -41,9 +41,6 @@
 // epoll
 #include <sys/epoll.h>
 
-# include "../src/server/Server.hpp"
-# include "../src/request/Request.hpp"
-
 // colors
 #define RESET          "\x1B[0m"
 #define RED            "\x1B[31m"
@@ -133,7 +130,7 @@ private:
 void parse_config(Config &config);
 
 // global class
-extern class   Config  GbConfig;
+//extern class   Config  GbConfig;
 
 template <typename T>
 std::string to_string(T &value) {
@@ -141,3 +138,8 @@ std::string to_string(T &value) {
     oss << value;
     return oss.str();
 }
+
+# include "../src/server/Server.hpp"
+# include "../src/request/Request.hpp"
+# include "../src/response/Response.hpp"
+# include "../src/request/RequestHandler.hpp"
