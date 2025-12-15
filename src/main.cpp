@@ -8,9 +8,6 @@
 
 #include "../includes/Webserv.hpp"
 
-// global class
-class   Config  GbConfig;
-
 int main(int argc, char const *argv[]) {
 
 	std::vector <std::string> vector;
@@ -21,9 +18,8 @@ int main(int argc, char const *argv[]) {
 			Parser	parser;
 			config_path = (argc == 1 ? "configs/default.conf" : argv[1]);
 			vector = token.tokenize(ConfigFileReader::read(config_path));
-			GbConfig = parser.parse(vector);
-			// printVector(vector, "vector");
-			Server sct(GbConfig);
+			Config config = parser.parse(vector);
+			Server sct(config);
 			sct.run();
 		} catch(const std::exception& e) {
 			std::cerr << e.what() << std::endl;
