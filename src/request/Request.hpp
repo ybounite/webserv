@@ -20,27 +20,26 @@ class Request {
 public:
 
 	Request( void );
-	Request( std::string raw );
+	Request( std::string raw, Config &ConfigFile );
 	Request( const  Request &Other );
 	Request &operator=( const  Request &Other );
 	~Request();
 	
-	std::string							getMethod( void );
-	std::string							getUri( void );
-	std::string							getHTTPversion( void );
-	std::map<std::string , std::string>	&getHeaders( void );
-	std::string							getBody( void );
-	std::string							getPath( void );
+	const std::string							&getMethod( void ) const;
+	const std::string							&getUri( void ) const;
+	const std::string							&getHTTPversion( void ) const;
+	const std::map<std::string, std::string>	&getHeaders( void ) const;
+	const std::string							&getBody( void ) const;
+	const std::string							&getPath( void ) const;
 
 	void								handleRequest( std::string &raw );
 	void								parseRequestLine( const std::string &line );
 	void								parseHeaders( std::istringstream &stream );
 	void								parseBody( std::istringstream &stream );
 	std::string							response( void );
-	void								sendResponse(int clientFd);
-	std::string getHeader(const std::string &key) const;
-	size_t      getContentLength() const;
-
+	//void								sendResponse(int clientFd);
+	std::string							getHeader(const std::string &key) const;
+	size_t								getContentLength() const;
 
 private:
 	std::string							_Method; // GET , POST DELETE
@@ -49,5 +48,6 @@ private:
 	std::map<std::string, std::string>	_Headers;
 	std::string							_Body;
 	std::string							_Path;
+	Config								_config; // Store config as a member, not inherit from it
 	//	std::string				_Server;
 };
