@@ -31,3 +31,4 @@ uploads/*
 # Generated error pages (if created at runtime)
 errors/*.html
 !errors/.gitkeep
+POST.htm

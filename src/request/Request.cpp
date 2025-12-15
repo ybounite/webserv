@@ -7,17 +7,13 @@
 /* ************************************************************************** */
 
 # include "Request.hpp"
-# include "RequestHandler.hpp"
+//# include "RequestHandler.hpp"
 
+Request::Request( void ) {}
 
-Request::Request( void ) {
-
-}
-
-Request::Request( std::string raw ) {
+Request::Request( std::string raw, Config &ConfigFile ) : _config(ConfigFile) {
 	this->handleRequest(raw);
 }
-
 
 Request::Request( const  Request &Other ) {
 	*this = Other;
@@ -30,21 +26,20 @@ Request &Request::operator=( const  Request &Other ) {
 		_HTTPversion = Other._HTTPversion;
 		_Headers = Other._Headers;
 		_Body = Other._Body;
-		_Path = Other._Path;	
+		_Path = Other._Path;
+		_config = Other._config;
 	}
 	return *this;
 }
 
-Request::~Request( void ) {
+Request::~Request( void ) {}
 
-}
-
-std::string	Request::getMethod( void ) {return _Method;}
-std::string	Request::getUri( void ) { return _URI;}
-std::string	Request::getHTTPversion( void ) {return _HTTPversion;}
-std::map<std::string , std::string>	&Request::getHeaders( void ) { return _Headers;}
-std::string	Request::getBody( void ) { return _Body;}
-std::string	Request::getPath( void ) { return _Path;}
+const std::string	&Request::getMethod( void ) const {return _Method;}
+const std::string	&Request::getUri( void ) const { return _URI;}
+const std::string	&Request::getHTTPversion( void ) const {return _HTTPversion;}
+const std::map<std::string , std::string>	&Request::getHeaders( void ) const { return _Headers;}
+const std::string	&Request::getBody( void ) const { return _Body;}
+const std::string	&Request::getPath( void ) const { return _Path;}
 
 void	Request::parseRequestLine( const std::string &line ) {
 	std::istringstream ss(line);
@@ -95,7 +90,7 @@ void	printRequest(std::string &row) {
 	✔ I can show you how to add support for those too.
 */
 
-void Request::parseBody(std::istringstream &stream)
+void		Request::parseBody(std::istringstream &stream)
 {
     std::string lenStr = _Headers["Content-Length"];
     if (lenStr.empty())
@@ -115,10 +110,11 @@ void Request::parseBody(std::istringstream &stream)
     }
 }
 
-void	Request::handleRequest( std::string &raw) {
+void		Request::handleRequest( std::string &raw) {
 	std::istringstream	stream(raw);
-	std::string		line;
-	printRequest(raw);
+	std::string			line;
+
+	printRequest(raw); // print request 
 
 	if (!std::getline(stream, line))
 		throw std::runtime_error("invalid request");
@@ -131,21 +127,22 @@ void	Request::handleRequest( std::string &raw) {
 	parseBody(stream);
 }
 
-std::string		Request::response(){
-
-	RequestHandler	rqshd(*this);
-	std::string Body = rqshd.handle(GbConfig);
-	return Body;
+std::string	Request::response(){
+	Response rsp = RequestHandler::handle(*this, this->_config);
+	return rsp.toString();
 }
 
-void	Request::sendResponse(int clientFd) {
+//void	Request::sendResponse(int clientFd) {
 
-	RequestHandler	rqshd(*this);
-	std::string Body = rqshd.handle(GbConfig);
-	send(clientFd, Body.c_str(), Body.length(), 0);
-}
+//	Response rsp = Response::build(*this, this->_config);
+//	/**/
+//	//RequestHandler	rqshd(*this);
+//	//std::string Body = rqshd.handle(this->_config);
+//	std::string Body = 	rsp.toString();
+//	send(clientFd, Body.c_str(), Body.length(), 0);
+//}
 
-std::string Request::getHeader(const std::string &key) const
+std::string	Request::getHeader(const std::string &key) const
 {
     std::map<std::string, std::string>::const_iterator it = _Headers.find(key);
     if (it != _Headers.end())
@@ -153,7 +150,7 @@ std::string Request::getHeader(const std::string &key) const
     return "";
 }
 
-size_t Request::getContentLength() const
+size_t		Request::getContentLength() const
 {
     std::string len = getHeader("Content-Length");
     if (len.empty())

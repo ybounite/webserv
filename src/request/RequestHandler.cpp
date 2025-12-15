@@ -7,104 +7,134 @@
 /* ************************************************************************** */
 
 # include "RequestHandler.hpp"
+# include "Request.hpp"
+# include "../response/Response.hpp"
 
-RequestHandler::RequestHandler( void ) {}
-
-RequestHandler::RequestHandler( const Request &Other ) : Request(Other) {}
-
-// RequestHandler::RequestHandler( const RequestHandler &Other ){
-// 	*this = Other;
-// }
-
-RequestHandler::~RequestHandler( void ) {}
-
-std::string	readFile(const std::string &path) {
-
+std::string	RequestHandler::readFile(const std::string &path) {
 	std::ifstream file(path.c_str());
 	if (!file.is_open()) return "";
 
-	std::stringstream buffer;
+	std::stringstream	buffer;
 	buffer << file.rdbuf();
 	return buffer.str();
 }
 
-std::string	getStatusText( int statusCode ) {
-	switch (statusCode) {
-		case 200: return "OK";
-		case 201: return "Created";
-		case 204: return "No Content";
-		case 400: return "Bad Request";
-		case 403: return "Forbidden";
-		case 404: return "Not Found";
-		case 405: return "Method Not Allowed";
-		case 413: return "Payload Too Large";
-		case 500: return "Internal Server Error";
-		case 501: return "Not Implemented";
-		default:  return "Unknown";
+std::string	RequestHandler::getErrorPage(int statusCode) {
+	std::ostringstream errorPath;
+	errorPath << "errors/" << statusCode << ".html";
+	std::string content = readFile(errorPath.str());
+	
+	if (content.empty()) {
+		// Fallback if error page doesn't exist
+		std::ostringstream fallback;
+		fallback << "<html><body><h1>" << statusCode << " Error</h1></body></html>";
+		return fallback.str();
+	}
+	return content;
+}
+
+short		RequestHandler::getMothod( const std::string &method ) {
+	if (method == "GET")
+		return HTTP_GET;
+	else if (method == "POST")
+		return HTTP_POST;
+	else if (method == "DELETE")
+		return HTTP_DELETE;
+	else
+		return HTTP_UNKNOWN;
+}
+
+// Main handler - routes to appropriate method handler
+Response	RequestHandler::handle(const Request &req, const Config &config) {
+
+	if (config.servers.empty()) {
+		Response	resp;
+		resp.setStatusCode(500);
+		resp.setBody(getErrorPage(500));
+		return resp;
+	}
+	
+	// Get the first server config (simplified - should match by host/port)
+	const ServerConfig &serverConf = config.servers[0];
+	
+	// Route based on method
+	//std::string method = req.getMethod();
+	switch (getMothod(req.getMethod())) {
+	case HTTP_GET:
+		return handleGET(req, serverConf);
+	case HTTP_POST:
+		return handlePOST(req, serverConf);
+	case HTTP_DELETE:
+		return handleDELETE(req, serverConf);
+	default :
+		Response resp;
+		resp.setStatusCode(405);
+		resp.setBody(getErrorPage(405));
+		return resp;
 	}
 }
 
-std::string RequestHandler::buildHttpResponse(int statusCode, const std::string &body) {
-
-    const std::string statusText = getStatusText(statusCode);
-
-    std::ostringstream response;
-
-    response << getHTTPversion() << " " << statusCode << " " << statusText << "\r\n";
-    response << "Content-Length: " << body.size() << "\r\n";
-    response << "Content-Type: text/html\r\n";
-    response << "\r\n";
-    response << body;
-
-    return response.str();
-}
-
-std::string     RequestHandler::handle(const Config &config) {
-	// Response     res;
-	std::cout << "Method is : " << this->getMethod() << std::endl;
-	int 		status;
-	std::string	body;
-	std::string Path = config.servers[0].root + this->getUri();
-	if (Path[Path.length() - 1] == '/')
-			Path += config.servers[0].index;
-	std::cout << GREEN << Path << RESET << std::endl;
-// struct       stat st;
-// if (stat(Path.c_str(), &st) == -1) 
-//      std::cout << RED <<  "file is not fond !" << RESET << std::endl;
-	if (getMethod() == "GET") {
-		status = 200;
-		body = readFile(Path);
+Response	RequestHandler::handleGET(const Request &req, const ServerConfig &config) {
+	Response resp;
+	
+	// Build file path
+	std::string path = config.root + req.getUri();
+	if (path[path.length() - 1] == '/') {
+		path += config.index;
 	}
-	else if (getMethod() == "POST") {
-
-		std::string bodyData = this->getBody();
-
-		if (bodyData.empty()) {
-			status = 400;
-			body = readFile("errors/400.html");
-		}
-		else {
-			status = 200;
-			body =
-				"<html><body>"
-				"<h1>POST received</h1>"
-				"<pre>" + bodyData + "</pre>"
-				"</body></html>";
-		}
-	}else if (getMethod() == "DELETE") {
-		// Handler DELETE
-		status = 200;
-	}else {
-		status = 405;
-		body = readFile("errors/405.html");
-		// body = "<html><body><h1>405 Method Not Allowed</h1></body></html>";
-	}
-
+	
+	Msg::info("GET: " + path);
+	
+	// Read file
+	std::string body = readFile(path);
+	
 	if (body.empty()) {
-		status = 404;
-		body = readFile("errors/404.html");
-		// body = "<html><body><h1>404 Not Found</h1></body></html>";
+		// File not found
+		resp.setStatusCode(404);
+		resp.setBody(getErrorPage(404));
+	} else {
+		// Success
+		resp.setStatusCode(200);
+		resp.setHeader("Content-Type", "text/html");
+		resp.setBody(body);
 	}
-	// Response	response(status, body);
-	return  buildHttpResponse(status, body);
+	
+	return resp;
+}
+
+Response	RequestHandler::handlePOST(const Request &req, const ServerConfig &config) {
+	Response resp;
+	(void)config; // Unused for now
+	
+	std::string bodyData = req.getBody();
+	
+	if (bodyData.empty()) {
+		resp.setStatusCode(400);
+		resp.setBody(getErrorPage(400));
+	} else {
+		// Process POST data (simplified)
+		resp.setStatusCode(200);
+		resp.setHeader("Content-Type", "text/html");
+		
+		std::string responseBody = 
+			"<html><body>"
+			"<h1>POST received</h1>"
+			"<pre>" + bodyData + "</pre>"
+			"</body></html>";
+		resp.setBody(responseBody);
+	}
+	
+	return resp;
+}
+
+Response	RequestHandler::handleDELETE(const Request &req, const ServerConfig &config) {
+	Response resp;
+	(void)req;
+	(void)config;
+	
+	// TODO: Implement file deletion
+	resp.setStatusCode(204); // No Content
+	resp.setBody("");
+	
+	return resp;
 }

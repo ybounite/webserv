@@ -8,27 +8,27 @@
 
 # pragma once
 # include "../../includes/Webserv.hpp"
-# include "../response/Response.hpp"
+
+class Response;
 
 /* ************************************************************************** */
 /*                          RequestHandler Class                              */
 /* ************************************************************************** */
 
-// class	ConfigFileReader;
-// class	Request;
-
-class RequestHandler : public Request {
-
+class RequestHandler {
 public:
+	enum	enHttpMethod { HTTP_GET, HTTP_POST, HTTP_DELETE, HTTP_UNKNOWN };
+	// Static handler - processes Request and returns Response
+	static Response		handle( const Request &req, const Config &config );
+	static short		getMothod( const std::string &method );
 
-	RequestHandler( void );
-	RequestHandler( const Request &Other );
-	// RequestHandler( const  RequestHandler &Other );
-	~RequestHandler( void );
-
-	std::string		handle(const Config &config);
-	std::string		buildHttpResponse(int statusCode, const std::string &body);
 private:
-	// Response		rsp;
-	// Response		handleGET(const Request req, const ServerConfig &config);
+	// Helper methods for different HTTP methods
+	static Response		handleGET(const Request &req, const ServerConfig &config);
+	static Response		handlePOST(const Request &req, const ServerConfig &config);
+	static Response		handleDELETE(const Request &req, const ServerConfig &config);
+	
+	// Utility functions
+	static std::string	readFile(const std::string &path);
+	static std::string	getErrorPage(int statusCode);
 };

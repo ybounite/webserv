@@ -40,10 +40,9 @@ void Server::readClientRequest(epoll_event client)
     }
     else
         buffer[bytesRead] = '\0';
-    Request request(buffer);
-    // request.response(); // this string body of HTTP request     
-    request.sendResponse(client.data.fd);
-    
+    Request req(buffer, _data);
+    Response resp = RequestHandler::handle(req, _data);
+    resp.send(client.data.fd);
 }
 
 // void Server::sendHttpResponse(int clientFd)
