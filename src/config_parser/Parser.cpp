@@ -52,6 +52,8 @@ size_t parseSizeDirective2(const std::vector<std::string> &tokens, unsigned long
         throw std::runtime_error("Invalid number in size: " + tok);
 
     size_t size = std::atoi(number.c_str()) * 1024 * 1024;
+    if (size > 10 * 1024 * 1024)
+         throw std::runtime_error("Invalid number in size: " + tok + " use less than 10M");
     i++;
     return size;
 }
