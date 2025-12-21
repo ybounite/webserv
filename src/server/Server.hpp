@@ -1,5 +1,4 @@
-# pragma once
-
+#pragma once
 
 #include <iostream>
 #include <sys/socket.h>
@@ -22,6 +21,13 @@
 
 class Config;
 
+typedef struct s_clients
+{
+    int fd;
+    std::string request;
+    std::string response;
+} t_clients;
+
 class Server
 {
 private:
@@ -29,7 +35,7 @@ private:
     int _ServerFd;
     Config &_data;
     struct sockaddr_in _address;
-    std::map<int, int> _ClientsFds;
+    std::map<int, t_clients> _ClientsMap;
     epoll_event _clients[MAX_CLIENTS_EVENTS];
 
 public:
@@ -37,11 +43,12 @@ public:
     Server(Config &data);
     int getServerFd();
     void addClientInEppol();
-    void readClientRequest(epoll_event client);
-    void sendHttpResponse(int clientFd);
+    void readClientRequest(unsigned int clientFd);
+    void sendHttpResponse(unsigned int clientFd);
     void CreateEpollInstance();
+    void deleteClientFromEpoll(unsigned int clientFd);
     void run();
-    std::map<int, int> getClients() const;
+    std::map<int, t_clients> getClients() const;
     ~Server();
 };
 

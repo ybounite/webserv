@@ -8,24 +8,30 @@
 
 #include "../includes/Webserv.hpp"
 
-int main(int argc, char const *argv[]) {
+int main(int argc, char const *argv[])
+{
 
-	std::vector <std::string> vector;
-	if (argc == 1 || argc == 2) {
-		try {
-			std::string	config_path;
-			Tokenizer	token;
-			Parser	parser;
+	std::vector<std::string> vector;
+	if (argc == 1 || argc == 2)
+	{
+		try
+		{
+			std::string config_path;
+			Tokenizer token;
+			Parser parser;
 			config_path = (argc == 1 ? "configs/default.conf" : argv[1]);
 			vector = token.tokenize(ConfigFileReader::read(config_path));
 			Config config = parser.parse(vector);
 			Server sct(config);
 			sct.run();
-		} catch(const std::exception& e) {
+		}
+		catch (const std::exception &e)
+		{
 			std::cerr << e.what() << std::endl;
 		}
 	}
-	else {
+	else
+	{
 		Msg::error("Bad arguments, should be ./webserv [configuration file], ");
 		return 1;
 	}

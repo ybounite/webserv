@@ -8,31 +8,57 @@ void throwing(std::string fct)
 void Server::addClientInEppol()
 {
     int clientFd;
+    // accept the client (that create for him a new socket and return a FD for it)
     clientFd = accept(_ServerFd, NULL, NULL);
+    // make this socket a nonblocked one so the recv wont block
+    fcntl(clientFd, F_SETFL, O_NONBLOCK);
     if (clientFd < 0)
         throwing("accept()");
+    // create new client epoll event
     epoll_event newClient;
     newClient.data.fd = clientFd;
     newClient.events = EPOLLIN;
     if (epoll_ctl(_epollInstance, EPOLL_CTL_ADD, clientFd, &newClient) < 0)
         throwing("epoll_ctl()");
-    _ClientsFds[clientFd] = clientFd;
+    // store the client FD and REQ/RES buffer in this struct
+    t_clients client;
+    client.fd = clientFd;
+    // add it to the map so we can deal with it smoothly
+    _ClientsMap[clientFd] = client;
 }
 
-void Server::readClientRequest(epoll_event client)
+// this function add the EPOLLOUT flag to the socket in the epoll instance to watch also if the client is ready to recv data
+void modifySockEvents(int epollfd, int fd)
+{
+    epoll_event newClient;
+    newClient.data.fd = fd;
+    newClient.events = EPOLLIN | EPOLLOUT;
+    // EPOLL_CTL_MOD this flag tell the kernel to modify the the event of the FD
+    epoll_ctl(epollfd, EPOLL_CTL_MOD, fd, &newClient);
+}
+
+void Server::deleteClientFromEpoll(unsigned int clientFd)
+{
+    // delete the client FD from the epoll instance so we are no longer watching it
+    epoll_ctl(_epollInstance, EPOLL_CTL_DEL, clientFd, NULL);
+    close(clientFd);
+    _ClientsMap.erase(clientFd);
+}
+
+void Server::readClientRequest(unsigned int clientFd)
 {
     int bytesRead;
     char buffer[_data.servers[0].client_max_body_size];
-    bytesRead = recv(client.data.fd, buffer, sizeof(buffer), 0);
+    // recv what the client sent to the server.
+    bytesRead = recv(clientFd, buffer, sizeof(buffer), 0);
     if (bytesRead == 0)
     {
-        epoll_ctl(_epollInstance, EPOLL_CTL_DEL, client.data.fd, NULL);
-        close(client.data.fd);
-        _ClientsFds.erase(client.data.fd);
+        deleteClientFromEpoll(clientFd);
         return;
     }
     else if (bytesRead < 0)
     {
+        //  if recv returns -1 and the errno code is on of those . that's mean there is no data yet and the recv would block.
         if (errno == EAGAIN || errno == EWOULDBLOCK)
             return;
         else
@@ -40,29 +66,22 @@ void Server::readClientRequest(epoll_event client)
     }
     else
         buffer[bytesRead] = '\0';
-    Request req(buffer, _data);
-    Response resp = RequestHandler::handle(req, _data);
-    resp.send(client.data.fd);
+    _ClientsMap[clientFd].request = buffer;
+    modifySockEvents(_epollInstance, clientFd);
 }
 
-// void Server::sendHttpResponse(int clientFd)
-// {
-//     const char *body =
-//         "HTTP/1.1 200 OK\r\n"
-//         "Content-Type: text/html\r\n"
-//         "Content-Length: %zu\r\n"
-//         "Connection: close\r\n"
-//         "\r\n"
-//         "<!DOCTYPE html>\r\n"
-//         "<html>\r\n"
-//         "<head>\r\n"
-//         "<title>Hello</title>\r\n"
-//         "</head>\r\n"
-//         "<body>\r\n"
-//         "<h1>Hello</h1>\r\n"
-//         "</body>\r\n"
-//         "</html>\r\n";
-//     send(clientFd, body, strlen(body), 0);
-//     close(clientFd);
-//     _ClientsFds.erase(clientFd);
-// }
+void Server::sendHttpResponse(unsigned int clientFd)
+{
+    try
+    {
+        Request req(_ClientsMap[clientFd].request, _data);
+        Response resp = RequestHandler::handle(req, _data);
+        resp.send(clientFd);
+        deleteClientFromEpoll(clientFd);
+    }
+
+    catch (std::exception &e)
+    {
+        std::cerr << e.what() << std::endl;
+    }
+}
