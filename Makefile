@@ -59,7 +59,7 @@ re: fclean all
 
 run: $(NAME)
 	@./$(NAME)
-BRANCH = main
+BRANCH = new-branch
 p:
 	@read -p "Commit message: " msg; \
-	git add . && git commit -m "$$msg" && git push --force origin $(BRANCH)
+	git add . && git commit -m "$$msg" && git push origin $(BRANCH)
