@@ -102,16 +102,57 @@ Response	RequestHandler::handleGET(const Request &req, const ServerConfig &confi
 	return resp;
 }
 
+/////////////////////
+std::map<std::string, std::string> parseUrlEncoded(const std::string &body)
+{
+	std::map<std::string, std::string> data;
+	std::stringstream ss(body);
+	std::string pair;
+
+	while (std::getline(ss, pair, '&')) {
+		size_t pos = pair.find('=');
+		if (pos != std::string::npos) {
+			std::string key = pair.substr(0, pos);
+			std::string value = pair.substr(pos + 1);
+			data[key] = value;
+		}
+	}
+	return data;
+}
+////////////////////
+
 Response	RequestHandler::handlePOST(const Request &req, const ServerConfig &config) {
 	Response resp;
 	(void)config; // Unused for now
 	
 	std::string bodyData = req.getBody();
+	std::string contentType = req.getHeader("Content-Type");
 	
 	if (bodyData.empty()) {
 		resp.setStatusCode(400);
 		resp.setBody(getErrorPage(400));
-	} else {
+	}
+	else if (bodyData.size() > config.client_max_body_size)
+	{
+		resp.setStatusCode(413);
+		return resp;
+	}
+
+	else if (contentType.find("application/x-www-form-urlencoded") != std::string::npos)
+	{
+		std::map<std::string, std::string> form = parseUrlEncoded(bodyData);
+
+		std::string html = "<html><body><h1>Form Data</h1><ul>";
+		for (std::map<std::string, std::string>::iterator it = form.begin(); it != form.end(); ++it)
+			html += "<li>" + it->first + " = " + it->second + "</li>";
+		html += "</ul></body></html>";
+
+		resp.setStatusCode(200);
+		resp.setHeader("Content-Type", "text/html");
+		resp.setBody(html);
+	}
+	else
+	{
 		// Process POST data (simplified)
 		resp.setStatusCode(200);
 		resp.setHeader("Content-Type", "text/html");
