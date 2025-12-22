@@ -151,9 +151,59 @@ Response	RequestHandler::handlePOST(const Request &req, const ServerConfig &conf
 		resp.setHeader("Content-Type", "text/html");
 		resp.setBody(html);
 	}
+	else if (contentType.find("multipart/form-data") != std::string::npos)
+	{
+		std::string boundaryKey = "boundary=";
+		size_t pos = contentType.find(boundaryKey);
+		if (pos == std::string::npos)
+		{
+			resp.setStatusCode(400);
+			resp.setBody(getErrorPage(400));
+			return resp;
+		}
+		std::string boundary = "--" + contentType.substr(pos + boundaryKey.size());
+		std::string body = req.getBody();
+		// process each part
+		size_t start = 0;
+		while ((start = body.find(boundary, start)) != std::string::npos)
+		{
+			start += boundary.size();
+			size_t end = body.find(boundary, start);
+			if (end == std::string::npos) break;
+
+			std::string part = body.substr(start, end - start);
+			start = end;
+			size_t filenamePos = part.find("filename=\"");
+			if (filenamePos != std::string::npos)
+			{
+				filenamePos += 10;
+				size_t filenameEnd = part.find("\"", filenamePos);
+				std::string filename = part.substr(filenamePos, filenameEnd - filenamePos);
+
+				// Find file content after double \r\n
+				size_t contentPos = part.find("\r\n\r\n");
+				if (contentPos != std::string::npos)
+				{
+					std::string fileContent = part.substr(contentPos + 4);
+					// Remove trailing \r\n if exists
+					if (fileContent.size() >= 2)
+						fileContent.resize(fileContent.size() - 2);
+
+					// Save file
+					std::string fullPath = config.locations[1].path + filename;
+					std::ofstream out(fullPath.c_str(), std::ios::binary);
+					out.write(fileContent.c_str(), fileContent.size());
+					out.close();
+				}
+			}
+		}
+		resp.setStatusCode(201); // Created
+		resp.setHeader("Content-Type", "text/html");
+		resp.setBody("<html><body><h1>File uploaded!</h1></body></html>");
+	}
 	else
 	{
-		// Process POST data (simplified)
+		//Process POST data (simplified)
 		resp.setStatusCode(200);
 		resp.setHeader("Content-Type", "text/html");
 		
