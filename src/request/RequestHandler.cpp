@@ -129,6 +129,7 @@ Response	RequestHandler::handlePOST(const Request &req, const ServerConfig &conf
 	std::string contentType = req.getHeader("Content-Type");
 	
 	if (bodyData.empty()) {
+		Msg::info("file is empty");
 		resp.setStatusCode(400);
 		resp.setBody(getErrorPage(400));
 	}
@@ -192,8 +193,10 @@ Response	RequestHandler::handlePOST(const Request &req, const ServerConfig &conf
 					// Save file
 					std::string fullPath = config.locations[1].upload_path + "/" + filename;
 					std::ofstream out(fullPath.c_str(), std::ios::binary);
+					Msg::info(fullPath);
 					if (!out.is_open())
 					{
+						Msg::info("we are in !out.is_open() ");
 						std::cerr << "Failed to open file: " << fullPath << std::endl;
 						resp.setStatusCode(500);
 						resp.setBody(getErrorPage(500));

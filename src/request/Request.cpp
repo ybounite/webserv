@@ -75,11 +75,11 @@ void	Request::parseHeaders( std::istringstream &stream ) {
 	}
 }
 
-void	printRequest(std::string &row) {
-	std::cout << YELLOW << "****************Request************" << RESET << std::endl;
-	std::cout << row << std::endl;
-	std::cout << YELLOW << "****************END****************" << RESET << std::endl;
-}
+// void	printRequest(std::string &row) {
+// 	std::cout << YELLOW << "****************Request************" << RESET << std::endl;
+// 	std::cout << row << std::endl;
+// 	std::cout << YELLOW << "****************END****************" << RESET << std::endl;
+// }
 
 /*
 		* ⚠ Important limitations
@@ -114,7 +114,7 @@ void		Request::handleRequest( std::string &raw) {
 	std::istringstream	stream(raw);
 	std::string			line;
 
-	printRequest(raw); // print request 
+	// printRequest(raw); // print request 
 
 	if (!std::getline(stream, line))
 		throw std::runtime_error("invalid request");
