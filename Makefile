@@ -25,6 +25,7 @@ SRC = src/main.cpp \
       $(CONFIG_PARSER_DIR)/Config.cpp \
 	  $(SERVER_DIR)/Server.cpp \
 	  $(SERVER_DIR)/Client.cpp \
+	  $(SERVER_DIR)/CGIhandler.cpp \
 	  $(REQUEST_PARSER_DIR)/Request.cpp\
 	  $(REQUEST_PARSER_DIR)/RequestHandler.cpp\
 	  $(REQUEST_RESPONSE_DIR)/Response.cpp
