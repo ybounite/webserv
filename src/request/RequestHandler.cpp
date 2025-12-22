@@ -186,12 +186,19 @@ Response	RequestHandler::handlePOST(const Request &req, const ServerConfig &conf
 				{
 					std::string fileContent = part.substr(contentPos + 4);
 					// Remove trailing \r\n if exists
-					if (fileContent.size() >= 2)
-						fileContent.resize(fileContent.size() - 2);
+					// if (fileContent.size() >= 2)
+					// 	fileContent.resize(fileContent.size() - 2);
 
 					// Save file
-					std::string fullPath = config.locations[1].path + filename;
+					std::string fullPath = config.locations[1].upload_path + "/" + filename;
 					std::ofstream out(fullPath.c_str(), std::ios::binary);
+					if (!out.is_open())
+					{
+						std::cerr << "Failed to open file: " << fullPath << std::endl;
+						resp.setStatusCode(500);
+						resp.setBody(getErrorPage(500));
+						return resp;
+					}
 					out.write(fileContent.c_str(), fileContent.size());
 					out.close();
 				}
