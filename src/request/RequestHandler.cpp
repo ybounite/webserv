@@ -11,12 +11,25 @@
 # include "../response/Response.hpp"
 
 std::string	RequestHandler::readFile(const std::string &path) {
-	std::ifstream file(path.c_str());
-	if (!file.is_open()) return "";
+	std::ifstream file(path.c_str(), std::ios::binary);
+	if (!file.is_open()){
+		std::cerr << "Error opening file: " << path << std::endl;
+		return "";
+	}
 
+	file.seekg(0, std::ios::end);
+	long	file_size = file.tellg();
+	file.seekg(0, std::ios::beg);
+	(void)file_size;
 	std::stringstream	buffer;
 	buffer << file.rdbuf();
 	return buffer.str();
+}
+
+bool		isDirectory(const char *path){
+	struct stat	st;
+	if (stat(path, &st) != 0)	return false;
+	return S_ISDIR(st.st_mode);
 }
 
 std::string	RequestHandler::getErrorPage(int statusCode) {
@@ -75,28 +88,47 @@ Response	RequestHandler::handle(const Request &req, const Config &config) {
 }
 
 Response	RequestHandler::handleGET(const Request &req, const ServerConfig &config) {
-	Response resp;
+	Response	resp;
 	
 	// Build file path
 	std::string path = config.root + req.getUri();
 	if (path[path.length() - 1] == '/') {
 		path += config.index;
 	}
-	
+	//if (path.find(".") == std::string::npos) path += ".html";
 	Msg::info("GET: " + path);
-	
-	// Read file
-	std::string body = readFile(path);
-	
-	if (body.empty()) {
+
+	/*Directory handling logic (GET request)
+
+	Typical webserv logic:
+	Case									Action
+	File exists & readable					Serve file
+	Directory + index exists				Serve index
+	Directory + autoindex ON				Generate listing
+	Directory + no index + autoindex OFF	403
+	Path does not exist						404*/
+
+	// Stream file instead of loading entirely into memory
+	std::ifstream file(path.c_str(), std::ios::in | std::ios::binary);
+	// 
+	if (!file.is_open()) {
 		// File not found
+		std::cerr << "Error: unable to open file for reading" << std::endl;
 		resp.setStatusCode(404);
 		resp.setBody(getErrorPage(404));
 	} else {
-		// Success
+		std::cout << "open : " << path << std::endl;
+		// Determine file size
+		file.seekg(0, std::ios::end);
+		std::streampos end = file.tellg();
+		file.seekg(0, std::ios::beg);
+		size_t length = static_cast<size_t>(end);
+
 		resp.setStatusCode(200);
-		resp.setHeader("Content-Type", "text/html");
-		resp.setBody(body);
+		// Content-Type will be guessed in Response::send if not set
+		resp.setHeader("Cache-Control", "no-cache");
+		resp.setHeader("Connection", "close");
+		resp.setStreamFile(path, length);
 	}
 	
 	return resp;

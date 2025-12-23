@@ -21,13 +21,14 @@ public:
 	std::map<std::string, std::string>		Headers;
 	std::string								Body;
 	std::string								uri;
+	// Streaming support
+	bool								StreamFile;
+	std::string							FilePath;
+	size_t								StreamLength;
 	
 	Response();
 	Response(const Response &Other);
 	~Response();
-	
-	// Static factory method - creates Response from Request + Config
-	static Response build(const Request &req, const Config &config);
 	
 	// Build the HTTP response string
 	std::string		toString() const;
@@ -39,9 +40,12 @@ public:
 	void setStatusCode(short code);
 	void setHeader(const std::string &key, const std::string &value);
 	void setBody(const std::string &body);
+	void setStreamFile(const std::string &path, size_t length);
 
 private:
 	std::string getStatusMessage(short code) const;
+	// Helper to guess basic MIME type by file extension
+	static std::string guessContentType(const std::string &path);
 	std::string findMatchingServer(const Request &req, const Config &config) const;
 	std::string findMatchingLocation(const Request &req, const ServerConfig &serverConf) const;
 };
