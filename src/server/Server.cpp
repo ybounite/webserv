@@ -2,15 +2,18 @@
 
 bool running = 0;
 
-void    sighandler(int status){
+void sighandler(int status)
+{
     if (status)
         throwing("");
 }
 Server::Server(Config &data) : _data(data)
 {
+    int opt = 1;
     signal(SIGINT, sighandler);
     _data = data;
     _ServerFd = socket(AF_INET, SOCK_STREAM, 0);
+    setsockopt(_ServerFd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
     fcntl(_ServerFd, F_SETFL, O_NONBLOCK);
     memset((void *)&_address, 0, sizeof(sockaddr_in));
     _address.sin_family = AF_INET;
@@ -52,9 +55,10 @@ void Server::run()
                 addClientInEppol();
             else
             {
-                if (_clients[i].events & EPOLLIN)   // do client wanna send data to the server ?
+                if (_clients[i].events & EPOLLIN) // do client wanna send data to the server ?
                     readClientRequest(_clients[i].data.fd);
-                if (_clients[i].events & EPOLLOUT){  // if the clinet send a request this condition would be true and i will respond here
+                if (_clients[i].events & EPOLLOUT)
+                { // if the clinet send a request this condition would be true and i will respond here
                     sendHttpResponse(_clients[i].data.fd);
                 }
             }
