@@ -8,7 +8,7 @@
 
 # include "Response.hpp"
 
-Response::Response() : StatusCode(200) {}
+Response::Response() : StatusCode(200), StreamFile(false), FilePath(""), StreamLength(0) {}
 
 Response::Response(const Response &Other) {
 
@@ -19,56 +19,6 @@ Response::Response(const Response &Other) {
 }
 
 Response::~Response() {}
-
-// Static factory method - This is where you process Request + Config
-Response	Response::build(const Request &req, const Config &config) {
-	Response	resp;
-
-	// 1. Get request details
-	std::string	method = req.getMethod();
-	std::string	uri = req.getUri();
-	resp.uri = uri;
-
-	// 2. Find matching server from config
-	// (You'll need to implement logic to match server based on Host header, port, etc.)
-	if (config.servers.empty()) {
-		resp.setStatusCode(500);
-		resp.setBody("<html><body><h1>500 Internal Server Error</h1></body></html>");
-		return resp;
-	}
-
-	const ServerConfig &serverConf = config.servers[0]; // Simplified - should match properly
-
-	// 3. Find matching location
-	// (You'll need to implement location matching based on URI)
-
-	// 4. Handle different methods
-	if (method == "GET") {
-		// Handle GET request
-		// Read file, return content
-		resp.setStatusCode(200);
-		resp.setHeader("Content-Type", "text/html");
-		resp.setBody("<html><body><h1>Hello from Response!</h1></body></html>");
-	}
-	else if (method == "POST") {
-		// Handle POST request
-		// Save uploaded data
-		resp.setStatusCode(201);
-		resp.setBody("<html><body><h1>Created</h1></body></html>");
-	}
-	else if (method == "DELETE") {
-		// Handle DELETE request
-		resp.setStatusCode(204);
-		resp.setBody("");
-	}
-	else {
-		// Method not allowed
-		resp.setStatusCode(405);
-		resp.setBody("<html><body><h1>405 Method Not Allowed</h1></body></html>");
-	}
-	(void)serverConf; // Suppress unused warning for now
-	return resp;
-}
 
 // Build the complete HTTP response string
 std::string Response::toString() const {
@@ -91,8 +41,64 @@ std::string Response::toString() const {
 
 // Send response to client
 void		Response::send(int clientFd) const {
-	std::string responseStr = toString();
-	::send(clientFd, responseStr.c_str(), responseStr.length(), 0);
+	if (!StreamFile) {
+		// Default non-streaming path
+		std::string responseStr = toString();
+		::send(clientFd, responseStr.c_str(), responseStr.length(), 0);
+		return;
+	}
+
+	// Streaming path: build and send headers first
+	std::ostringstream oss;
+	oss << "HTTP/1.1 " << StatusCode << " " << getStatusMessage(StatusCode) << "\r\n";
+	for (std::map<std::string, std::string>::const_iterator it = Headers.begin(); it != Headers.end(); ++it) {
+		oss << it->first << ": " << it->second << "\r\n";
+	}
+	// Ensure Content-Type present
+	if (Headers.find("Content-Type") == Headers.end()) {
+		oss << "Content-Type: " << guessContentType(FilePath) << "\r\n";
+	}
+	// Use Content-Length with known file size
+	oss << "Content-Length: " << StreamLength << "\r\n";
+	// Connection header default
+	if (Headers.find("Connection") == Headers.end()) {
+		oss << "Connection: close\r\n";
+	}
+	// End headers
+	oss << "\r\n";
+
+	std::string headerStr = oss.str();
+	::send(clientFd, headerStr.c_str(), headerStr.length(), 0);
+
+	// Stream file body in chunks
+	std::ifstream file(FilePath.c_str(), std::ios::in | std::ios::binary);
+	if (!file.is_open()) {
+		// Fallback error body if file can't be opened
+		std::string err = "Failed to open file";
+		::send(clientFd, err.c_str(), err.length(), 0);
+		return;
+	}
+
+	const std::size_t CHUNK_SIZE = 64 * 1024; // 64KB
+	char buffer[CHUNK_SIZE];
+	while (file) {
+		file.read(buffer, CHUNK_SIZE);
+		std::streamsize count = file.gcount();
+		if (count > 0) {
+			const char *ptr = buffer;
+			std::streamsize remaining = count;
+			// Attempt to write the chunk; handle short writes
+			while (remaining > 0) {
+				ssize_t sent = ::send(clientFd, ptr, static_cast<size_t>(remaining), 0);
+				if (sent <= 0) {
+					// Stop on error; in real server handle EAGAIN/EWOULDBLOCK
+					return;
+				}
+				ptr += sent;
+				remaining -= sent;
+			}
+		}
+	}
 }
 
 void		Response::setStatusCode(short code) {
@@ -120,4 +126,28 @@ std::string	Response::getStatusMessage(short code) const {
 		case 505: return "HTTP Version Not Supported";
 		default: return "Unknown";
 	}
+}
+
+// Basic content-type guessing
+std::string Response::guessContentType(const std::string &path) {
+	std::string::size_type dot = path.find_last_of('.');
+	std::string ext = (dot == std::string::npos) ? std::string("") : path.substr(dot + 1);
+	if (ext == "html" || ext == "htm") return "text/html";
+	if (ext == "css") return "text/css";
+	if (ext == "js") return "application/javascript";
+	if (ext == "json") return "application/json";
+	if (ext == "png") return "image/png";
+	if (ext == "jpg" || ext == "jpeg") return "image/jpeg";
+	//if (ext == "gif") return "image/gif";
+	//if (ext == "svg") return "image/svg+xml";
+	//if (ext == "ico") return "image/x-icon";
+	if (ext == "pdf") return "application/pdf";
+	if (ext == "mp4") return "video/mp4";
+	return "application/octet-stream";
+}
+
+void Response::setStreamFile(const std::string &path, size_t length) {
+	StreamFile = true;
+	FilePath = path;
+	StreamLength = length;
 }
