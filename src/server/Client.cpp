@@ -49,8 +49,31 @@ void Server::readClientRequest(unsigned int clientFd)
 {
     int bytesRead;
     char buffer[_data.servers[0].client_max_body_size];
+    std::string str;
+    // size_t index;
+    std::string boundary;
+    std::string next;
+    int i = 0;
     // recv what the client sent to the server.
-    bytesRead = recv(clientFd, buffer, sizeof(buffer), 0);
+    while (true)
+    {
+        bytesRead = recv(clientFd, buffer, sizeof(buffer), 0);
+        buffer[bytesRead] = '\0';
+        str += buffer;
+        try
+        {
+            std::cout << str << std::endl;
+            Request req(str, _data);
+            break;
+        }
+        catch (const std::exception &e)
+        {
+            std::cerr << e.what() << '\n';
+        }
+        std::cout << "heheheehhiya ======> " <<  i << std::endl;
+        if (i++ == 10)
+            break;
+    }
     if (bytesRead == 0)
     {
         deleteClientFromEpoll(clientFd);
@@ -66,7 +89,7 @@ void Server::readClientRequest(unsigned int clientFd)
     }
     else
         buffer[bytesRead] = '\0';
-    _ClientsMap[clientFd].request = buffer;
+    _ClientsMap[clientFd].request += buffer;
     modifySockEvents(_epollInstance, clientFd);
 }
 
