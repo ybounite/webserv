@@ -4,14 +4,15 @@
     <style> body {background-color:rgb(187, 175, 175);} </style>
     <meta charset="UTF-8">
     <title>File Upload</title>
+    <link rel="stylesheet" href="./assets/css/main.css">
 </head>
 <body>
 
     <h2>Upload a file</h2>
 
 <form action="/upload" method="POST" enctype="multipart/form-data">
-    <input type="file" name="file">
-    <button type="submit">Upload</button>
+    <input class="input-box" type="file" name="file">
+    <button class="btn" type="submit">Upload</button>
 </form>
 
 </body>
