@@ -51,45 +51,38 @@ void Server::readClientRequest(unsigned int clientFd)
     char buffer[_data.servers[0].client_max_body_size];
     std::string str;
     // size_t index;
-    std::string boundary;
-    std::string next;
-    int i = 0;
     // recv what the client sent to the server.
     while (true)
     {
-        bytesRead = recv(clientFd, buffer, sizeof(buffer), 0);
-        buffer[bytesRead] = '\0';
+        bytesRead = recv(clientFd, buffer, sizeof(buffer) - 1, 0);
+
+        if (bytesRead == 0)
+        {
+            deleteClientFromEpoll(clientFd);
+            return;
+        }
+        else if (bytesRead < 0)
+        {
+            //  if recv returns -1 and the errno code is on of those . that's mean there is no data yet and the recv would block.
+            if (errno == EAGAIN || errno == EWOULDBLOCK)
+                return;
+            else
+                throwing("recv()");
+        }
+        // buffer[bytesRead] = '\0';
         str += buffer;
+        printf("===========================================================\n");
+        std::cout << str << std::endl;
+        printf("===========================================================\n");
         try
         {
-            std::cout << str << std::endl;
             Request req(str, _data);
-            break;
+            break; // request complete
         }
         catch (const std::exception &e)
-        {
-            std::cerr << e.what() << '\n';
-        }
-        std::cout << "heheheehhiya ======> " <<  i << std::endl;
-        if (i++ == 10)
-            break;
+        {}
     }
-    if (bytesRead == 0)
-    {
-        deleteClientFromEpoll(clientFd);
-        return;
-    }
-    else if (bytesRead < 0)
-    {
-        //  if recv returns -1 and the errno code is on of those . that's mean there is no data yet and the recv would block.
-        if (errno == EAGAIN || errno == EWOULDBLOCK)
-            return;
-        else
-            throwing("recv()");
-    }
-    else
-        buffer[bytesRead] = '\0';
-    _ClientsMap[clientFd].request += buffer;
+    _ClientsMap[clientFd].request += str;
     modifySockEvents(_epollInstance, clientFd);
 }
 
