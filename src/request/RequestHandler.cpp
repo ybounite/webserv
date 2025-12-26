@@ -252,7 +252,7 @@ Response	RequestHandler::handlePOST(const Request &req, const ServerConfig &conf
 		}
 		resp.setStatusCode(201);
 		resp.setHeader("Content-Type", "text/html");
-		resp.setBody("<html><body><h1>File uploaded!</h1></body></html>");
+		resp.setBody(readFile("www/uploaded.html")); //
 	}
 	else
 	{
