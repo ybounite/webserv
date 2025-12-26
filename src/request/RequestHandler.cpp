@@ -151,11 +151,19 @@ std::map<std::string, std::string> parseUrlEncoded(const std::string &body)
 	}
 	return data;
 }
+
+std::string getUploadPath(const ServerConfig &config) {
+    for (size_t i = 0; i < config.locations.size(); ++i) {
+        if (!config.locations[i].upload_path.empty())
+            return config.locations[i].upload_path;
+    }
+    return ""; // none found
+}
+
 ////////////////////
 
 Response	RequestHandler::handlePOST(const Request &req, const ServerConfig &config) {
 	Response resp;
-	(void)config; // Unused for now
 	
 	std::string bodyData = req.getBody();
 	std::string contentType = req.getHeader("Content-Type");
@@ -219,16 +227,19 @@ Response	RequestHandler::handlePOST(const Request &req, const ServerConfig &conf
 				{
 					std::string fileContent = part.substr(contentPos + 4);
 					// Remove trailing \r\n if exists
-					// if (fileContent.size() >= 2)
-					// 	fileContent.resize(fileContent.size() - 2);
+					if (fileContent.size() >= 2)
+						fileContent.resize(fileContent.size() - 2);
 
 					// Save file
-					std::string fullPath = config.locations[1].upload_path + "/" + filename;
+					std::string uploadDir = getUploadPath(config);
+					if (uploadDir.empty()) {
+						resp.setStatusCode(500);
+						return resp;
+					}
+					std::string fullPath = uploadDir + "/" + filename;																																				
 					std::ofstream out(fullPath.c_str(), std::ios::binary);
-					Msg::info(fullPath);
 					if (!out.is_open())
 					{
-						Msg::info("we are in !out.is_open() ");
 						std::cerr << "Failed to open file: " << fullPath << std::endl;
 						resp.setStatusCode(500);
 						resp.setBody(getErrorPage(500));
@@ -239,13 +250,12 @@ Response	RequestHandler::handlePOST(const Request &req, const ServerConfig &conf
 				}
 			}
 		}
-		resp.setStatusCode(201); // Created
+		resp.setStatusCode(201);
 		resp.setHeader("Content-Type", "text/html");
 		resp.setBody("<html><body><h1>File uploaded!</h1></body></html>");
 	}
 	else
 	{
-		//Process POST data (simplified)
 		resp.setStatusCode(200);
 		resp.setHeader("Content-Type", "text/html");
 		
@@ -265,8 +275,7 @@ Response	RequestHandler::handleDELETE(const Request &req, const ServerConfig &co
 	(void)req;
 	(void)config;
 	
-	// TODO: Implement file deletion
-	resp.setStatusCode(204); // No Content
+	resp.setStatusCode(204); 
 	resp.setBody("");
 	
 	return resp;
