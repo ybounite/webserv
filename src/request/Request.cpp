@@ -7,7 +7,6 @@
 /* ************************************************************************** */
 
 #include "Request.hpp"
-// # include "RequestHandler.hpp"
 
 Request::Request(void) {}
 
@@ -27,7 +26,7 @@ Request &Request::operator=(const Request &Other)
 	{
 		_Method = Other._Method;
 		_URI = Other._URI;
-		_HTTPversion = Other._HTTPversion;
+		_Protocol = Other._Protocol;
 		_Headers = Other._Headers;
 		_Body = Other._Body;
 		_Path = Other._Path;
@@ -40,45 +39,67 @@ Request::~Request(void) {}
 
 const std::string &Request::getMethod(void) const { return _Method; }
 const std::string &Request::getUri(void) const { return _URI; }
-const std::string &Request::getHTTPversion(void) const { return _HTTPversion; }
+const std::string &Request::getHTTPversion(void) const { return _Protocol; }
 const std::map<std::string, std::string> &Request::getHeaders(void) const { return _Headers; }
 const std::string &Request::getBody(void) const { return _Body; }
 const std::string &Request::getPath(void) const { return _Path; }
 
-void Request::parseRequestLine(const std::string &line)
-{
-	std::istringstream ss(line);
-	ss >> _Method >> _URI >> _HTTPversion;
-	// std::cout << GREEN << "**********************" << RESET << std::endl;
-	// std::cout << "* Method : " << _Method << std::endl;
-	// std::cout << "* URI : " << _URI << std::endl;
-	// std::cout << "* HTTPversion : " << _HTTPversion << std::endl;
-	// std::cout << GREEN << "**********************" << RESET << std::endl;
+/* my library */
+bool is_not_space(char c) {
+	return !std::isspace(static_cast<unsigned char>(c));
 }
 
-void Request::parseHeaders(std::istringstream &stream)
+void ltrim(std::string &s) {
+	s.erase(s.begin(), std::find_if(s.begin(), s.end(), is_not_space));
+}
+
+void rtrim(std::string &s) {
+	s.erase(std::find_if(s.rbegin(), s.rend(), is_not_space).base(), s.end());
+}
+
+void trim(std::string &s) {
+	ltrim(s);
+	rtrim(s);
+}
+/* my library */
+
+
+bool Request::is_ValidRequest() const {
+    return !_Method.empty() && !_URI.empty() && !_Protocol.empty();
+}
+
+void	Request::parseRequestLine(const std::string &line)
 {
-	std::string Line;
-	while (getline(stream, Line))
-	{
+	std::istringstream ss(line);
+	ss >> _Method >> _URI >> _Protocol;
 
-		if (!Line.empty() && Line[Line.length() - 1] == '\r') // this '\r' trailing
-			Line.erase(Line.length() - 1);
+	if (!is_ValidRequest()) {
+		status = enMISSING_LINE;
+		
+		throw std::runtime_error("invalid or missing request line");
+	}
+}
 
-		if (Line.empty())
-			break;
-		size_t pos = Line.find(":");
-		if (pos == std::string::npos)
-			throw std::runtime_error("invalid header field");
+void	Request::ParseHeaders( std::istringstream &stream ) {
 
-		std::string key = Line.substr(0, pos);
-		std::string value = Line.substr(pos + 1);
+	std::string	line;
+	while (std::getline(stream, line)) {
 
-		if (!value.empty() && value[0] == ' ')
-			value.erase(0, 1);
-		// std::cout << "this key :" << key << std::endl;
-		// std::cout << "this value :" << value << std::endl;
-		this->_Headers[key] = value;
+		if (!line.empty() && line[line.length() - 1] == '\r')
+			line.erase(line.length() - 1);
+		if (line.empty())
+			break ;
+
+		size_t	pos = line.find(":");
+		if (pos == std::string::npos) {
+			status = enMISSING_HEADER;
+			throw std::runtime_error("invalid or missing request header");
+		}
+		std::string header_name = line.substr(0, pos);
+		std::string header_value = line.substr(pos + 1);
+		trim(header_name);
+		trim(header_value);
+		_Headers[header_name] = header_value;
 	}
 }
 
@@ -89,35 +110,45 @@ void printRequest(std::string &row)
 	std::cout << YELLOW << "****************END****************" << RESET << std::endl;
 }
 
-/*
-		* ⚠ Important limitations
-	✔ This function only works for Content-Length, not for:
-	✔ Transfer-Encoding: chunked
-	✔ multipart form decoding
-	✔ file uploads (multipart/form-data)
-	✔ I can show you how to add support for those too.
-*/
+void	Request::ParseChunked( std::istringstream &stream ){
 
-void Request::parseBody(std::istringstream &stream)
-{
-	std::string lenStr = _Headers["Content-Length"];
-	if (lenStr.empty())
-		return;
-
-	size_t len = std::atoi(lenStr.c_str());
-	if (len == 0)
-		return;
-
-	_Body.resize(len);
-	stream.read(&_Body[0], len);
-	// std::cout << _Body << std::endl;
-	if (stream.gcount() < static_cast<std::streamsize>(len))
-	{
-		throw std::runtime_error("uncompleate");
+	std::string	ChunkSizeStr;
+	size_t		TotalBytesRead = 0;
+	while (std::getline(stream, ChunkSizeStr)) {
+		size_t	ChunkSize = std::strtoul(ChunkSizeStr.c_str(), NULL, 16);
+		if (ChunkSize == 0)
+			break ;
+		std::vector<char> ChunkData(ChunkSize);
+		stream.read(ChunkData.data(), ChunkSize);
+		_Body.append(ChunkData.begin(), ChunkData.end());
+		TotalBytesRead += ChunkSize;
 	}
 }
 
-void Request::handleRequest(std::string &raw)
+void	Request::ParseBody( std::istringstream &stream ) {
+
+	std::string	&ContentLength = _Headers["Content-Length"];
+	if (ContentLength.empty()) {
+		std::string	&TransferEncoding = _Headers["Transfer-Encoding"];
+		if (TransferEncoding == "chunked") {
+			ParseChunked(stream);
+			return ;
+		}
+		// No body expected (e.g., GET, HEAD requests)
+		return ;
+	}
+	size_t	len = std::atoi(ContentLength.c_str());
+	if (len == 0)
+		return ;
+	_Body.resize(len);
+	stream.read(&_Body[0], len);
+	if (stream.gcount() < static_cast<std::streamsize>(len)) {
+		status = enMISSING_BODY;
+		throw std::runtime_error("Incomplete body data received");
+	}
+}
+
+void	Request::handleRequest(std::string &raw)
 {
 	std::istringstream stream(raw);
 	std::string line;
@@ -131,8 +162,8 @@ void Request::handleRequest(std::string &raw)
 		line.erase(line.length() - 1);
 
 	parseRequestLine(line);
-	parseHeaders(stream);
-	parseBody(stream);
+	ParseHeaders(stream);
+	ParseBody(stream);
 }
 
 std::string Request::response()
@@ -140,16 +171,6 @@ std::string Request::response()
 	Response rsp = RequestHandler::handle(*this, this->_config);
 	return rsp.toString();
 }
-
-// void	Request::sendResponse(int clientFd) {
-
-//	Response rsp = Response::build(*this, this->_config);
-//	/**/
-//	//RequestHandler	rqshd(*this);
-//	//std::string Body = rqshd.handle(this->_config);
-//	std::string Body = 	rsp.toString();
-//	send(clientFd, Body.c_str(), Body.length(), 0);
-//}
 
 std::string Request::getHeader(const std::string &key) const
 {
