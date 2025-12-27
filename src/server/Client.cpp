@@ -65,43 +65,31 @@ size_t contentLenght(std::string header)
 void Server::readClientRequest(unsigned int clientFd)
 {
     int bytesRead;
-    char buffer[_data.servers[0].client_max_body_size];
+    char buffer[100];
     // while (true)
     // {
-        bytesRead = recv(clientFd, buffer, sizeof(buffer) - 1, 0);
+    bytesRead = recv(clientFd, buffer, sizeof(buffer) - 1, 0);
 
-        if (bytesRead == 0)
-        {
-            deleteClientFromEpoll(clientFd);
+    if (bytesRead == 0)
+        return (deleteClientFromEpoll(clientFd));
+    else if (bytesRead < 0)
+    {
+        //  if recv returns -1 and the errno code is on of those . that's mean there is no data yet and the recv would block.
+        if (errno == EAGAIN || errno == EWOULDBLOCK)
             return;
-        }
-        else if (bytesRead < 0)
-        {
-            //  if recv returns -1 and the errno code is on of those . that's mean there is no data yet and the recv would block.
-            if (errno == EAGAIN || errno == EWOULDBLOCK)
-                return;
-            else
-                throwing("recv()");
-        }
-        _ClientsMap[clientFd].request.append(buffer, bytesRead);
-        size_t headerEnd = _ClientsMap[clientFd].request.find("\r\n\r\n");
-        if (headerEnd == std::string::npos)
-            return;
-        if (contentLenght(_ClientsMap[clientFd].request) > _ClientsMap[clientFd].request.length() - headerEnd + 4)
-            return;
-        printf("===========================================================\n");
-        std::cout << _ClientsMap[clientFd].request << std::endl;
-        printf("===========================================================\n");
-    //     try
-    //     {
-    //         Request req(_ClientsMap[clientFd].request, _data);
-    //         break; // request complete
-    //     }
-    //     catch (const std::exception &e)
-    //     {
-    //         printf("%s\n", e.what());
-    //     }
-    // }
+        else
+            throwing("recv()");
+    }
+    _ClientsMap[clientFd].request.append(buffer, bytesRead);
+    size_t headerEnd = _ClientsMap[clientFd].request.find("\r\n\r\n");
+    if (headerEnd == std::string::npos)
+        return;
+    if (contentLenght(_ClientsMap[clientFd].request) > _ClientsMap[clientFd].request.length() - headerEnd + 4)
+        return;
+    printf("===========================================================\n");
+    std::cout << _ClientsMap[clientFd].request << std::endl;
+    printf("===========================================================\n");
+
     modifySockEvents(_epollInstance, clientFd);
 }
 
