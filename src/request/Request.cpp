@@ -11,7 +11,7 @@
 
 Request::Request(void) {}
 
-Request::Request(std::string raw, Config &ConfigFile) : _config(ConfigFile)
+Request::Request(std::string &raw, Config &ConfigFile) : _config(ConfigFile)
 {
 	this->handleRequest(raw);
 }
@@ -58,7 +58,6 @@ void Request::parseRequestLine(const std::string &line)
 
 void Request::parseHeaders(std::istringstream &stream)
 {
-	std::cout << GREEN << "Hendling HTTP request" << RESET << std::endl;
 	std::string Line;
 	while (getline(stream, Line))
 	{

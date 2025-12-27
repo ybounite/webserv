@@ -6,38 +6,44 @@
 /*                    Updated: 2025/11/29 16:09 by ybounite                   */
 /* ************************************************************************** */
 
-# include "RequestHandler.hpp"
-# include "Request.hpp"
-# include "../response/Response.hpp"
+#include "RequestHandler.hpp"
+#include "Request.hpp"
+#include "../response/Response.hpp"
 
-std::string	RequestHandler::readFile(const std::string &path) {
+std::string RequestHandler::readFile(const std::string &path)
+{
 	std::ifstream file(path.c_str(), std::ios::binary);
-	if (!file.is_open()){
+	if (!file.is_open())
+	{
 		std::cerr << "Error opening file: " << path << std::endl;
 		return "";
 	}
 
 	file.seekg(0, std::ios::end);
-	long	file_size = file.tellg();
+	long file_size = file.tellg();
 	file.seekg(0, std::ios::beg);
 	(void)file_size;
-	std::stringstream	buffer;
+	std::stringstream buffer;
 	buffer << file.rdbuf();
 	return buffer.str();
 }
 
-bool		isDirectory(const char *path){
-	struct stat	st;
-	if (stat(path, &st) != 0)	return false;
+bool isDirectory(const char *path)
+{
+	struct stat st;
+	if (stat(path, &st) != 0)
+		return false;
 	return S_ISDIR(st.st_mode);
 }
 
-std::string	RequestHandler::getErrorPage(int statusCode) {
+std::string RequestHandler::getErrorPage(int statusCode)
+{
 	std::ostringstream errorPath;
 	errorPath << "errors/" << statusCode << ".html";
 	std::string content = readFile(errorPath.str());
-	
-	if (content.empty()) {
+
+	if (content.empty())
+	{
 		// Fallback if error page doesn't exist
 		std::ostringstream fallback;
 		fallback << "<html><body><h1>" << statusCode << " Error</h1></body></html>";
@@ -46,7 +52,8 @@ std::string	RequestHandler::getErrorPage(int statusCode) {
 	return content;
 }
 
-short		RequestHandler::getMothod( const std::string &method ) {
+short RequestHandler::getMothod(const std::string &method)
+{
 	if (method == "GET")
 		return HTTP_GET;
 	else if (method == "POST")
@@ -58,28 +65,31 @@ short		RequestHandler::getMothod( const std::string &method ) {
 }
 
 // Main handler - routes to appropriate method handler
-Response	RequestHandler::handle(const Request &req, const Config &config) {
+Response RequestHandler::handle(const Request &req, const Config &config)
+{
 
-	if (config.servers.empty()) {
-		Response	resp;
+	if (config.servers.empty())
+	{
+		Response resp;
 		resp.setStatusCode(500);
 		resp.setBody(getErrorPage(500));
 		return resp;
 	}
-	
+
 	// Get the first server config (simplified - should match by host/port)
 	const ServerConfig &serverConf = config.servers[0];
-	
+
 	// Route based on method
-	//std::string method = req.getMethod();
-	switch (getMothod(req.getMethod())) {
+	// std::string method = req.getMethod();
+	switch (getMothod(req.getMethod()))
+	{
 	case HTTP_GET:
 		return handleGET(req, serverConf);
 	case HTTP_POST:
 		return handlePOST(req, serverConf);
 	case HTTP_DELETE:
 		return handleDELETE(req, serverConf);
-	default :
+	default:
 		Response resp;
 		resp.setStatusCode(405);
 		resp.setBody(getErrorPage(405));
@@ -87,15 +97,17 @@ Response	RequestHandler::handle(const Request &req, const Config &config) {
 	}
 }
 
-Response	RequestHandler::handleGET(const Request &req, const ServerConfig &config) {
-	Response	resp;
-	
+Response RequestHandler::handleGET(const Request &req, const ServerConfig &config)
+{
+	Response resp;
+
 	// Build file path
 	std::string path = config.root + req.getUri();
-	if (path[path.length() - 1] == '/') {
+	if (path[path.length() - 1] == '/')
+	{
 		path += config.index;
 	}
-	//if (path.find(".") == std::string::npos) path += ".html";
+	// if (path.find(".") == std::string::npos) path += ".html";
 	Msg::info("GET: " + path);
 
 	/*Directory handling logic (GET request)
@@ -110,13 +122,16 @@ Response	RequestHandler::handleGET(const Request &req, const ServerConfig &confi
 
 	// Stream file instead of loading entirely into memory
 	std::ifstream file(path.c_str(), std::ios::in | std::ios::binary);
-	// 
-	if (!file.is_open()) {
+	//
+	if (!file.is_open())
+	{
 		// File not found
 		std::cerr << "Error: unable to open file for reading" << std::endl;
 		resp.setStatusCode(404);
 		resp.setBody(getErrorPage(404));
-	} else {
+	}
+	else
+	{
 		std::cout << "open : " << path << std::endl;
 		// Determine file size
 		file.seekg(0, std::ios::end);
@@ -130,7 +145,7 @@ Response	RequestHandler::handleGET(const Request &req, const ServerConfig &confi
 		resp.setHeader("Connection", "close");
 		resp.setStreamFile(path, length);
 	}
-	
+
 	return resp;
 }
 
@@ -141,9 +156,11 @@ std::map<std::string, std::string> parseUrlEncoded(const std::string &body)
 	std::stringstream ss(body);
 	std::string pair;
 
-	while (std::getline(ss, pair, '&')) {
+	while (std::getline(ss, pair, '&'))
+	{
 		size_t pos = pair.find('=');
-		if (pos != std::string::npos) {
+		if (pos != std::string::npos)
+		{
 			std::string key = pair.substr(0, pos);
 			std::string value = pair.substr(pos + 1);
 			data[key] = value;
@@ -152,23 +169,29 @@ std::map<std::string, std::string> parseUrlEncoded(const std::string &body)
 	return data;
 }
 
-std::string getUploadPath(const ServerConfig &config) {
-    for (size_t i = 0; i < config.locations.size(); ++i) {
-        if (!config.locations[i].upload_path.empty())
-            return config.locations[i].upload_path;
-    }
-    return ""; // none found
+std::string getUploadPath(const ServerConfig &config)
+{
+	for (size_t i = 0; i < config.locations.size(); ++i)
+	{
+		if (!config.locations[i].upload_path.empty())
+			return config.locations[i].upload_path;
+	}
+	return ""; // none found
 }
 
 ////////////////////
 
-Response	RequestHandler::handlePOST(const Request &req, const ServerConfig &config) {
+Response RequestHandler::handlePOST(const Request &req, const ServerConfig &config)
+{
 	Response resp;
-	
+
 	std::string bodyData = req.getBody();
+
+
 	std::string contentType = req.getHeader("Content-Type");
-	
-	if (bodyData.empty()) {
+
+	if (bodyData.empty())
+	{
 		Msg::info("file is empty");
 		resp.setStatusCode(400);
 		resp.setBody(getErrorPage(400));
@@ -210,7 +233,8 @@ Response	RequestHandler::handlePOST(const Request &req, const ServerConfig &conf
 		{
 			start += boundary.size();
 			size_t end = body.find(boundary, start);
-			if (end == std::string::npos) break;
+			if (end == std::string::npos)
+				break;
 
 			std::string part = body.substr(start, end - start);
 			start = end;
@@ -232,11 +256,12 @@ Response	RequestHandler::handlePOST(const Request &req, const ServerConfig &conf
 
 					// Save file
 					std::string uploadDir = getUploadPath(config);
-					if (uploadDir.empty()) {
+					if (uploadDir.empty())
+					{
 						resp.setStatusCode(500);
 						return resp;
 					}
-					std::string fullPath = uploadDir + "/" + filename;																																				
+					std::string fullPath = uploadDir + "/" + filename;
 					std::ofstream out(fullPath.c_str(), std::ios::binary);
 					if (!out.is_open())
 					{
@@ -258,25 +283,27 @@ Response	RequestHandler::handlePOST(const Request &req, const ServerConfig &conf
 	{
 		resp.setStatusCode(200);
 		resp.setHeader("Content-Type", "text/html");
-		
-		std::string responseBody = 
+
+		std::string responseBody =
 			"<html><body>"
 			"<h1>POST received</h1>"
-			"<pre>" + bodyData + "</pre>"
-			"</body></html>";
+			"<pre>" +
+			bodyData + "</pre>"
+					   "</body></html>";
 		resp.setBody(responseBody);
 	}
-	
+
 	return resp;
 }
 
-Response	RequestHandler::handleDELETE(const Request &req, const ServerConfig &config) {
+Response RequestHandler::handleDELETE(const Request &req, const ServerConfig &config)
+{
 	Response resp;
 	(void)req;
 	(void)config;
-	
-	resp.setStatusCode(204); 
+
+	resp.setStatusCode(204);
 	resp.setBody("");
-	
+
 	return resp;
 }

@@ -51,15 +51,18 @@ size_t contentLenght(std::string header)
     if (index == std::string::npos)
         return 0;
 
-    index += 16;
-    std::string str = header.substr(index);
+    index += 15; // "Content-Length:" is 15 characters, not 16
+    
+    // Skip any spaces after the colon
+    while (index < header.length() && header[index] == ' ')
+        index++;
 
-    size_t index2 = str.find("\n");
-    if (index2 == std::string::npos)
+    size_t endIndex = header.find("\r\n", index);
+    if (endIndex == std::string::npos)
         return 0;
 
-    std::string Clenght = str.substr(index, index2);
-    return (atoi(Clenght.c_str()));
+    std::string Clenght = header.substr(index, endIndex - index);
+    return atoi(Clenght.c_str());
 }
 
 void Server::readClientRequest(unsigned int clientFd)
@@ -84,12 +87,8 @@ void Server::readClientRequest(unsigned int clientFd)
     size_t headerEnd = _ClientsMap[clientFd].request.find("\r\n\r\n");
     if (headerEnd == std::string::npos)
         return;
-    if (contentLenght(_ClientsMap[clientFd].request) > _ClientsMap[clientFd].request.length() - headerEnd + 4)
+    if (contentLenght(_ClientsMap[clientFd].request) > _ClientsMap[clientFd].request.length() - headerEnd - 4)
         return;
-    printf("===========================================================\n");
-    std::cout << _ClientsMap[clientFd].request << std::endl;
-    printf("===========================================================\n");
-
     modifySockEvents(_epollInstance, clientFd);
 }
 

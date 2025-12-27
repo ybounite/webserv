@@ -20,7 +20,7 @@ class Request {
 public:
 
 	Request( void );
-	Request( std::string raw, Config &ConfigFile );
+	Request( std::string &raw, Config &ConfigFile );
 	Request( const  Request &Other );
 	Request &operator=( const  Request &Other );
 	~Request();
