@@ -111,9 +111,9 @@ void Request::parseBody(std::istringstream &stream)
 
 	_Body.resize(len);
 	stream.read(&_Body[0], len);
+	// std::cout << _Body << std::endl;
 	if (stream.gcount() < static_cast<std::streamsize>(len))
 	{
-		// _Body.clear();
 		throw std::runtime_error("uncompleate");
 	}
 }

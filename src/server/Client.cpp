@@ -45,15 +45,29 @@ void Server::deleteClientFromEpoll(unsigned int clientFd)
     _ClientsMap.erase(clientFd);
 }
 
+size_t contentLenght(std::string header)
+{
+    size_t index = header.find("Content-Length:");
+    if (index == std::string::npos)
+        return 0;
+
+    index += 16;
+    std::string str = header.substr(index);
+
+    size_t index2 = str.find("\n");
+    if (index2 == std::string::npos)
+        return 0;
+
+    std::string Clenght = str.substr(index, index2);
+    return (atoi(Clenght.c_str()));
+}
+
 void Server::readClientRequest(unsigned int clientFd)
 {
     int bytesRead;
     char buffer[_data.servers[0].client_max_body_size];
-    std::string str;
-    // size_t index;
-    // recv what the client sent to the server.
-    while (true)
-    {
+    // while (true)
+    // {
         bytesRead = recv(clientFd, buffer, sizeof(buffer) - 1, 0);
 
         if (bytesRead == 0)
@@ -69,20 +83,25 @@ void Server::readClientRequest(unsigned int clientFd)
             else
                 throwing("recv()");
         }
-        // buffer[bytesRead] = '\0';
-        str += buffer;
+        _ClientsMap[clientFd].request.append(buffer, bytesRead);
+        size_t headerEnd = _ClientsMap[clientFd].request.find("\r\n\r\n");
+        if (headerEnd == std::string::npos)
+            return;
+        if (contentLenght(_ClientsMap[clientFd].request) > _ClientsMap[clientFd].request.length() - headerEnd + 4)
+            return;
         printf("===========================================================\n");
-        std::cout << str << std::endl;
+        std::cout << _ClientsMap[clientFd].request << std::endl;
         printf("===========================================================\n");
-        try
-        {
-            Request req(str, _data);
-            break; // request complete
-        }
-        catch (const std::exception &e)
-        {}
-    }
-    _ClientsMap[clientFd].request += str;
+    //     try
+    //     {
+    //         Request req(_ClientsMap[clientFd].request, _data);
+    //         break; // request complete
+    //     }
+    //     catch (const std::exception &e)
+    //     {
+    //         printf("%s\n", e.what());
+    //     }
+    // }
     modifySockEvents(_epollInstance, clientFd);
 }
 
