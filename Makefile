@@ -60,7 +60,7 @@ re: fclean all
 
 run: $(NAME)
 	@./$(NAME)
-BRANCH = new-branch
+BRANCH = sodahani
 p:
 	@read -p "Commit message: " msg; \
-	git add . && git commit -m "$$msg" && git push origin $(BRANCH)
+	git add -f . && git commit -m "$$msg" && git push origin $(BRANCH)
