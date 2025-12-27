@@ -57,10 +57,8 @@ void Server::run()
             {
                 if (_clients[i].events & EPOLLIN) // do client wanna send data to the server ?
                     readClientRequest(_clients[i].data.fd);
-                if (_clients[i].events & EPOLLOUT)
-                { // if the clinet send a request this condition would be true and i will respond here
+                if (_clients[i].events & EPOLLOUT)// if the clinet send a request this condition would be true and i will respond here
                     sendHttpResponse(_clients[i].data.fd);
-                }
             }
         }
     }

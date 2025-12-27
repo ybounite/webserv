@@ -57,6 +57,5 @@ void CGIhandler(std::string fileName, std::map<int, t_clients> &client, int fd)
 {
     int pfd = runCGI(fileName);
     std::string output = readOutput(pfd);
-    std::cout << output << std::endl;
     client[fd].response = output;
 }
