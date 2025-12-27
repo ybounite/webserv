@@ -55,3 +55,11 @@ p {
     border-color: #2d6df6;
     box-shadow: 0 0 6px rgba(45,109,246,0.3);
 }
+
+li {
+    font-size: 18px;
+    margin-bottom: 10px;
+    text-align: left;
+    list-style: disc;
+    padding-left: 20px;
+}
