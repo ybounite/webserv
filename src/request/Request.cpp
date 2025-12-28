@@ -156,47 +156,62 @@ void	Request::ParseBody( std::istringstream &stream ) {
 void Request::createNewSession(ServerConfig &config)
 {
     std::string id = generateSessionId();
-
     config.sessions[id]["username"] = "Soufiane";
 
-    setHeader("Set-Cookie", "session_id=" + id + "; HttpOnly; Path=/; Max-Age=30");
-	cookies["session_id"] = id;
+    // server RESPONSE sets cookie
+    // setHeader("Set-Cookie:", "session_id=" + id + "; HttpOnly; Path=/; Max-Age=3600");
+
+    // save for this request
+    // cookies["session_id"] = id;
+	cookies["Set-Cookie:"] = "session_id=" + id + "; HttpOnly; Path=/; Max-Age=3600";
+	std::map<std::string, std::string>::const_iterator it = cookies.begin();
+	std::cout << it->first << " " << it->second << std::endl;
 }
 
-void	Request::CreateSessioncookies()
+void PrintCookies( std::map<std::string, std::string> header)
 {
-	if (_URI == "/pages/login.html") {
-		std::string Id;
-		// Msg::error(_URI);
-		if (cookies.count("session_id")) {
-			Id = getHeader("Set-Cookie");
-			Id = Id.substr(Id.find("=") + 1, 16);
-			std::cout << Id << std::endl;
-		}
-		else {
-			createNewSession(_config.servers[0]);
-			Msg::error("Create session cookies");
-		}
-	}
+    std::cout << GREEN << "---- Cookies Map ----" << RESET << std::endl;
+    for (std::map<std::string, std::string>::const_iterator it = header.begin(); it != header.end(); ++it)
+    {
+        std::cout << it->first << " " << it->second << std::endl;
+    }
+    std::cout << GREEN << "--------------------" << RESET << std::endl;
 }
 
-void	Request::handleRequest(std::string &raw)
+void Request::CreateSessioncookies()
 {
-	std::istringstream stream(raw);
-	std::string line;
+    if (_URI == "/pages/login.html")
+    {
+        if (cookies.count("session_id"))
+        {
+            std::string Id = cookies["session_id"];
+            Msg::error("Existing session ID = " + Id);
+            return ;
+        }
 
-	// printRequest(raw); // print request
+        // create new session
+        createNewSession(_config.servers[0]);
+        Msg::error("New session created");
+    }
+}
 
-	if (!std::getline(stream, line))
-		throw std::runtime_error("invalid request");
+void Request::handleRequest(std::string &raw)
+{
+    std::istringstream stream(raw);
+    std::string line;
 
-	if (!line.empty() && line[line.length() - 1] == '\r')
-		line.erase(line.length() - 1);
+    if (!std::getline(stream, line))
+        throw std::runtime_error("invalid request");
 
-	parseRequestLine(line);
-	ParseHeaders(stream);
-	ParseBody(stream);
-	CreateSessioncookies();
+    if (!line.empty() && line[line.length() - 1] == '\r')
+        line.erase(line.length() - 1);
+
+    parseRequestLine(line);
+    ParseHeaders(stream);
+    ParseCookies();
+    ParseBody(stream);
+    CreateSessioncookies();
+	PrintCookies(_Headers);
 }
 
 std::string Request::response()
@@ -220,3 +235,39 @@ size_t Request::getContentLength() const
 		return 0;
 	return std::atoi(len.c_str());
 }
+
+
+//////////////////
+
+
+
+void Request::ParseCookies()
+{
+    std::string cookieHeader = getHeader("Cookie"); // declare once
+
+    if (cookieHeader.empty())
+    {
+        std::cout << "No Cookie header in request\n";
+        return;
+    }
+
+    std::istringstream ss(cookieHeader);
+    std::string token;
+    while (std::getline(ss, token, ';'))
+    {
+        trim(token);
+        size_t pos = token.find('=');
+        if (pos != std::string::npos)
+        {
+            std::string key = token.substr(0, pos);
+            std::string value = token.substr(pos + 1);
+            cookies[key] = value;
+            std::cout << "Cookie parsed: " << key << " = " << value << "\n";
+        }
+    }
+}
+
+
+
+
+

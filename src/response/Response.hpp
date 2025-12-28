@@ -19,6 +19,7 @@ class Response {
 public:
 	short									StatusCode;
 	std::map<std::string, std::string>		Headers;
+	std::map<std::string, std::string>		cookies;
 	std::string								Body;
 	std::string								uri;
 	// Streaming support
@@ -46,6 +47,6 @@ private:
 	std::string getStatusMessage(short code) const;
 	// Helper to guess basic MIME type by file extension
 	static std::string guessContentType(const std::string &path);
-	std::string findMatchingServer(const Request &req, const Config &config) const;
-	std::string findMatchingLocation(const Request &req, const ServerConfig &serverConf) const;
+	// std::string findMatchingServer(const Request &req, const Config &config) const;
+	// std::string findMatchingLocation(const Request &req, const ServerConfig &serverConf) const;
 };

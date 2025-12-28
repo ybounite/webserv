@@ -67,15 +67,17 @@ short RequestHandler::getMothod(const std::string &method)
 // Main handler - routes to appropriate method handler
 Response RequestHandler::handle(const Request &req, const Config &config)
 {
-
+	
+	Response resp;
 	if (config.servers.empty())
 	{
-		Response resp;
 		resp.setStatusCode(500);
 		resp.setBody(getErrorPage(500));
 		return resp;
 	}
-
+	// std::map<std::string, std::string>::const_iterator it = req.cookies.begin();
+		// std::cout << RED << it->first << "------------------" << it->second << RESET << std::endl;
+	resp.cookies = req.cookies;	
 	// Get the first server config (simplified - should match by host/port)
 	const ServerConfig &serverConf = config.servers[0];
 
@@ -90,7 +92,6 @@ Response RequestHandler::handle(const Request &req, const Config &config)
 	case HTTP_DELETE:
 		return handleDELETE(req, serverConf);
 	default:
-		Response resp;
 		resp.setStatusCode(405);
 		resp.setBody(getErrorPage(405));
 		return resp;
@@ -103,10 +104,6 @@ Response RequestHandler::handleGET(const Request &req, const ServerConfig &confi
 
 	// Build file path
 	std::string path = config.root + req.getUri();
-	// if (path != "/" && path != "/pages/login.html")
-	// {
-	// 	std::string str = req.cookies
-	// }
 	if (path[path.length() - 1] == '/')
 	{
 		path += config.index;
@@ -125,6 +122,14 @@ Response RequestHandler::handleGET(const Request &req, const ServerConfig &confi
 	Path does not exist						404*/
 
 	// Stream file instead of loading entirely into memory
+	if (!req.cookies.empty()){
+		for (std::map<std::string, std::string>::const_iterator it = req.cookies.begin(); it != req.cookies.end(); it++) {
+			std::cout << RED << it->first << "------------------" << it->second << RESET << std::endl;
+			resp.setHeader(it->first, it->second);
+			// resp.setHeader("Set-Cookie:", "session_id=" + it->second + "; Max-Age=60");
+		}
+	}else
+		std::cout << "-----------------empty request ----------\n";
 	std::ifstream file(path.c_str(), std::ios::in | std::ios::binary);
 	//
 	if (!file.is_open())

@@ -53,7 +53,12 @@ void		Response::send(int clientFd) const {
 	oss << "HTTP/1.1 " << StatusCode << " " << getStatusMessage(StatusCode) << "\r\n";
 	for (std::map<std::string, std::string>::const_iterator it = Headers.begin(); it != Headers.end(); ++it) {
 		oss << it->first << ": " << it->second << "\r\n";
+		// std::cout << RED << it->first << "-------#----" << it->second  << RESET<< "\n";
 	}
+	for (std::map<std::string, std::string>::const_iterator it = cookies.begin(); it != cookies.end(); ++it) {
+		oss << it->first << ": " << it->second << "\r\n";
+	}
+
 	// Ensure Content-Type present
 	if (Headers.find("Content-Type") == Headers.end()) {
 		oss << "Content-Type: " << guessContentType(FilePath) << "\r\n";

@@ -47,6 +47,8 @@ public:
 	std::string							response( void );
 	std::string							getHeader(const std::string &key) const;
 	size_t								getContentLength() const;
+	///
+	void ParseCookies();
 
 private:
 	std::string							_Method;
