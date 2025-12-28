@@ -147,7 +147,8 @@ Response RequestHandler::handleGET(const Request &req, const ServerConfig &confi
 	}
 	// if (path.find(".") == std::string::npos) path += ".html";
 	// Msg::info("GET: " + path);
-	bool isPublicPage = (uri == "/pages/login.html" || 
+	bool isPublicPage = (uri == "/pages/login.html" ||
+					uri == "/pages/register.html" || 
                      uri == "/pages/index.html" ||
                      uri == "/" ||
                      uri.find("/assets/") == 0);
