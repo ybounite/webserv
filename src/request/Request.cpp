@@ -173,13 +173,13 @@ void Request::CreateSessioncookies()
         if (cookies.find("session_id") != cookies.end())
         {
             std::string Id = cookies["session_id"];
-            Msg::error("Existing session ID = " + Id);
+            //Msg::error("Existing session ID = " + Id);
             return; // Don't create a new session
         }
 
         // No session exists, create new session
         createNewSession(_config.servers[0]);
-        Msg::error("New session created");
+        //Msg::error("New session created");
     }
 }
 
@@ -234,7 +234,7 @@ void Request::ParseCookies()
 
     if (cookieHeader.empty())
     {
-        Msg::error("No Cookie header in request");
+        //Msg::error("No Cookie header in request");
         return;
     }
 
@@ -249,7 +249,7 @@ void Request::ParseCookies()
             std::string key = token.substr(0, pos);
             std::string value = token.substr(pos + 1);
             cookies[key] = value;
-            Msg::warning("Cookie parsed: " + key + " = " + value);
+            //Msg::warning("Cookie parsed: " + key + " = " + value);
         }
     }
 }

@@ -98,19 +98,75 @@ Response RequestHandler::handle(const Request &req, const Config &config)
 	}
 }
 
+bool search_Cookies(const std::map<std::string, std::string> &cookies)
+{
+    std::ifstream file("/home/dahani/Desktop/webserv/src/data/data.txt");
+    if (!file.is_open())
+    {
+        std::cerr << "Cannot open data.txt file!" << std::endl;
+        return false;
+    }
+
+    std::string line;
+    while (std::getline(file, line))
+    {
+        if (line.empty())
+            continue;
+
+        for (std::map<std::string,std::string>::const_iterator it = cookies.begin(); it != cookies.end(); ++it)
+        {
+            std::string cookie_str = it->first + "=" + it->second;
+			std::string key = "session_id=";
+    		size_t pos = line.find(key);
+			line = line.substr(pos);
+            if (line == cookie_str)
+            {
+                file.close();
+                return true;
+            }
+        }
+    }
+
+    file.close();
+    return false;
+}
+
+
+
+
 Response RequestHandler::handleGET(const Request &req, const ServerConfig &config)
 {
 	Response resp;
 
 	// Build file path
 	std::string path = config.root + req.getUri();
+	std::string uri = req.getUri();
 	if (path[path.length() - 1] == '/')
 	{
 		path += config.index;
 	}
 	// if (path.find(".") == std::string::npos) path += ".html";
-	Msg::info("GET: " + path);
+	// Msg::info("GET: " + path);
+	bool isPublicPage = (uri == "/pages/login.html" || 
+                     uri == "/pages/index.html" ||
+                     uri == "/" ||
+                     uri.find("/assets/") == 0);
 
+	// PrintCookies(req.cookies);
+	// Msg::success(path);
+	// std::cout << RED << search_Cookies(req.cookies) << RESET << std::endl;
+	// std::cout << RED << isPublicPage << RESET << std::endl;
+
+	if (!isPublicPage && !search_Cookies(req.cookies))
+	{
+		std::cout << RED << "REDIRECTING TO LOGIN (no session)" << RESET << std::endl;
+		// Redirect to login page
+		resp.setStatusCode(302);
+		resp.setHeader("Location", "/pages/login.html");
+		resp.setBody("<html><body>Redirecting to login...</body></html>");
+		return resp;
+	}
+	PrintCookies(req.cookies);
 	/*Directory handling logic (GET request)
 
 	Typical webserv logic:
