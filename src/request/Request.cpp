@@ -158,38 +158,26 @@ void Request::createNewSession(ServerConfig &config)
     std::string id = generateSessionId();
     config.sessions[id]["username"] = "Soufiane";
 
-    // server RESPONSE sets cookie
-    // setHeader("Set-Cookie:", "session_id=" + id + "; HttpOnly; Path=/; Max-Age=3600");
 
-    // save for this request
-    // cookies["session_id"] = id;
-	cookies["Set-Cookie:"] = "session_id=" + id + "; HttpOnly; Path=/; Max-Age=3600";
-	std::map<std::string, std::string>::const_iterator it = cookies.begin();
-	std::cout << it->first << " " << it->second << std::endl;
+    cookies["Set-Cookie"] = "session_id=" + id + "; HttpOnly; Path=/; Max-Age=3600";
+    
+    cookies["session_id"] = id;
 }
 
-void PrintCookies( std::map<std::string, std::string> header)
-{
-    std::cout << GREEN << "---- Cookies Map ----" << RESET << std::endl;
-    for (std::map<std::string, std::string>::const_iterator it = header.begin(); it != header.end(); ++it)
-    {
-        std::cout << it->first << " " << it->second << std::endl;
-    }
-    std::cout << GREEN << "--------------------" << RESET << std::endl;
-}
 
 void Request::CreateSessioncookies()
 {
     if (_URI == "/pages/login.html")
     {
-        if (cookies.count("session_id"))
+        // Check if session_id already exists in cookies from the request
+        if (cookies.find("session_id") != cookies.end())
         {
             std::string Id = cookies["session_id"];
             Msg::error("Existing session ID = " + Id);
-            return ;
+            return; // Don't create a new session
         }
 
-        // create new session
+        // No session exists, create new session
         createNewSession(_config.servers[0]);
         Msg::error("New session created");
     }
@@ -211,7 +199,6 @@ void Request::handleRequest(std::string &raw)
     ParseCookies();
     ParseBody(stream);
     CreateSessioncookies();
-	PrintCookies(_Headers);
 }
 
 std::string Request::response()
@@ -247,7 +234,7 @@ void Request::ParseCookies()
 
     if (cookieHeader.empty())
     {
-        std::cout << "No Cookie header in request\n";
+        Msg::error("No Cookie header in request");
         return;
     }
 
@@ -262,7 +249,7 @@ void Request::ParseCookies()
             std::string key = token.substr(0, pos);
             std::string value = token.substr(pos + 1);
             cookies[key] = value;
-            std::cout << "Cookie parsed: " << key << " = " << value << "\n";
+            Msg::warning("Cookie parsed: " + key + " = " + value);
         }
     }
 }

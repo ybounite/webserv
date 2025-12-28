@@ -77,7 +77,7 @@ Response RequestHandler::handle(const Request &req, const Config &config)
 	}
 	// std::map<std::string, std::string>::const_iterator it = req.cookies.begin();
 		// std::cout << RED << it->first << "------------------" << it->second << RESET << std::endl;
-	resp.cookies = req.cookies;	
+	resp.cookies = req.cookies;
 	// Get the first server config (simplified - should match by host/port)
 	const ServerConfig &serverConf = config.servers[0];
 

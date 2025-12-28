@@ -153,3 +153,4 @@ std::string to_string(T &value) {
 std::string getCookieValue(const Request &req, std::string key);
 void createNewSession(Request &req, ServerConfig &config);
 std::string generateSessionId();
+void PrintCookies( std::map<std::string, std::string> header);

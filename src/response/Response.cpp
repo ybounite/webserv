@@ -39,6 +39,16 @@ std::string Response::toString() const {
 	return oss.str();
 }
 
+void PrintCookies( std::map<std::string, std::string> header)
+{
+    std::cout << GREEN << "---- Cookies Map ----" << RESET << std::endl;
+    for (std::map<std::string, std::string>::const_iterator it = header.begin(); it != header.end(); ++it)
+    {
+        std::cout << it->first << " " << it->second << std::endl;
+    }
+    std::cout << GREEN << "--------------------" << RESET << std::endl;
+}
+
 // Send response to client
 void		Response::send(int clientFd) const {
 	if (!StreamFile) {
@@ -55,6 +65,7 @@ void		Response::send(int clientFd) const {
 		oss << it->first << ": " << it->second << "\r\n";
 		// std::cout << RED << it->first << "-------#----" << it->second  << RESET<< "\n";
 	}
+	// PrintCookies(Headers);
 	for (std::map<std::string, std::string>::const_iterator it = cookies.begin(); it != cookies.end(); ++it) {
 		oss << it->first << ": " << it->second << "\r\n";
 	}

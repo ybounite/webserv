@@ -14,6 +14,7 @@
 /* ************************************************************************** */
 
 # define LINE_BREAK "\r\n"
+class Response;
 
 class Request {
 public:
