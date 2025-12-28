@@ -9,7 +9,7 @@ UP			=	\033[A
 CUT			=	\033[K
 
 CXX = c++
-FLAGS = -Wall -Wextra -Werror -std=c++98
+FLAGS = -Wall -Wextra -Werror -std=c++98 -g3
 RM = rm -rf
 
 CONFIG_PARSER_DIR = src/config_parser
@@ -26,6 +26,7 @@ SRC = src/main.cpp \
 	  $(SERVER_DIR)/Server.cpp \
 	  $(SERVER_DIR)/Client.cpp \
 	  $(SERVER_DIR)/CGIhandler.cpp \
+	  src/sessions/sessions.cpp\
 	  $(REQUEST_PARSER_DIR)/Request.cpp\
 	  $(REQUEST_PARSER_DIR)/RequestHandler.cpp\
 	  $(REQUEST_RESPONSE_DIR)/Response.cpp

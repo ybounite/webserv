@@ -103,6 +103,10 @@ Response RequestHandler::handleGET(const Request &req, const ServerConfig &confi
 
 	// Build file path
 	std::string path = config.root + req.getUri();
+	// if (path != "/" && path != "/pages/login.html")
+	// {
+	// 	std::string str = req.cookies
+	// }
 	if (path[path.length() - 1] == '/')
 	{
 		path += config.index;

@@ -27,14 +27,19 @@ public:
 	~Request();
 	
 	enStatusRequest						status;
+	std::map<std::string, std::string> cookies;
+
 	const std::string							&getMethod( void ) const;
 	const std::string							&getUri( void ) const;
 	const std::string							&getHTTPversion( void ) const;
 	const std::map<std::string, std::string>	&getHeaders( void ) const;
 	const std::string							&getBody( void ) const;
 	const std::string							&getPath( void ) const;
-
+	void								setHeader(const std::string &key, const std::string &value);
 	void								handleRequest( std::string &raw );
+	void								CreateSessioncookies();
+	void 								createNewSession(ServerConfig &config);
+
 	void								parseRequestLine( const std::string &line );
 	void								ParseHeaders( std::istringstream &stream );
 	void								ParseBody( std::istringstream &stream );

@@ -15,6 +15,7 @@ Request::Request(std::string &raw, Config &ConfigFile) : _config(ConfigFile)
 	this->handleRequest(raw);
 }
 
+
 Request::Request(const Request &Other)
 {
 	*this = Other;
@@ -43,6 +44,10 @@ const std::string &Request::getHTTPversion(void) const { return _Protocol; }
 const std::map<std::string, std::string> &Request::getHeaders(void) const { return _Headers; }
 const std::string &Request::getBody(void) const { return _Body; }
 const std::string &Request::getPath(void) const { return _Path; }
+
+void		Request::setHeader(const std::string &key, const std::string &value) {
+	_Headers[key] = value;
+}
 
 /* my library */
 bool is_not_space(char c) {
@@ -148,6 +153,33 @@ void	Request::ParseBody( std::istringstream &stream ) {
 	}
 }
 
+void Request::createNewSession(ServerConfig &config)
+{
+    std::string id = generateSessionId();
+
+    config.sessions[id]["username"] = "Soufiane";
+
+    setHeader("Set-Cookie", "session_id=" + id + "; HttpOnly; Path=/; Max-Age=30");
+	cookies["session_id"] = id;
+}
+
+void	Request::CreateSessioncookies()
+{
+	if (_URI == "/pages/login.html") {
+		std::string Id;
+		// Msg::error(_URI);
+		if (cookies.count("session_id")) {
+			Id = getHeader("Set-Cookie");
+			Id = Id.substr(Id.find("=") + 1, 16);
+			std::cout << Id << std::endl;
+		}
+		else {
+			createNewSession(_config.servers[0]);
+			Msg::error("Create session cookies");
+		}
+	}
+}
+
 void	Request::handleRequest(std::string &raw)
 {
 	std::istringstream stream(raw);
@@ -164,6 +196,7 @@ void	Request::handleRequest(std::string &raw)
 	parseRequestLine(line);
 	ParseHeaders(stream);
 	ParseBody(stream);
+	CreateSessioncookies();
 }
 
 std::string Request::response()
