@@ -278,12 +278,20 @@ Response RequestHandler::handlePOST(const Request &req, const ServerConfig &conf
 		for (std::map<std::string, std::string>::iterator it = form.begin(); it != form.end(); ++it)
 		{
 			html += "<li>" + it->first + " = " + it->second + "</li>";
-			outfile << it->second;
-			outfile << " ";
+			if (req.getUri() == "/pages/login.html")
+			{
+				Msg::error("the path is ");
+				Msg::info(req.getUri());
+				outfile << it->second;
+				outfile << " ";
+			}
 		}
 		std::map<std::string,std::string>::const_iterator it = req.cookies.begin();
-		outfile << it->first + "=" + it->second;
-		outfile << std::endl;
+		if (req.getUri() == "/pages/home.html")
+		{
+			outfile << it->first + "=" + it->second;
+			outfile << std::endl;
+		}
 		html += "</ul></body></html>";
 
 		resp.setStatusCode(200);

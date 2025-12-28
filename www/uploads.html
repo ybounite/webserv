@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <style> body {background-color:rgb(187, 175, 175);} </style>
     <meta charset="UTF-8">
     <title>File Upload</title>
     <link rel="stylesheet" href="./assets/css/main.css">
@@ -13,18 +12,6 @@
 <form action="/upload" method="POST" enctype="multipart/form-data">
     <input class="input-box" type="file" name="file">
     <button class="btn" type="submit">Upload</button>
-</form>
-
-
-<form action="/upload" method="post">
-    <input class="input-box" name="fullname" type="text" placeholder="Full Name" required>
-    <input class="input-box" name="email" type="email" placeholder="Email Address" required>
-    <input class="input-box" name="age" type="number" placeholder="Age" required>
-    <input class="input-box" name="city" type="text" placeholder="City" required>
-    <input class="input-box" name="country" type="text" placeholder="Country" required>
-    <input class="input-box" name="bio" placeholder="Short Bio" ></input>
-    
-    <button class="btn" type="submit">Submit</button>
 </form>
     <button class="btn" onclick="window.location.href='/pages/about.html'">Go to About</button>
     <button class="btn" onclick="window.location.href='/pages/contact.html'">Go to Contact</button>
