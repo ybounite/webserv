@@ -267,10 +267,23 @@ Response RequestHandler::handlePOST(const Request &req, const ServerConfig &conf
 	else if (contentType.find("application/x-www-form-urlencoded") != std::string::npos)
 	{
 		std::map<std::string, std::string> form = parseUrlEncoded(bodyData);
+		std::ofstream outfile("/home/dahani/Desktop/webserv/src/data/data.txt", std::ios::app);
+		if (!outfile.is_open())
+		{
+			throw "Cannot open data.txt file!";
+		}
 
+		outfile << std::endl;
 		std::string html = "<html><head><meta charset='UTF-8'><meta name='viewport' content='width=device-width, initial-scale=1.0'><title>Form</title><link rel='stylesheet' href='/assets/css/main.css'></head><body><h1>Form Data</h1><ul></ul></body></html>";
 		for (std::map<std::string, std::string>::iterator it = form.begin(); it != form.end(); ++it)
+		{
 			html += "<li>" + it->first + " = " + it->second + "</li>";
+			outfile << it->second;
+			outfile << " ";
+		}
+		std::map<std::string,std::string>::const_iterator it = req.cookies.begin();
+		outfile << it->first + "=" + it->second;
+		outfile << std::endl;
 		html += "</ul></body></html>";
 
 		resp.setStatusCode(200);
