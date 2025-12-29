@@ -179,6 +179,8 @@ ServerConfig Parser::parseServer(const std::vector<std::string> &tokens, unsigne
     if (tokens[i] != "}")
         throw std::runtime_error("Unexpected token in parseServer: should be `}` but token is " + tokens[i]);
     last_check_in_map(directive_flags);
+    if (server.index.empty())
+        server.index = "index.html";
     return server;
  }
 
