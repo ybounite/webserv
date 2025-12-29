@@ -28,7 +28,37 @@ std::string RequestHandler::readFile(const std::string &path)
 	return buffer.str();
 }
 
-bool isDirectory(const char *path)
+std::string RequestHandler::_BuildFileSystemPath(const std::string &root, const std::string &uri)
+{
+    std::string path = root;
+    if (!path.empty() && path[path.size() -1 ] != '/')
+        path += "/";
+    path += (uri[0] == '/' ? uri.substr(1) : uri); // avoid double slash
+    return path;
+}
+
+bool		RequestHandler::_ResourceExists( std::string &Path ){
+	struct stat Buffer;
+	return (stat(Path.c_str(), &Buffer) == 0);
+}
+
+std::string RequestHandler::_ResolveIndexFile(const std::string &path, const ServerConfig &server, const LocationConfig &loc)
+{
+    std::string indexName = !loc.index.empty() ? loc.index : server.index;
+    if (indexName.empty())
+        return "";
+
+    std::string fullPath = path;
+    if (fullPath[fullPath.size() - 1] != '/')
+        fullPath += '/';
+    fullPath += indexName;
+    if (_ResourceExists(fullPath))
+        return fullPath;
+
+    return "";
+}
+
+bool	_IsDirectory(const char *path)
 {
 	struct stat st;
 	if (stat(path, &st) != 0)
@@ -52,7 +82,140 @@ std::string RequestHandler::getErrorPage(int statusCode)
 	return content;
 }
 
-short RequestHandler::getMothod(const std::string &method)
+Response	RequestHandler::BuildErrorResponse( short code ) {
+
+	Response resp;
+	resp.setStatusCode(code);
+	resp.setBody(getErrorPage(code));
+	return resp;
+}
+
+LocationConfig GetMatchingLocation(const std::vector<LocationConfig>& locations, const std::string& uri)
+{
+	LocationConfig* bestMatch = NULL;
+	size_t longestMatch = 0;
+
+	for (size_t i = 0; i < locations.size(); i++)
+	{
+		const std::string& locPath = locations[i].path;
+		if (uri.find(locPath) == 0)
+		{
+			if (locPath.size() > longestMatch)
+			{ //Example: if uri = "/images/cat.jpg" and locPath = "/images", it matches because /images is at the start.
+				bestMatch = const_cast<LocationConfig*>(&locations[i]);
+				longestMatch = locPath.size();
+				std::cout << "Locations [" << i << "] -> " << locations[i].path << std::endl;
+			}
+		}
+	}
+
+	if (bestMatch)
+		return *bestMatch;
+	return LocationConfig();
+}
+
+Response	RequestHandler::serveFile(const std::string &path)
+{
+    Response resp;
+
+    std::string content = readFile(path);
+    if (content.empty())
+        return BuildErrorResponse(404);
+
+    resp.setStatusCode(200);
+    resp.setBody(content);
+
+    // Optional: set MIME type (simplified example)
+    if (path.find(".html") != std::string::npos)
+        resp.setHeader("Content-Type", "text/html");
+    else if (path.find(".css") != std::string::npos)
+        resp.setHeader("Content-Type", "text/css");
+    else if (path.find(".js") != std::string::npos)
+        resp.setHeader("Content-Type", "application/javascript");
+    else if (path.find(".png") != std::string::npos)
+        resp.setHeader("Content-Type", "image/png");
+    else if (path.find(".jpg") != std::string::npos || path.find(".jpeg") != std::string::npos)
+        resp.setHeader("Content-Type", "image/jpeg");
+    else
+        resp.setHeader("Content-Type", "application/octet-stream");
+
+    return resp;
+}
+
+Response RequestHandler::generateAutoindexResponse(const std::string &dirPath,
+			const std::string &uri) {
+    Response resp;
+    std::ostringstream html;
+
+    html << "<html><head><title>Index of " << uri << "</title></head><body>";
+    html << "<h1>Index of " << uri << "</h1><ul>";
+
+    DIR *dir = opendir(dirPath.c_str());
+    if (!dir)
+        return BuildErrorResponse(403);  // Cannot open directory
+
+    struct dirent *entry;
+    while ((entry = readdir(dir)) != NULL)
+    {
+        std::string name = entry->d_name;
+
+        // Skip current and parent directories
+        if (name == "." || name == "..")
+            continue;
+
+        // Build link
+        html << "<li><a href=\"" << uri;
+        if (uri[uri.size() - 1] != '/')
+            html << '/';
+        html << name << "\">" << name << "</a></li>";
+    }
+
+    closedir(dir);
+
+    html << "</ul></body></html>";
+
+    resp.setStatusCode(200);
+    resp.setBody(html.str());
+    resp.setHeader("Content-Type", "text/html");
+
+    return resp;
+}
+
+Response RequestHandler::handleGET(const Request &req, const ServerConfig &server)
+{
+	Response resp;
+	//system("clear");
+	LocationConfig loc = GetMatchingLocation(server.locations, req.getUri());
+
+	std::string root = loc.root.empty() ? server.root : loc.root;
+	std::cout << RED << "location : " << loc.root << RESET << std::endl;
+	std::cout << GREEN << "root : " << server.root << RESET << std::endl;
+	std::cout << YELLOW << "URI : " << req.getUri() << RESET << std::endl;
+
+	std::string path = _BuildFileSystemPath(root, req.getUri());
+	std::cout << "*** : " << path << ": ***" << std::endl;
+	if (!_ResourceExists(path))
+		return BuildErrorResponse(404);
+
+	if (_IsDirectory(path.c_str()))
+	{
+		std::cout << "Yes directory \n";
+		std::string indexPath = _ResolveIndexFile(path, server, loc);
+		//std::cout << "indexPath: " << indexPath  << " autoindex : " << loc.autoindex << std::endl;
+		if (!loc.autoindex)
+			return BuildErrorResponse(403);
+		if (!indexPath.empty()) {
+			return serveFile(indexPath);
+		}
+	}
+	else 
+		std::cout << "### is file " << path << " ###" << std::endl;
+	
+	return serveFile(path);
+}
+
+
+short		RequestHandler::getMothod(const std::string &method)
 {
 	if (method == "GET")
 		return HTTP_GET;
@@ -64,23 +227,11 @@ short RequestHandler::getMothod(const std::string &method)
 		return HTTP_UNKNOWN;
 }
 
-// Main handler - routes to appropriate method handler
-Response RequestHandler::handle(const Request &req, const Config &config)
+Response	RequestHandler::handle(const Request &req, const Config &config)
 {
-
-	if (config.servers.empty())
-	{
-		Response resp;
-		resp.setStatusCode(500);
-		resp.setBody(getErrorPage(500));
-		return resp;
-	}
-
-	// Get the first server config (simplified - should match by host/port)
+	Response resp;
+	//server = config.servers[0];
 	const ServerConfig &serverConf = config.servers[0];
-
-	// Route based on method
-	// std::string method = req.getMethod();
 	switch (getMothod(req.getMethod()))
 	{
 	case HTTP_GET:
@@ -90,67 +241,10 @@ Response RequestHandler::handle(const Request &req, const Config &config)
 	case HTTP_DELETE:
 		return handleDELETE(req, serverConf);
 	default:
-		Response resp;
 		resp.setStatusCode(405);
 		resp.setBody(getErrorPage(405));
 		return resp;
 	}
-}
-
-Response RequestHandler::handleGET(const Request &req, const ServerConfig &config)
-{
-	Response resp;
-
-	// Build file path
-	std::string path = config.root + req.getUri();
-	// if (path != "/" && path != "/pages/login.html")
-	// {
-	// 	std::string str = req.cookies
-	// }
-	if (path[path.length() - 1] == '/')
-	{
-		path += config.index;
-	}
-	// if (path.find(".") == std::string::npos) path += ".html";
-	Msg::info("GET: " + path);
-
-	/*Directory handling logic (GET request)
-
-	Typical webserv logic:
-	Case									Action
-	File exists & readable					Serve file
-	Directory + index exists				Serve index
-	Directory + autoindex ON				Generate listing
-	Directory + no index + autoindex OFF	403
-	Path does not exist						404*/
-
-	// Stream file instead of loading entirely into memory
-	std::ifstream file(path.c_str(), std::ios::in | std::ios::binary);
-	//
-	if (!file.is_open())
-	{
-		// File not found
-		std::cerr << "Error: unable to open file for reading" << std::endl;
-		resp.setStatusCode(404);
-		resp.setBody(getErrorPage(404));
-	}
-	else
-	{
-		std::cout << "open : " << path << std::endl;
-		// Determine file size
-		file.seekg(0, std::ios::end);
-		std::streampos end = file.tellg();
-		file.seekg(0, std::ios::beg);
-		size_t length = static_cast<size_t>(end);
-
-		resp.setStatusCode(200);
-		// Content-Type will be guessed in Response::send if not set
-		resp.setHeader("Cache-Control", "no-cache");
-		resp.setHeader("Connection", "close");
-		resp.setStreamFile(path, length);
-	}
-
-	return resp;
 }
 
 /////////////////////
