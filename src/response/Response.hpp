@@ -41,11 +41,11 @@ public:
 	void setHeader(const std::string &key, const std::string &value);
 	void setBody(const std::string &body);
 	void setStreamFile(const std::string &path, size_t length);
+	static std::string guessContentType(const std::string &path);
 
 private:
 	std::string getStatusMessage(short code) const;
 	// Helper to guess basic MIME type by file extension
-	static std::string guessContentType(const std::string &path);
 	std::string findMatchingServer(const Request &req, const Config &config) const;
 	std::string findMatchingLocation(const Request &req, const ServerConfig &serverConf) const;
 };
