@@ -248,7 +248,7 @@ std::string getUploadPath(const ServerConfig &config)
 		if (!config.locations[i].upload_path.empty())
 			return config.locations[i].upload_path;
 	}
-	return ""; // none found
+	return ""; 
 }
 
 std::string clean(const std::string &str)
@@ -282,47 +282,42 @@ Response RequestHandler::handlePOST(const Request &req, const ServerConfig &conf
 	{
 		std::map<std::string, std::string> form = parseUrlEncoded(bodyData);
 
-		// ---- REGISTER ----
+		for (std::map<std::string,std::string>::iterator it = form.begin(); it != form.end(); ++it)
+			std::cout << "FORM: [" << it->first << "] = [" << it->second << "]" << std::endl;
+
+		std::string username = form.count("username") ? form["username"] : "";
+		std::string password = form.count("password") ? form["password"] : "";
+
+		if (!username.empty() && username[username.size()-1] == '\r')
+			username.erase(username.size()-1);
+		if (!password.empty() && password[password.size()-1] == '\r')
+			password.erase(password.size()-1);
+
+		bool loginSuccess = false;
+
 		if (req.getUri() == "/pages/register.html")
 		{
 			std::ofstream outfile("src/data/data.txt", std::ios::app);
 			if (!outfile.is_open())
 				throw "Cannot open data.txt file!";
 
-			std::string username = form["username"];
-			std::string password = form["password"];
-
-			// get cookie session
 			std::string sessionId = "none";
 			if (!req.cookies.empty())
-			{
 				sessionId = "session_id=" + req.cookies.begin()->second;
-			}
 
-			// write to file
 			outfile << username << " " << password << " " << sessionId << std::endl;
 		}
 
-		// ---- LOGIN ----
-		bool loginSuccess = false;
 		if (req.getUri() == "/pages/login.html")
 		{
 			std::ifstream infile("src/data/data.txt");
 			if (!infile.is_open())
 				throw "Cannot open data.txt for login check!";
 
-			std::string username = form["username"];
-			std::string password = form["password"];
-
 			std::string fileUser, filePass, fileSession;
-			std::string line;
-			while (std::getline(infile, line))
+			while (infile >> fileUser >> filePass >> fileSession)
 			{
-				std::stringstream ss(line);
-				ss >> fileUser >> filePass >> fileSession;
-
 				std::cout << "FILE: [" << fileUser << "] [" << filePass << "]" << std::endl;
-				std::cout << "INPUT: [" << username << "] [" << password << "]" << std::endl;
 
 				if (fileUser == username && filePass == password)
 				{
@@ -331,34 +326,31 @@ Response RequestHandler::handlePOST(const Request &req, const ServerConfig &conf
 				}
 			}
 		}
-
-		// ---- POPUP Tailwind ----
 		std::string html;
+
 		if (req.getUri() == "/pages/login.html" && !loginSuccess)
 		{
 			html =
 			"<html><head>"
 			"<meta charset='UTF-8'>"
-			"<script src=\"https://cdn.tailwindcss.com\"></script>"
-			"</head>"
-			"<body class='bg-gray-100 flex items-center justify-center h-screen'>"
+			"<script src='https://cdn.tailwindcss.com'></script>"
+			"</head><body class='bg-gray-100 flex items-center justify-center h-screen'>"
 			"<div class='fixed inset-0 flex items-center justify-center bg-black bg-opacity-50'>"
 			"<div class='bg-white rounded-xl shadow-lg p-6 text-center w-80'>"
-			"<h2 class='text-xl font-bold text-red-600 mb-4'>Error ❌</h2>"
-			"<p class='text-gray-700 mb-6'>Invalid username or password!</p>"
+			"<h2 class='text-xl font-bold text-red-600 mb-4'>Login Failed ❌</h2>"
+			"<p class='text-gray-700 mb-6'>Invalid username or password</p>"
 			"<button onclick=\"window.location.href='/pages/login.html'\" "
 			"class='bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg w-full transition'>Try Again</button>"
 			"</div></div></body></html>";
 		}
+
 		else
 		{
-			// success popup
 			html =
 			"<html><head>"
 			"<meta charset='UTF-8'>"
-			"<script src=\"https://cdn.tailwindcss.com\"></script>"
-			"</head>"
-			"<body class='bg-gray-100 flex items-center justify-center h-screen'>"
+			"<script src='https://cdn.tailwindcss.com'></script>"
+			"</head><body class='bg-gray-100 flex items-center justify-center h-screen'>"
 			"<div class='fixed inset-0 flex items-center justify-center bg-black bg-opacity-50'>"
 			"<div class='bg-white rounded-xl shadow-lg p-6 text-center w-80'>"
 			"<h2 class='text-xl font-bold text-green-600 mb-4'>Success 🎉</h2>"
@@ -372,6 +364,7 @@ Response RequestHandler::handlePOST(const Request &req, const ServerConfig &conf
 		resp.setHeader("Content-Type", "text/html");
 		resp.setBody(html);
 	}
+
 
 
 	else if (contentType.find("multipart/form-data") != std::string::npos)
