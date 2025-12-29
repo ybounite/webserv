@@ -259,6 +259,16 @@ std::string clean(const std::string &str)
     return s;
 }
 
+bool createDirectory(const std::string &path) {
+	
+    if (mkdir(path.c_str(), 0755) == 0) {
+        return true;
+    } else {
+        throw("mkdir");
+        return false;
+    }
+}
+
 ////////////////////
 
 Response RequestHandler::handlePOST(const Request &req, const ServerConfig &config)
@@ -298,6 +308,7 @@ Response RequestHandler::handlePOST(const Request &req, const ServerConfig &conf
 		if (req.getUri() == "/pages/register.html")
 		{
 			std::ofstream outfile("src/data/data.txt", std::ios::app);
+			outfile << std::endl;
 			if (!outfile.is_open())
 				throw "Cannot open data.txt file!";
 
@@ -314,18 +325,31 @@ Response RequestHandler::handlePOST(const Request &req, const ServerConfig &conf
 			if (!infile.is_open())
 				throw "Cannot open data.txt for login check!";
 
-			std::string fileUser, filePass, fileSession;
-			while (infile >> fileUser >> filePass >> fileSession)
+			std::string line;
+			while (std::getline(infile, line)) // read line by line
 			{
+				if (line.empty())
+					continue; // skip empty lines
+
+				std::istringstream iss(line);
+				std::string fileUser, filePass, fileSession;
+				if (!(iss >> fileUser >> filePass >> fileSession))
+					continue; // skip malformed lines
+
 				std::cout << "FILE: [" << fileUser << "] [" << filePass << "]" << std::endl;
 
-				if (fileUser == username && filePass == password)
+				std::string sessionId = "session_id=" + req.cookies.begin()->second;
+				Msg::warning("-----------------" + sessionId + "--------------------------------------");
+				Msg::warning(fileSession);
+
+				if (fileUser == username && filePass == password && fileSession == sessionId)
 				{
 					loginSuccess = true;
-					break;
+					break; // stop once we find a match
 				}
 			}
 		}
+
 		std::string html;
 
 		if (req.getUri() == "/pages/login.html" && !loginSuccess)
@@ -409,6 +433,7 @@ Response RequestHandler::handlePOST(const Request &req, const ServerConfig &conf
 						resp.setBody(getErrorPage(500));
 						return resp;
 					}
+					createDirectory(uploadDir);
 					std::string fullPath = uploadDir + "/" + filename;
 					std::ofstream out(fullPath.c_str(), std::ios::binary);
 					if (!out.is_open())

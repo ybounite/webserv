@@ -10,7 +10,7 @@
 
 int main(int argc, char const *argv[])
 {
-
+	std::srand(std::time(0));
 	std::vector<std::string> vector;
 	if (argc == 1 || argc == 2)
 	{
