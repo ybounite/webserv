@@ -325,27 +325,48 @@ Response RequestHandler::handlePOST(const Request &req, const ServerConfig &conf
 			if (!infile.is_open())
 				throw "Cannot open data.txt for login check!";
 
+			std::vector<std::string> lines;
 			std::string line;
-			while (std::getline(infile, line)) // read line by line
+			bool loginUpdated = false;
+
+			std::string sessionId = "session_id=" + req.cookies.begin()->second;
+
+			while (std::getline(infile, line))
 			{
-				if (line.empty())
-					continue; // skip empty lines
+				if (line.empty()) {
+					lines.push_back(line);
+					continue;
+				}
 
 				std::istringstream iss(line);
 				std::string fileUser, filePass, fileSession;
-				if (!(iss >> fileUser >> filePass >> fileSession))
-					continue; // skip malformed lines
+				if (!(iss >> fileUser >> filePass >> fileSession)) {
+					lines.push_back(line);
+					continue; // keep malformed lines as is
+				}
 
-				std::cout << "FILE: [" << fileUser << "] [" << filePass << "]" << std::endl;
-
-				std::string sessionId = "session_id=" + req.cookies.begin()->second;
-				Msg::warning("-----------------" + sessionId + "--------------------------------------");
-				Msg::warning(fileSession);
-
-				if (fileUser == username && filePass == password && fileSession == sessionId)
+				if (fileUser == username && filePass == password)
 				{
+					// update the session with the one from request
+					line = fileUser + " " + filePass + " " + sessionId;
 					loginSuccess = true;
-					break; // stop once we find a match
+					loginUpdated = true;
+				}
+
+				lines.push_back(line);
+			}
+			infile.close();
+
+			if (loginUpdated)
+			{
+				std::ofstream outfile("src/data/data.txt", std::ios::trunc);
+				if (!outfile.is_open())
+					throw "Cannot open data.txt to update session!";
+
+				for (size_t i = 0; i < lines.size(); ++i)
+				{
+					outfile << lines[i];
+					if (i + 1 < lines.size()) outfile << "\n";
 				}
 			}
 		}

@@ -159,7 +159,7 @@ void Request::createNewSession(ServerConfig &config)
     config.sessions[id]["username"] = "Soufiane";
 
 
-    cookies["Set-Cookie"] = "session_id=" + id + "; HttpOnly; Path=/; Max-Age=3600";
+    cookies["Set-Cookie"] = "session_id=" + id + "; HttpOnly; Path=/; Max-Age=30";
     
     cookies["session_id"] = id;
 }
