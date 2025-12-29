@@ -100,7 +100,7 @@ Response RequestHandler::handle(const Request &req, const Config &config)
 
 bool search_Cookies(const std::map<std::string, std::string> &cookies)
 {
-    std::ifstream file("/home/dahani/Desktop/webserv/src/data/data.txt");
+    std::ifstream file("src/data/data.txt");
     if (!file.is_open())
     {
         std::cerr << "Cannot open data.txt file!" << std::endl;
@@ -267,36 +267,52 @@ Response RequestHandler::handlePOST(const Request &req, const ServerConfig &conf
 	else if (contentType.find("application/x-www-form-urlencoded") != std::string::npos)
 	{
 		std::map<std::string, std::string> form = parseUrlEncoded(bodyData);
-		std::ofstream outfile("/home/dahani/Desktop/webserv/src/data/data.txt", std::ios::app);
+		std::ofstream outfile("src/data/data.txt", std::ios::app);
 		if (!outfile.is_open())
-		{
 			throw "Cannot open data.txt file!";
-		}
 
 		outfile << std::endl;
-		std::string html = "<html><head><meta charset='UTF-8'><meta name='viewport' content='width=device-width, initial-scale=1.0'><title>Form</title><link rel='stylesheet' href='/assets/css/main.css'></head><body><h1>Form Data</h1><ul></ul></body></html>";
+
 		for (std::map<std::string, std::string>::iterator it = form.begin(); it != form.end(); ++it)
 		{
-			html += "<li>" + it->first + " = " + it->second + "</li>";
-			Msg::error(req.getUri());
 			if (req.getUri() == "/pages/register.html")
 			{
 				outfile << it->second;
 				outfile << " ";
 			}
+			// if (req.getUri() == "/pages/login.html")
+			// {
+
+			// }
 		}
+
 		std::map<std::string,std::string>::const_iterator it = req.cookies.begin();
 		if (req.getUri() == "/pages/register.html")
 		{
 			outfile << it->first + "=" + it->second;
 			outfile << std::endl;
 		}
-		html += "</ul></body></html>";
+		std::string html =
+		"<html><head>"
+		"<meta charset='UTF-8'>"
+		"<script src=\"https://cdn.tailwindcss.com\"></script>"
+		"</head>"
+		"<body class='bg-gray-100 flex items-center justify-center h-screen'>"
+		"<div id='popup' class='fixed inset-0 flex items-center justify-center bg-black bg-opacity-50'>"
+		"  <div class='bg-white rounded-xl shadow-lg p-6 text-center w-80'>"
+		"    <h2 class='text-xl font-bold text-green-600 mb-4'>Success 🎉</h2>"
+		"    <p class='text-gray-700 mb-6'>Data has been submitted successfully!</p>"
+		"    <button onclick=\"window.location.href='/pages/home.html'\" "
+		"      class='bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg w-full transition'>OK</button>"
+		"  </div>"
+		"</div>"
+		"</body></html>";
 
 		resp.setStatusCode(200);
 		resp.setHeader("Content-Type", "text/html");
 		resp.setBody(html);
 	}
+
 	else if (contentType.find("multipart/form-data") != std::string::npos)
 	{
 		std::string boundaryKey = "boundary=";
