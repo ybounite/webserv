@@ -116,10 +116,15 @@ bool search_Cookies(const std::map<std::string, std::string> &cookies)
         for (std::map<std::string,std::string>::const_iterator it = cookies.begin(); it != cookies.end(); ++it)
         {
             std::string cookie_str = it->first + "=" + it->second;
-			std::string key = "session_id=";
-    		size_t pos = line.find(key);
-			line = line.substr(pos);
-            if (line == cookie_str)
+            std::string key = "session_id=";
+
+            size_t pos = line.find(key);
+            if (pos == std::string::npos)
+                continue;
+
+            std::string sessionPart = line.substr(pos);
+
+            if (sessionPart == cookie_str)
             {
                 file.close();
                 return true;
@@ -130,6 +135,7 @@ bool search_Cookies(const std::map<std::string, std::string> &cookies)
     file.close();
     return false;
 }
+
 
 
 
@@ -245,6 +251,14 @@ std::string getUploadPath(const ServerConfig &config)
 	return ""; // none found
 }
 
+std::string clean(const std::string &str)
+{
+    std::string s = str;
+    while (!s.empty() && (s[s.size()-1] == '\n' || s[s.size()-1] == '\r'))
+        s.erase(s.size()-1);
+    return s;
+}
+
 ////////////////////
 
 Response RequestHandler::handlePOST(const Request &req, const ServerConfig &config)
@@ -267,51 +281,98 @@ Response RequestHandler::handlePOST(const Request &req, const ServerConfig &conf
 	else if (contentType.find("application/x-www-form-urlencoded") != std::string::npos)
 	{
 		std::map<std::string, std::string> form = parseUrlEncoded(bodyData);
-		std::ofstream outfile("src/data/data.txt", std::ios::app);
-		if (!outfile.is_open())
-			throw "Cannot open data.txt file!";
 
-		outfile << std::endl;
-
-		for (std::map<std::string, std::string>::iterator it = form.begin(); it != form.end(); ++it)
-		{
-			if (req.getUri() == "/pages/register.html")
-			{
-				outfile << it->second;
-				outfile << " ";
-			}
-			// if (req.getUri() == "/pages/login.html")
-			// {
-
-			// }
-		}
-
-		std::map<std::string,std::string>::const_iterator it = req.cookies.begin();
+		// ---- REGISTER ----
 		if (req.getUri() == "/pages/register.html")
 		{
-			outfile << it->first + "=" + it->second;
-			outfile << std::endl;
+			std::ofstream outfile("src/data/data.txt", std::ios::app);
+			if (!outfile.is_open())
+				throw "Cannot open data.txt file!";
+
+			std::string username = form["username"];
+			std::string password = form["password"];
+
+			// get cookie session
+			std::string sessionId = "none";
+			if (!req.cookies.empty())
+			{
+				sessionId = "session_id=" + req.cookies.begin()->second;
+			}
+
+			// write to file
+			outfile << username << " " << password << " " << sessionId << std::endl;
 		}
-		std::string html =
-		"<html><head>"
-		"<meta charset='UTF-8'>"
-		"<script src=\"https://cdn.tailwindcss.com\"></script>"
-		"</head>"
-		"<body class='bg-gray-100 flex items-center justify-center h-screen'>"
-		"<div id='popup' class='fixed inset-0 flex items-center justify-center bg-black bg-opacity-50'>"
-		"  <div class='bg-white rounded-xl shadow-lg p-6 text-center w-80'>"
-		"    <h2 class='text-xl font-bold text-green-600 mb-4'>Success 🎉</h2>"
-		"    <p class='text-gray-700 mb-6'>Data has been submitted successfully!</p>"
-		"    <button onclick=\"window.location.href='/pages/home.html'\" "
-		"      class='bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg w-full transition'>OK</button>"
-		"  </div>"
-		"</div>"
-		"</body></html>";
+
+		// ---- LOGIN ----
+		bool loginSuccess = false;
+		if (req.getUri() == "/pages/login.html")
+		{
+			std::ifstream infile("src/data/data.txt");
+			if (!infile.is_open())
+				throw "Cannot open data.txt for login check!";
+
+			std::string username = form["username"];
+			std::string password = form["password"];
+
+			std::string fileUser, filePass, fileSession;
+			std::string line;
+			while (std::getline(infile, line))
+			{
+				std::stringstream ss(line);
+				ss >> fileUser >> filePass >> fileSession;
+
+				std::cout << "FILE: [" << fileUser << "] [" << filePass << "]" << std::endl;
+				std::cout << "INPUT: [" << username << "] [" << password << "]" << std::endl;
+
+				if (fileUser == username && filePass == password)
+				{
+					loginSuccess = true;
+					break;
+				}
+			}
+		}
+
+		// ---- POPUP Tailwind ----
+		std::string html;
+		if (req.getUri() == "/pages/login.html" && !loginSuccess)
+		{
+			html =
+			"<html><head>"
+			"<meta charset='UTF-8'>"
+			"<script src=\"https://cdn.tailwindcss.com\"></script>"
+			"</head>"
+			"<body class='bg-gray-100 flex items-center justify-center h-screen'>"
+			"<div class='fixed inset-0 flex items-center justify-center bg-black bg-opacity-50'>"
+			"<div class='bg-white rounded-xl shadow-lg p-6 text-center w-80'>"
+			"<h2 class='text-xl font-bold text-red-600 mb-4'>Error ❌</h2>"
+			"<p class='text-gray-700 mb-6'>Invalid username or password!</p>"
+			"<button onclick=\"window.location.href='/pages/login.html'\" "
+			"class='bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg w-full transition'>Try Again</button>"
+			"</div></div></body></html>";
+		}
+		else
+		{
+			// success popup
+			html =
+			"<html><head>"
+			"<meta charset='UTF-8'>"
+			"<script src=\"https://cdn.tailwindcss.com\"></script>"
+			"</head>"
+			"<body class='bg-gray-100 flex items-center justify-center h-screen'>"
+			"<div class='fixed inset-0 flex items-center justify-center bg-black bg-opacity-50'>"
+			"<div class='bg-white rounded-xl shadow-lg p-6 text-center w-80'>"
+			"<h2 class='text-xl font-bold text-green-600 mb-4'>Success 🎉</h2>"
+			"<p class='text-gray-700 mb-6'>Welcome!</p>"
+			"<button onclick=\"window.location.href='/pages/home.html'\" "
+			"class='bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg w-full transition'>OK</button>"
+			"</div></div></body></html>";
+		}
 
 		resp.setStatusCode(200);
 		resp.setHeader("Content-Type", "text/html");
 		resp.setBody(html);
 	}
+
 
 	else if (contentType.find("multipart/form-data") != std::string::npos)
 	{
