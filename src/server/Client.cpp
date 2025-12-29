@@ -11,7 +11,7 @@ void Server::addClientInEppol()
     // accept the client (that create for him a new socket and return a FD for it)
     clientFd = accept(_ServerFd, NULL, NULL);
     // make this socket a nonblocked one so the recv wont block
-    fcntl(clientFd, F_SETFL, O_NONBLOCK);
+    addNblock(clientFd);
     if (clientFd < 0)
         throwing("accept()");
     // create new client epoll event
@@ -51,8 +51,8 @@ size_t contentLenght(std::string header)
     if (index == std::string::npos)
         return 0;
 
-    index += 15; // "Content-Length:" is 15 characters, not 16
-    
+    index += 15; // "Content-Length:"
+
     // Skip any spaces after the colon
     while (index < header.length() && header[index] == ' ')
         index++;
@@ -69,20 +69,12 @@ void Server::readClientRequest(unsigned int clientFd)
 {
     int bytesRead;
     char buffer[100];
-    // while (true)
-    // {
     bytesRead = recv(clientFd, buffer, sizeof(buffer) - 1, 0);
 
     if (bytesRead == 0)
         return (deleteClientFromEpoll(clientFd));
     else if (bytesRead < 0)
-    {
-        //  if recv returns -1 and the errno code is on of those . that's mean there is no data yet and the recv would block.
-        if (errno == EAGAIN || errno == EWOULDBLOCK)
-            return;
-        else
-            throwing("recv()");
-    }
+        return;
     _ClientsMap[clientFd].request.append(buffer, bytesRead);
     size_t headerEnd = _ClientsMap[clientFd].request.find("\r\n\r\n");
     if (headerEnd == std::string::npos)

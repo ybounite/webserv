@@ -48,6 +48,7 @@ public:
     void sendHttpResponse(unsigned int clientFd);
     void CreateEpollInstance();
     void deleteClientFromEpoll(unsigned int clientFd);
+    void addNblock(unsigned int clientFd);
     void run();
     std::map<int, t_clients> getClients() const;
     ~Server();

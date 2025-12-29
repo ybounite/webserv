@@ -7,6 +7,16 @@ void sighandler(int status)
     if (status)
         throwing("");
 }
+
+void Server::addNblock(unsigned int fd)
+{
+    int flags = fcntl(fd, F_GETFL, 0);
+    if (flags < 0)
+        throwing("fcntl(F_GETFL)");
+    if (fcntl(fd, F_SETFL, flags | O_NONBLOCK) < 0)
+        throwing("fcntl(F_SETFL)");
+}
+
 Server::Server(Config &data) : _data(data)
 {
     int opt = 1;
@@ -14,7 +24,7 @@ Server::Server(Config &data) : _data(data)
     _data = data;
     _ServerFd = socket(AF_INET, SOCK_STREAM, 0);
     setsockopt(_ServerFd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
-    fcntl(_ServerFd, F_SETFL, O_NONBLOCK);
+    addNblock(_ServerFd);
     memset((void *)&_address, 0, sizeof(sockaddr_in));
     _address.sin_family = AF_INET;
     _address.sin_addr.s_addr = INADDR_ANY;
@@ -33,7 +43,7 @@ void Server::CreateEpollInstance()
     epoll_event listener;
     listener.events = EPOLLIN;
     listener.data.fd = _ServerFd;
-    _epollInstance = epoll_create1(EPOLL_CLOEXEC); // we create an epoll instance in the kernel
+    _epollInstance = epoll_create(1); // we create an epoll instance in the kernel
     if (_epollInstance < 0)
         throwing("epoll_create()");
     if (epoll_ctl(_epollInstance, EPOLL_CTL_ADD, _ServerFd, &listener) < 0) // we now watching any event in the server.
@@ -55,9 +65,9 @@ void Server::run()
                 addClientInEppol();
             else
             {
-                if (_clients[i].events & EPOLLIN) // do client wanna send data to the server ?
+                if (_clients[i].events & EPOLLIN) // do client ready to  send data to the server ?
                     readClientRequest(_clients[i].data.fd);
-                if (_clients[i].events & EPOLLOUT)// if the clinet send a request this condition would be true and i will respond here
+                if (_clients[i].events & EPOLLOUT) // if the clinet send a request this condition would be true and i will respond here
                     sendHttpResponse(_clients[i].data.fd);
             }
         }
