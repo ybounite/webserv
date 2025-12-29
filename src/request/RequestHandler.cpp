@@ -184,21 +184,17 @@ std::string getUploadPath(const ServerConfig &config)
 Response RequestHandler::handlePOST(const Request &req, const ServerConfig &config)
 {
 	Response resp;
-
 	std::string bodyData = req.getBody();
-
-
 	std::string contentType = req.getHeader("Content-Type");
-
 	if (bodyData.empty())
 	{
-		Msg::info("file is empty");
 		resp.setStatusCode(400);
 		resp.setBody(getErrorPage(400));
 	}
 	else if (bodyData.size() > config.client_max_body_size)
 	{
 		resp.setStatusCode(413);
+		resp.setBody(getErrorPage(413));
 		return resp;
 	}
 
@@ -206,7 +202,7 @@ Response RequestHandler::handlePOST(const Request &req, const ServerConfig &conf
 	{
 		std::map<std::string, std::string> form = parseUrlEncoded(bodyData);
 
-		std::string html = "<html><body><h1>Form Data</h1><ul>";
+		std::string html = "<html><head><meta charset='UTF-8'><meta name='viewport' content='width=device-width, initial-scale=1.0'><title>Form</title><link rel='stylesheet' href='/assets/css/main.css'></head><body><h1>Form Data</h1><ul></ul></body></html>";
 		for (std::map<std::string, std::string>::iterator it = form.begin(); it != form.end(); ++it)
 			html += "<li>" + it->first + " = " + it->second + "</li>";
 		html += "</ul></body></html>";
@@ -244,21 +240,17 @@ Response RequestHandler::handlePOST(const Request &req, const ServerConfig &conf
 				filenamePos += 10;
 				size_t filenameEnd = part.find("\"", filenamePos);
 				std::string filename = part.substr(filenamePos, filenameEnd - filenamePos);
-
-				// Find file content after double \r\n
 				size_t contentPos = part.find("\r\n\r\n");
 				if (contentPos != std::string::npos)
 				{
 					std::string fileContent = part.substr(contentPos + 4);
-					// Remove trailing \r\n if exists
 					if (fileContent.size() >= 2)
 						fileContent.resize(fileContent.size() - 2);
-
-					// Save file
 					std::string uploadDir = getUploadPath(config);
 					if (uploadDir.empty())
 					{
 						resp.setStatusCode(500);
+						resp.setBody(getErrorPage(500));
 						return resp;
 					}
 					std::string fullPath = uploadDir + "/" + filename;
@@ -277,19 +269,26 @@ Response RequestHandler::handlePOST(const Request &req, const ServerConfig &conf
 		}
 		resp.setStatusCode(201);
 		resp.setHeader("Content-Type", "text/html");
-		resp.setBody(readFile("www/uploaded.html")); //
+		resp.setBody(readFile("www/uploaded.html"));
 	}
 	else
 	{
 		resp.setStatusCode(200);
 		resp.setHeader("Content-Type", "text/html");
 
-		std::string responseBody =
-			"<html><body>"
-			"<h1>POST received</h1>"
-			"<pre>" +
-			bodyData + "</pre>"
-					   "</body></html>";
+		std::string responseBody = "<html>"
+		"<head>"
+		"<meta charset='UTF-8'>"
+		"<meta name='viewport' content='width=device-width, initial-scale=1.0'>"
+		"<title>POST Result</title>"
+		"<link rel='stylesheet' href='/assets/css/main.css'>"
+		"</head>"
+		"<body>"
+		"<h1>POST received</h1>"
+		"<pre>" + bodyData + "</pre>"
+		"</body>"
+		"</html>";
+
 		resp.setBody(responseBody);
 	}
 

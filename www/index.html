@@ -22,146 +22,28 @@
                 margin-top: 20px;
             }
         </style> -->
-    <!-- <link rel="stylesheet" href="./assets/css/main.css"> -->
-</head>
+        <link rel="stylesheet" href="./assets/css/main.css">
+    </head>
+    <body>
+        <h1>WEB SERVER</h1>
+        
+        <p>DAHANI SOUFIANE</p>
+        <p>YOUSSEF BOUNITE</p>
+        <strong>ILYAS SIR GAD PARTIE DIALK</strong>
+        <hr>
+        <img src="" alt="">
 
-<body class="p-0 m-0 font-[Fredoka] bg-[#3f5599] gap-10 flex flex-col px-10 md:px-25 lg:px-40">
-    <header class="flex flex-col gap-50 h-screen">
-        <div class="w-full pt-5">
-            <nav class="w-full flex justify-between items-center text-[#111827]">
-                <div class="text-4xl font-bold">
-                    <button>WebServ</button>
-                </div>
-                <ul class="gap-10 text-xl hidden lg:flex font-semibold">
-                    <a href="" class="hover:text-white transition-color duration-500">
-                        <li>Home</li>
-                    </a>
-                    <a href="" class="hover:text-white transition-color duration-500">
-                        <li>About</li>
-                    </a>
-                </ul>
-                <div class="flex gap-5 items-center">
-                    <div class="text-2xl md:flex gap-3 font-semibold group hidden 
-                    bg-white
-                    p-2 rounded-3xl">
-                        <a href="">
-                            Go Test
-                        </a>
-                        <div class="w-8 h-8 group-hover:hidden">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w-8 h-8 fill-current">
-                                <path
-                                    d="M16.0037 9.41421L7.39712 18.0208L5.98291 16.6066L14.5895 8H7.00373V6H18.0037V17H16.0037V9.41421Z">
-                                </path>
-                            </svg>
-                        </div>
-                        <div class="w-8 h-8 group-hover:block hidden">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w-8 h-8 fill-current">
-                                <path
-                                    d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z">
-                                </path>
-                            </svg>
-                        </div>
-                    </div>
-                    <div class="lg:hidden" onclick="createNav()">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="black"
-                            class="w-12 h-12 cursor-pointer">
-                            <path d="M3 4H21V6H3V4ZM9 11H21V13H9V11ZM3 18H21V20H3V18Z"></path>
-                        </svg>
-                    </div>
-                </div>
-            </nav>
-        </div>
-        <div class="w-full">
-            <div class="flex justify-center flex-col items-center gap-10">
-                <div class="flex justify-center flex-col items-center gap-7">
-                    <h1 class="text-8xl text-[black] text-center font-[Fredoka] font-semibold">WebServ <span
-                            class="bg-gradient-to-r from-[white] to-[white] text-transparent bg-clip-text font-bold">
-                            KHEDAM
-                        </span>
-                    </h1>
-                    <p class="text-center text-3xl text-[#111827] w-full lg:w-[60%]">it is a Http server created with
-                        anger and conflicts and each
-                        team-mate
-                        tell the other is YOUR PROBLEM but althogh. DONE!
-                    </p>
-                </div>
-                <div class="flex gap-5">
-                    <div class="text-3xl flex font-semiboldn group
-                    bg-white
-                    hover:bg-[#111827]
-                    hover:text-white
-                    transition-all duration-500
-                    pt-[6px] px-6 rounded-3xl">
-                        <a href="#team">
-                            Meat the Team
-                        </a>
-                    </div>
-                    <div class="text-3xl flex gap-3 font-semibold group items-center
-                    p-2 rounded-3xl border border-white">
-                        <a href="">
-                            Go Test
-                        </a>
-                        <div class="w-8 h-8 group-hover:hidden">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w-8 h-8 fill-current">
-                                <path
-                                    d="M16.0037 9.41421L7.39712 18.0208L5.98291 16.6066L14.5895 8H7.00373V6H18.0037V17H16.0037V9.41421Z">
-                                </path>
-                            </svg>
-                        </div>
-                        <div class="w-8 h-8 group-hover:block hidden">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w-8 h-8 fill-white">
-                                <path
-                                    d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z">
-                                </path>
-                            </svg>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        </div>
-    </header>
-    <main>
-        <section id="team">
-            <divc class="flex flex-col w-full gap-10 h-screen pt-5">
-                <div class="flex justify-start text-6xl">
-                    <h2 class="text-white font-semibold">Team</h2>
-                </div>
+        <!-- Redirect Button -->
+        <button class="btn" onclick="window.location.href='http://localhost:8080/uploads.html'">
+            Go to Uploads
+        </button>
+        <button class="btn" onclick="window.location.href='http://localhost:8080/pages/about.html'">Go to About</button>
+        <button class="btn" onclick="window.location.href='http://localhost:8080/pages/contact.html'">Go to Contact</button>
+        <button class="btn" onclick="window.location.href='http://localhost:8080/pages/cookies.html'">Go to Cookies</button>
+        <button class="btn" onclick="window.location.href='http://localhost:8080/pages/home.html'">Go to Home</button>
+        <button class="btn" onclick="window.location.href='http://localhost:8080/pages/login.html'">Go to Login</button>
+        <button class="btn" onclick="window.location.href='http://localhost:8080/pages/register.html'">Go to Register</button>
+        <button class="btn" onclick="window.location.href='http://localhost:8080/pages/services.html'">Go to Services</button>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-10">
-                    <div class="h-120 w-full bg-[rgba(255,255,255,0.1)] rounded overflow-hidden bg-center bg-no-repeat bg-cover hover:border-white border border-transparent transition-all duration-500 relative flex justify-center"
-                        style="background-image: url('ilyass.png');">
-                        <div
-                            class="absolute h-20 shadow-[1px_3px_7px_rgba(0,0,0,0.5)_] w-[95%] flex justify-center items-start flex-col bottom-5 hover:bottom-7 transition-all duration-500 cursor-pointer">
-                            <div class="uppercase pl-10 text-2xl font-semibold">Ilyass <span
-                                    class="inline md:hidden">Meftah</span> El Menani</div>
-                            <div class="pl-10 text-xl">networking core</div>
-                        </div>
-                    </div>
-                    <div class="h-120 w-full bg-[rgba(255,255,255,0.1)] rounded overflow-hidden bg-center bg-no-repeat bg-cover hover:border-white border border-transparent transition-all duration-500 relative flex justify-center"
-                        style="background-image: url('bounite.png');">
-                        <div
-                            class="absolute bg-white h-20  hover:shadow-[1px_3px_7px_rgba(0,0,0,0.5)_] w-[95%] flex justify-center items-start flex-col bottom-5 hover:bottom-7 transition-all duration-500 cursor-pointer">
-                            <div class="uppercase pl-10 text-2xl font-semibold">Youssef Bounite</div>
-                            <div class="pl-10 text-xl">request handling</div>
-                        </div>
-                    </div>
-                    <div class="h-120 w-full bg-[rgba(255,255,255,0.1)] rounded overflow-hidden bg-center bg-no-repeat bg-cover hover:border-white border border-transparent transition-all duration-500 relative flex justify-center"
-                        style="background-image: url('sof.png');">
-                        <div
-                            class="absolute bg-white h-20  hover:shadow-[1px_3px_7px_rgba(0,0,0,0.5)_] w-[95%] flex justify-center items-start flex-col bottom-5 hover:bottom-7 transition-all duration-500 cursor-pointer">
-                            <div class="uppercase pl-10 text-2xl font-semibold">Sofiane Dahani</div>
-                            <div class="pl-10 text-xl">parsing</div>
-                        </div>
-                    </div>
-                </div>
-                </div>
-        </section>
-        <section>
-
-        </section>
-    </main>
-    <script src="./index.js"></script>
-</body>
-
+    </body>
 </html>
