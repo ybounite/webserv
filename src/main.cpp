@@ -7,6 +7,8 @@
 /* ************************************************************************** */
 
 #include "../includes/Webserv.hpp"
+#include "../includes/Parser.hpp"
+#include "../includes/Msg.hpp"
 
 int main(int argc, char const *argv[])
 {

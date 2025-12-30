@@ -1,4 +1,5 @@
 #pragma once
+
 # include <iostream>
 // # include <fstream>
 # include <fcntl.h>
@@ -54,28 +55,18 @@
 #define LIGHTMAGENTA   "\x1B[95m"
 #define GREEN          "\x1B[32m"
 #define LIGHT_GREEN    "\x1B[92m"
-
-
-// classes
-
-class Msg {
-public:
-    // Generic printer with any color
-    static void print(const std::string& mode, const std::string& msg, const std::string& color);
-
-    // Fixed log types
-    static void info(const std::string& msg);
-    static void success(const std::string& msg);
-    static void warning(const std::string& msg);
-    static void error(const std::string& msg);
-    static void debug(const std::string& msg);
-};
-
-
+#include "ServerConfig.hpp"
+#include "Config.hpp"
+#include "Msg.hpp"
+#include "Parser.hpp"
+#include "../src/server/Server.hpp"
+#include "../src/request/Request.hpp"
+#include "../src/response/Response.hpp"
+#include "../src/request/RequestHandler.hpp"
 
 class ConfigFileReader {
 public:
-    static std::string read(const std::string &path);
+static std::string read(const std::string &path);
 };
 
 class Tokenizer {
@@ -83,72 +74,14 @@ public:
     std::vector<std::string> tokenize(const std::string &content);
 };
 
-class LocationConfig {
-public:
-    std::string path;
-    std::string root;
-    std::string index;
-    bool autoindex;
-    std::vector<std::string> methods;
-    std::string upload_path;
-    std::string cgi_path;
-    // (bonus)
-    int return_code;
-    std::string return_url;
-};
-
-
-class ServerConfig {
-public:
-    std::map<std::string, std::map<std::string, std::string> > sessions;
-    int listen_port;
-    std::string index;
-    std::string server_name;
-    std::string root;
-    size_t client_max_body_size;
-    std::map<int, std::string> error_pages;
-    std::vector<LocationConfig> locations;
-};
-
-
-class Config {
-public:
-    std::vector<ServerConfig> servers;
-};
-
-
-class Parser {
-public:
-    Config parse(const std::vector<std::string> &tokens);
-private:
-    ServerConfig parseServer(const std::vector<std::string> &tokens, unsigned long &i);
-    LocationConfig parseLocation(const std::vector<std::string> &tokens, unsigned long &i);
-};
-
-
-// helper function
 
 void parse_config(Config &config);
-
-// global class
-//extern class   Config  GbConfig;
-
 template <typename T>
 std::string to_string(T &value) {
     std::ostringstream  oss;
     oss << value;
     return oss.str();
 }
-
-# include "../src/server/Server.hpp"
-# include "../src/request/Request.hpp"
-# include "../src/response/Response.hpp"
-# include "../src/request/RequestHandler.hpp"
-
-
-
-//////////////////////
-
 
 std::string getCookieValue(const Request &req, std::string key);
 void createNewSession(Request &req, ServerConfig &config);
