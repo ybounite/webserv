@@ -8,6 +8,7 @@ public:
     std::string root;
     std::string index;
     bool autoindex;
+    std::string list;
     std::vector<std::string> methods;
     std::string upload_path;
     std::string cgi_path;

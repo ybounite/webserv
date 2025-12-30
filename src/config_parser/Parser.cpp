@@ -172,7 +172,14 @@ ServerConfig Parser::parseServer(const std::vector<std::string> &tokens, unsigne
             expect(tokens, i);
         }
         else if (tokens[i] == "location")
+        {
             server.locations.push_back(parseLocation(tokens, i));
+            if (server.locations[server.locations.size() - 1].autoindex == true)
+            {
+                server.locations[server.locations.size() - 1].list = buildDirectoryListing(server.root + server.locations[server.locations.size() - 1].path);
+                Msg::error(server.locations[server.locations.size() - 1].list);
+            }
+        }
         else
             throw std::runtime_error("Unexpected token in parseServer: " + tokens[i]);
     }
@@ -199,7 +206,7 @@ ServerConfig Parser::parseServer(const std::vector<std::string> &tokens, unsigne
             if (tokens[i] == "off")
                 location.autoindex = false;
             else if (tokens[i] == "on")
-                location.autoindex = true; 
+                location.autoindex = true;
             else
                 throw std::runtime_error("Unexpected token in parseLocation: should be `off or on ` but " + tokens[i]);
             i++;

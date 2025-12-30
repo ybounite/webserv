@@ -42,6 +42,9 @@
 // epoll
 #include <sys/epoll.h>
 
+// dir 
+#include <dirent.h>
+
 // colors
 #define RESET          "\x1B[0m"
 #define RED            "\x1B[31m"
@@ -86,4 +89,5 @@ std::string to_string(T &value) {
 std::string getCookieValue(const Request &req, std::string key);
 void createNewSession(Request &req, ServerConfig &config);
 std::string generateSessionId();
+std::string buildDirectoryListing(const std::string &directoryPath);
 // void PrintCookies( std::map<std::string, std::string> header);
