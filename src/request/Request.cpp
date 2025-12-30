@@ -199,12 +199,6 @@ void	Request::handleRequest(std::string &raw)
 	CreateSessioncookies();
 }
 
-std::string Request::response()
-{
-	Response rsp = RequestHandler::handle(*this, this->_config);
-	return rsp.toString();
-}
-
 std::string Request::getHeader(const std::string &key) const
 {
 	std::map<std::string, std::string>::const_iterator it = _Headers.find(key);
