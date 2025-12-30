@@ -39,15 +39,15 @@ std::string Response::toString() const {
 	return oss.str();
 }
 
-void PrintCookies( std::map<std::string, std::string> header)
-{
-    std::cout << GREEN << "---- Cookies Map ----" << RESET << std::endl;
-    for (std::map<std::string, std::string>::const_iterator it = header.begin(); it != header.end(); ++it)
-    {
-        std::cout << it->first << " " << it->second << std::endl;
-    }
-    std::cout << GREEN << "--------------------" << RESET << std::endl;
-}
+// void PrintCookies( std::map<std::string, std::string> header)
+// {
+//     std::cout << GREEN << "---- Cookies Map ----" << RESET << std::endl;
+//     for (std::map<std::string, std::string>::const_iterator it = header.begin(); it != header.end(); ++it)
+//     {
+//         std::cout << it->first << " " << it->second << std::endl;
+//     }
+//     std::cout << GREEN << "--------------------" << RESET << std::endl;
+// }
 
 // Send response to client
 void		Response::send(int clientFd) const {

@@ -166,14 +166,13 @@ Response RequestHandler::handleGET(const Request &req, const ServerConfig &confi
 
 	if (!isPublicPage && !search_Cookies(req.cookies))
 	{
-		std::cout << RED << "REDIRECTING TO LOGIN (no session)" << RESET << std::endl;
+		// std::cout << RED << "REDIRECTING TO LOGIN (no session)" << RESET << std::endl;
 		// Redirect to login page
 		resp.setStatusCode(302);
 		resp.setHeader("Location", "/pages/login.html");
 		resp.setBody("<html><body>Redirecting to login...</body></html>");
 		return resp;
 	}
-	PrintCookies(req.cookies);
 	/*Directory handling logic (GET request)
 
 	Typical webserv logic:
@@ -187,12 +186,11 @@ Response RequestHandler::handleGET(const Request &req, const ServerConfig &confi
 	// Stream file instead of loading entirely into memory
 	if (!req.cookies.empty()){
 		for (std::map<std::string, std::string>::const_iterator it = req.cookies.begin(); it != req.cookies.end(); it++) {
-			std::cout << RED << it->first << "------------------" << it->second << RESET << std::endl;
+			// std::cout << RED << it->first << "------------------" << it->second << RESET << std::endl;
 			resp.setHeader(it->first, it->second);
 			// resp.setHeader("Set-Cookie:", "session_id=" + it->second + "; Max-Age=60");
 		}
-	}else
-		std::cout << "-----------------empty request ----------\n";
+	}
 	std::ifstream file(path.c_str(), std::ios::in | std::ios::binary);
 	//
 	if (!file.is_open())
@@ -204,7 +202,7 @@ Response RequestHandler::handleGET(const Request &req, const ServerConfig &confi
 	}
 	else
 	{
-		std::cout << "open : " << path << std::endl;
+		// std::cout << "open : " << path << std::endl;
 		// Determine file size
 		file.seekg(0, std::ios::end);
 		std::streampos end = file.tellg();
@@ -292,8 +290,8 @@ Response RequestHandler::handlePOST(const Request &req, const ServerConfig &conf
 	{
 		std::map<std::string, std::string> form = parseUrlEncoded(bodyData);
 
-		for (std::map<std::string,std::string>::iterator it = form.begin(); it != form.end(); ++it)
-			std::cout << "FORM: [" << it->first << "] = [" << it->second << "]" << std::endl;
+		// for (std::map<std::string,std::string>::iterator it = form.begin(); it != form.end(); ++it)
+		// 	std::cout << "FORM: [" << it->first << "] = [" << it->second << "]" << std::endl;
 
 		std::string username = form.count("username") ? form["username"] : "";
 		std::string password = form.count("password") ? form["password"] : "";

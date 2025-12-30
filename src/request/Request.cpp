@@ -108,12 +108,12 @@ void	Request::ParseHeaders( std::istringstream &stream ) {
 	}
 }
 
-void printRequest(std::string &row)
-{
-	std::cout << YELLOW << "****************Request************" << RESET << std::endl;
-	std::cout << row << std::endl;
-	std::cout << YELLOW << "****************END****************" << RESET << std::endl;
-}
+// void printRequest(std::string &row)
+// {
+// 	std::cout << YELLOW << "****************Request************" << RESET << std::endl;
+// 	std::cout << row << std::endl;
+// 	std::cout << YELLOW << "****************END****************" << RESET << std::endl;
+// }
 
 void	Request::ParseChunked( std::istringstream &stream ){
 
