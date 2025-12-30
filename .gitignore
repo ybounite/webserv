@@ -32,3 +32,4 @@ uploads/*
 errors/*.html
 !errors/.gitkeep
 POST.htm
+www/uploads
