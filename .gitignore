@@ -2,9 +2,6 @@
 .build/
 build/
 obj/
-*.o
-*.a
-*.so
 .vscode
 # Executables
 webserv
@@ -33,3 +30,4 @@ errors/*.html
 !errors/.gitkeep
 POST.htm
 www/uploads
+!errors/.gitkeep

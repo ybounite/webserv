@@ -100,6 +100,7 @@ public:
 
 class ServerConfig {
 public:
+    std::map<std::string, std::map<std::string, std::string> > sessions;
     int listen_port;
     std::string index;
     std::string server_name;
@@ -143,3 +144,12 @@ std::string to_string(T &value) {
 # include "../src/request/Request.hpp"
 # include "../src/response/Response.hpp"
 # include "../src/request/RequestHandler.hpp"
+
+
+
+//////////////////////
+
+
+std::string getCookieValue(const Request &req, std::string key);
+void createNewSession(Request &req, ServerConfig &config);
+std::string generateSessionId();
