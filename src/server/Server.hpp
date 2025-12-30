@@ -1,24 +1,10 @@
 #pragma once
 
-// #include <iostream>
-// #include <sys/socket.h>
-// #include <string.h>
-// #include <unistd.h>
-// #include <stdlib.h>
-// #include <netinet/in.h>
-// #include <errno.h>
-// #include <arpa/inet.h>
-// #include <signal.h>
-// #include <stdexcept>
-// #include <fcntl.h>
-// #include <poll.h>
-// #include <sys/epoll.h>
-// #include <vector>
-// #include <map>
 #include "../../includes/Webserv.hpp"
 
+class Response;
+
 #define MAX_CLIENTS_EVENTS 1000
-#define PORT 4445
 
 class Config;
 
@@ -27,6 +13,11 @@ typedef struct s_clients
     int fd;
     std::string request;
     std::string response;
+    bool firstTime;
+    bool leftData;
+    size_t bytesread;
+    std::string DataLeft;
+    Response    *clsResponse;
 } t_clients;
 
 class Server
