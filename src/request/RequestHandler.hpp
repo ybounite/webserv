@@ -17,28 +17,30 @@ class Response;
 
 class RequestHandler {
 public:
+	RequestHandler(const Request &Req, const ServerConfig &Conf): req(Req), config(Conf) {}
 	enum	enHttpMethod { HTTP_GET, HTTP_POST, HTTP_DELETE, HTTP_UNKNOWN };
-	static const ServerConfig &server;
+	//static const ServerConfig &server;
+
 	// Static handler - processes Request and returns Response
-	static Response		handle( const Request &req, const Config &config );
-	static short		getMothod( const std::string &method );
-	static Response		BuildErrorResponse( short code );
+	Response		HandleMethod();
+	short			getMethod( const std::string &method );
+	Response		BuildErrorResponse( short code );
+	size_t			GetBodySize(const std::string &path);
 
 private:
+	const Request		&req;
+	const ServerConfig	&config;
 	// Helper methods for different HTTP methods
-	static Response		handleGET(const Request &req, const ServerConfig &config);
-	static Response		handlePOST(const Request &req, const ServerConfig &config);
-	static Response		handleDELETE(const Request &req, const ServerConfig &config);
-	
-	// Utility functions
-	static std::string			readFile(const std::string &path);
-	static std::string			getErrorPage(int statusCode);
-	//static std::string			_BuildFileSystemPath(std::string Root, std::string Uri);
-	static std::string			_BuildFileSystemPath(const std::string &root, const std::string &uri);
+	Response		handleGET();
+	Response		handlePOST();
+	Response		handleDELETE();
 
-	static bool					_ResourceExists( std::string &Path );
-	//static std::string			_ResolveIndexFile( std::string Path, const ServerConfig &server );
-	static std::string			_ResolveIndexFile(const std::string &path, const ServerConfig &server, const LocationConfig &loc);
-	static Response 			serveFile(const std::string &path);
-	static Response 		generateAutoindexResponse(const std::string &dirPath, const std::string &uri);
+	// Utility functions
+	std::string			readFile(const std::string &path);
+	std::string			getErrorPage(int statusCode);
+	std::string			_BuildFileSystemPath(const std::string &root, const std::string &uri);
+
+	bool					_ResourceExists( std::string &Path );
+	std::string				_ResolveIndexFile(const std::string &path, const ServerConfig &server, const LocationConfig &loc);
+	Response				serveFile(const std::string &path);
 };

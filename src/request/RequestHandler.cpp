@@ -10,23 +10,21 @@
 #include "Request.hpp"
 #include "../response/Response.hpp"
 
-std::string RequestHandler::readFile(const std::string &path)
-{
+size_t RequestHandler::GetBodySize(const std::string &path) {
 	std::ifstream file(path.c_str(), std::ios::binary);
-	if (!file.is_open())
-	{
-		std::cerr << "Error opening file: " << path << std::endl;
-		return "";
-	}
-
+	//if (!file.is_open()) {
+	//	std::cerr << "Error opening file: " << path << std::endl;
+	//	return 0;
+	//}
 	file.seekg(0, std::ios::end);
 	long file_size = file.tellg();
 	file.seekg(0, std::ios::beg);
-	(void)file_size;
-	std::stringstream buffer;
-	buffer << file.rdbuf();
-	return buffer.str();
+	file.close();
+	if (file_size < 0)
+		return 0;
+	return file_size;
 }
+
 
 std::string RequestHandler::_BuildFileSystemPath(const std::string &root, const std::string &uri)
 {
@@ -66,31 +64,28 @@ bool	_IsDirectory(const char *path)
 	return S_ISDIR(st.st_mode);
 }
 
-std::string RequestHandler::getErrorPage(int statusCode)
-{
-	std::ostringstream errorPath;
-	errorPath << "errors/" << statusCode << ".html";
-	std::string content = readFile(errorPath.str());
-
-	if (content.empty())
-	{
-		// Fallback if error page doesn't exist
-		std::ostringstream fallback;
-		fallback << "<html><body><h1>" << statusCode << " Error</h1></body></html>";
-		return fallback.str();
-	}
-	return content;
-}
-
 Response	RequestHandler::BuildErrorResponse( short code ) {
 
-	Response resp;
+	Response resp(req);
+	std::ostringstream errorPath;
+	errorPath << "errors/" << code << ".html";
+	resp.Fd = open(errorPath.str().c_str(), O_RDONLY);
+	if (resp.Fd == -1) {
+		std::cerr << "Error opening error file: " << errorPath.str() << std::endl;
+		// Fallback: set body with inline HTML instead of file
+		std::ostringstream fallbackBody;
+		fallbackBody << "<html><body><h1>" << code << " " << resp.getStatusMessage(code) << "</h1></body></html>";
+		resp.setBody(fallbackBody.str());
+		resp.BodySize = fallbackBody.str().size();
+	} else {
+		resp.BodySize = GetBodySize(errorPath.str());
+	}
+	resp.FilePath = errorPath.str();
 	resp.setStatusCode(code);
-	resp.setBody(getErrorPage(code));
 	return resp;
 }
 
-LocationConfig GetMatchingLocation(const std::vector<LocationConfig>& locations, const std::string& uri)
+LocationConfig	GetMatchingLocation(const std::vector<LocationConfig>& locations, const std::string& uri)
 {
 	LocationConfig* bestMatch = NULL;
 	size_t longestMatch = 0;
@@ -116,106 +111,47 @@ LocationConfig GetMatchingLocation(const std::vector<LocationConfig>& locations,
 
 Response	RequestHandler::serveFile(const std::string &path)
 {
-    Response resp;
+    Response resp(req);
 
-    std::string content = readFile(path);
-    if (content.empty())
+	resp.Fd = open(path.c_str(), O_RDONLY);
+	if (resp.Fd == -1)
         return BuildErrorResponse(404);
-
+	resp.BodySize = GetBodySize(path);
     resp.setStatusCode(200);
-    resp.setBody(content);
-
-    // Optional: set MIME type (simplified example)
-    if (path.find(".html") != std::string::npos)
-        resp.setHeader("Content-Type", "text/html");
-    else if (path.find(".css") != std::string::npos)
-        resp.setHeader("Content-Type", "text/css");
-    else if (path.find(".js") != std::string::npos)
-        resp.setHeader("Content-Type", "application/javascript");
-    else if (path.find(".png") != std::string::npos)
-        resp.setHeader("Content-Type", "image/png");
-    else if (path.find(".jpg") != std::string::npos || path.find(".jpeg") != std::string::npos)
-        resp.setHeader("Content-Type", "image/jpeg");
-    else
-        resp.setHeader("Content-Type", "application/octet-stream");
-
+	resp.FilePath = path;
     return resp;
 }
 
-Response RequestHandler::generateAutoindexResponse(const std::string &dirPath,
-			const std::string &uri) {
-    Response resp;
-    std::ostringstream html;
-
-    html << "<html><head><title>Index of " << uri << "</title></head><body>";
-    html << "<h1>Index of " << uri << "</h1><ul>";
-
-    DIR *dir = opendir(dirPath.c_str());
-    if (!dir)
-        return BuildErrorResponse(403);  // Cannot open directory
-
-    struct dirent *entry;
-    while ((entry = readdir(dir)) != NULL)
-    {
-        std::string name = entry->d_name;
-
-        // Skip current and parent directories
-        if (name == "." || name == "..")
-            continue;
-
-        // Build link
-        html << "<li><a href=\"" << uri;
-        if (uri[uri.size() - 1] != '/')
-            html << '/';
-        html << name << "\">" << name << "</a></li>";
-    }
-
-    closedir(dir);
-
-    html << "</ul></body></html>";
-
-    resp.setStatusCode(200);
-    resp.setBody(html.str());
-    resp.setHeader("Content-Type", "text/html");
-
-    return resp;
-}
-
-Response RequestHandler::handleGET(const Request &req, const ServerConfig &server)
+Response	RequestHandler::handleGET()
 {
-	Response resp;
-	//system("clear");
-	LocationConfig loc = GetMatchingLocation(server.locations, req.getUri());
+	LocationConfig loc = GetMatchingLocation(config.locations, req.getUri());
 
-	std::string root = loc.root.empty() ? server.root : loc.root;
-	std::cout << RED << "location : " << loc.root << RESET << std::endl;
-	std::cout << GREEN << "root : " << server.root << RESET << std::endl;
-	std::cout << YELLOW << "URI : " << req.getUri() << RESET << std::endl;
+	std::string root = loc.root.empty() ? config.root : loc.root;
+	//std::cout << RED << "location : " << loc.root << RESET << std::endl;
+	//std::cout << GREEN << "root : " << server.root << RESET << std::endl;
+	//std::cout << YELLOW << "URI : " << req.getUri() << RESET << std::endl;
 
-	std::string path = _BuildFileSystemPath(root, req.getUri());
-	std::cout << "*** : " << path << ": ***" << std::endl;
+	std::string	path = _BuildFileSystemPath(root, req.getUri());
 	if (!_ResourceExists(path))
 		return BuildErrorResponse(404);
 
 	if (_IsDirectory(path.c_str()))
 	{
 		std::cout << "Yes directory \n";
-		std::string indexPath = _ResolveIndexFile(path, server, loc);
-		//std::cout << "indexPath: " << indexPath  << " autoindex : " << loc.autoindex << std::endl;
-		if (!loc.autoindex)
-			return BuildErrorResponse(403);
+		std::string indexPath = _ResolveIndexFile(path, config, loc);
+		std::cout << "indexPath: " << indexPath  << " autoindex : " << loc.autoindex << std::endl;
 		if (!indexPath.empty()) {
 			return serveFile(indexPath);
 		}
+		if (!loc.autoindex)
+			return BuildErrorResponse(403);
+		return BuildErrorResponse(403);
 	}
-	else 
-		std::cout << "### is file " << path << " ###" << std::endl;
-	
+	std::cout << "*** : " << path << ": ***" << std::endl;
 	return serveFile(path);
 }
 
-
-short		RequestHandler::getMothod(const std::string &method)
+short		RequestHandler::getMethod(const std::string &method)
 {
 	if (method == "GET")
 		return HTTP_GET;
@@ -227,19 +163,17 @@ short		RequestHandler::getMothod(const std::string &method)
 		return HTTP_UNKNOWN;
 }
 
-Response	RequestHandler::handle(const Request &req, const Config &config)
+Response	RequestHandler::HandleMethod()
 {
-	Response resp;
-	//server = config.servers[0];
-	const ServerConfig &serverConf = config.servers[0];
-	switch (getMothod(req.getMethod()))
+	Response resp(req);
+	switch (getMethod(req.getMethod()))
 	{
 	case HTTP_GET:
-		return handleGET(req, serverConf);
+		return handleGET();
 	case HTTP_POST:
-		return handlePOST(req, serverConf);
+		return handlePOST();
 	case HTTP_DELETE:
-		return handleDELETE(req, serverConf);
+		return handleDELETE();
 	default:
 		resp.setStatusCode(405);
 		resp.setBody(getErrorPage(405));
@@ -279,9 +213,9 @@ std::string getUploadPath(const ServerConfig &config)
 
 ////////////////////
 
-Response RequestHandler::handlePOST(const Request &req, const ServerConfig &config)
+Response RequestHandler::handlePOST()
 {
-	Response resp;
+	Response resp(req);
 	std::string bodyData = req.getBody();
 	std::string contentType = req.getHeader("Content-Type");
 	if (bodyData.empty())
@@ -393,14 +327,44 @@ Response RequestHandler::handlePOST(const Request &req, const ServerConfig &conf
 	return resp;
 }
 
-Response RequestHandler::handleDELETE(const Request &req, const ServerConfig &config)
+Response RequestHandler::handleDELETE()
 {
-	Response resp;
-	(void)req;
-	(void)config;
+	Response resp(req);
 
 	resp.setStatusCode(204);
 	resp.setBody("");
 
 	return resp;
+}
+
+std::string RequestHandler::readFile(const std::string &path)
+{
+	std::ifstream file(path.c_str(), std::ios::in | std::ios::binary);
+	if (!file.is_open())
+		return "";
+	std::ostringstream ss;
+	ss << file.rdbuf();
+	return ss.str();
+}
+
+std::string RequestHandler::getErrorPage(int statusCode)
+{
+	std::map<int, std::string>::const_iterator it = config.error_pages.find(statusCode);
+	std::string path;
+	if (it != config.error_pages.end())
+		path = it->second;
+	else
+	{
+		std::ostringstream oss;
+		oss << "errors/" << statusCode << ".html";
+		path = oss.str();
+	}
+
+	std::string content = readFile(path);
+	if (!content.empty())
+		return content;
+
+	std::ostringstream fallback;
+	fallback << "<html><body><h1>" << statusCode << " " << statusCode << "</h1></body></html>";
+	return fallback.str();
 }
