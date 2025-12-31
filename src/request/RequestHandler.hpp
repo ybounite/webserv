@@ -19,7 +19,6 @@ class RequestHandler {
 public:
 	RequestHandler(const Request &Req, const ServerConfig &Conf): req(Req), config(Conf) {}
 	enum	enHttpMethod { HTTP_GET, HTTP_POST, HTTP_DELETE, HTTP_UNKNOWN };
-	//static const ServerConfig &server;
 
 	// Static handler - processes Request and returns Response
 	Response		HandleMethod();

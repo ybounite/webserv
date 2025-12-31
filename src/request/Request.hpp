@@ -56,7 +56,7 @@ private:
 	std::string							_Path;
 
 	bool								is_ValidRequest() const;
-	
+
 protected:
 	Config								_config;
 };

@@ -111,7 +111,7 @@ LocationConfig	GetMatchingLocation(const std::vector<LocationConfig>& locations,
 Response	RequestHandler::serveFile(const std::string &path)
 {
     Response resp(req);
-
+	
 	resp.Fd = open(path.c_str(), O_RDONLY);
 	if (resp.Fd == -1)
         return BuildErrorResponse(404);
