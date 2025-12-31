@@ -6,20 +6,35 @@
     <title>404 Not Found</title>
 </head>
 <body>
-    <h1>404 Not Found</h1>
-    <p>The requested resource could not be found on this server.</p>
-    <a class="btn" href="/">Go Home</a>
-    <button class="btn" onclick="window.location.href='/uploads.html'">
-    Go to Uploads
-</button>
-<button class="btn" onclick="window.location.href='/pages/about.html'">Go to About</button>
-    <button class="btn" onclick="window.location.href='/pages/contact.html'">Go to Contact</button>
-    <button class="btn" onclick="window.location.href='/pages/cookies.html'">Go to Cookies</button>
-    <button class="btn" onclick="window.location.href='/pages/home.html'">Go to Home</button>
-    <button class="btn" onclick="window.location.href='/pages/login.html'">Go to Login</button>
-    <button class="btn" onclick="window.location.href='/pages/register.html'">Go to Register</button>
-    <button class="btn" onclick="window.location.href='/pages/services.html'">Go to Services</button>
-        <a class="btn" href="/">Welcome</a>
-
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            flex-direction: column;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .error-container {
+            text-align: center;
+            background: white;
+            padding: 3rem;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+        h1 {
+            color: #d32f2f;
+            margin-bottom: 1rem;
+        }
+        p {
+            color: #666;
+            margin-bottom: 2rem;
+        }
+    </style>
+    <div class="error-container">
+        <h1>404 Not Found</h1>
+        <p>The requested resource could not be found on this server.</p>
+        <button class="btn" onclick="window.location.href='/'">Go to Home</button>
+    </div>
 </body>
 </html>
