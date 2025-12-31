@@ -23,9 +23,6 @@ void Server::addClientInEppol()
 	// store the client FD and REQ/RES buffer in this struct
 	t_clients client;
 	client.fd = clientFd;
-	client.firstTime = true;
-	client.leftData = false;
-	client.bytesread = 0;
 	// add it to the map so we can deal with it smoothly
 	_ClientsMap[clientFd] = client;
 }
@@ -45,7 +42,11 @@ void Server::deleteClientFromEpoll(unsigned int clientFd)
 	epoll_ctl(_epollInstance, EPOLL_CTL_DEL, clientFd, NULL);
 	close(clientFd);
 	if (_ClientsMap[clientFd].clsResponse != NULL)
+	{
+		if (_ClientsMap[clientFd].clsResponse->Fd != -1)
+			close(_ClientsMap[clientFd].clsResponse->Fd);
 		delete _ClientsMap[clientFd].clsResponse;
+	}
 	_ClientsMap.erase(clientFd);
 }
 
@@ -87,9 +88,12 @@ void Server::readClientRequest(unsigned int clientFd)
 		return;
 	modifySockEvents(_epollInstance, clientFd);
 }
-
 void Server::sendHttpResponse(unsigned int clientFd)
 {
+	// Check if client exists in the map
+	if (_ClientsMap.find(clientFd) == _ClientsMap.end())
+		return;
+		
 	std::cout << "Client Index [" << clientFd << "]\n";
 
 	ssize_t sendBytes;
@@ -101,11 +105,21 @@ void Server::sendHttpResponse(unsigned int clientFd)
 		_ClientsMap[clientFd].response = _ClientsMap[clientFd].clsResponse->BuildHeaderResponse();
 		std::cout << "Header > : " <<  _ClientsMap[clientFd].response << std::endl;
 		sendBytes = send(clientFd, _ClientsMap[clientFd].response.c_str(), _ClientsMap[clientFd].response.length(), 0);
+		if (sendBytes < 0) {
+			deleteClientFromEpoll(clientFd);
+			return;
+		}
 		_ClientsMap[clientFd].firstTime = false;
-
+		return;
 	}
-	std::cout <<  _ClientsMap[clientFd].response << std::endl;
-	
+
+	if (_ClientsMap[clientFd].clsResponse == NULL)
+	{
+		std::cout << "delete bucose response is empty $ " << std::endl;
+		deleteClientFromEpoll(clientFd);
+		return;
+	}
+
 	if (_ClientsMap[clientFd].clsResponse->Fd == -1) {
 		if (!_ClientsMap[clientFd].clsResponse->Body.empty())
 		{
@@ -119,14 +133,32 @@ void Server::sendHttpResponse(unsigned int clientFd)
 	}
 
 	char buffer[1024];
-	size_t b_read = read(_ClientsMap[clientFd].clsResponse->Fd, buffer, sizeof(buffer));
-	if (b_read == 0)
-		std::cout << "Full read file \n";
-	//	throwing("read()");
-	_ClientsMap[clientFd].bytesread += b_read;
+	ssize_t b_read = read(_ClientsMap[clientFd].clsResponse->Fd, buffer, sizeof(buffer));
+	if (b_read <= 0)
+	{
+		if (b_read == 0)
+			std::cout << "Full read file \n";
+		else
+			std::cerr << "Error reading file: " << strerror(errno) << "\n";
+		deleteClientFromEpoll(clientFd);
+		return;
+	}
+
 	sendBytes = send(clientFd, buffer, b_read, 0);
 	if (sendBytes < 0)
-		throwing("send()");
-	if (sendBytes == 0 || static_cast<size_t>(sendBytes) == _ClientsMap[clientFd].response.length())
+	{
+		std::cout << "delete bucose in send byts is nigative: " << sendBytes << std::endl;
 		deleteClientFromEpoll(clientFd);
+		return;
+	}
+
+	// CRITICAL FIX: Increment by actual bytes SENT, not bytes READ
+	_ClientsMap[clientFd].bytesread += sendBytes;
+
+	// Check if we've sent everything
+	if (_ClientsMap[clientFd].bytesread >= static_cast<size_t>(_ClientsMap[clientFd].clsResponse->BodySize))
+	{
+		std::cout << "Full file sent\n";
+		deleteClientFromEpoll(clientFd);
+	}
 }

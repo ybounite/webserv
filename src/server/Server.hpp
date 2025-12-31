@@ -10,14 +10,15 @@ class Config;
 
 typedef struct s_clients
 {
-    int fd;
-    std::string request;
-    std::string response;
-    bool firstTime;
-    bool leftData;
-    size_t bytesread;
-    std::string DataLeft;
-    Response    *clsResponse;
+	s_clients() : fd(-1) ,firstTime(true) ,leftData(false) ,bytesread(0) ,clsResponse(NULL){}
+	int			fd;
+	std::string	request;
+	std::string	response;
+	bool		firstTime;
+	bool		leftData;
+	size_t		bytesread;
+	std::string	DataLeft;
+	Response   *clsResponse;
 } t_clients;
 
 class Server
