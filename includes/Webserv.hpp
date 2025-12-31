@@ -131,9 +131,6 @@ private:
 
 void parse_config(Config &config);
 
-// global class
-//extern class   Config  GbConfig;
-
 template <typename T>
 std::string to_string(T &value) {
     std::ostringstream  oss;
@@ -141,22 +138,11 @@ std::string to_string(T &value) {
     return oss.str();
 }
 
-// Forward declarations
 class Request;
 class RequestHandler;
-class Response;
 
-# include "../src/server/Server.hpp"
 # include "../src/request/Request.hpp"
-
-// Forward declarations for classes used in function signatures below
-class RequestHandler;
-class Response;
-
-
-
-//////////////////////
-
+# include "../src/server/Server.hpp"
 
 std::string getCookieValue(const Request &req, std::string key);
 void createNewSession(Request &req, ServerConfig &config);
