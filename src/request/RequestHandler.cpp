@@ -128,18 +128,18 @@ Response	RequestHandler::handleGET()
 
 	std::string root = loc.root.empty() ? config.root : loc.root;
 	//std::cout << RED << "location : " << loc.root << RESET << std::endl;
-	//std::cout << GREEN << "root : " << server.root << RESET << std::endl;
+	//std::cout << GREEN << "root : " << config.root << RESET << std::endl;
 	//std::cout << YELLOW << "URI : " << req.getUri() << RESET << std::endl;
 
 	std::string	path = _BuildFileSystemPath(root, req.getUri());
 	if (!_ResourceExists(path))
 		return BuildErrorResponse(404);
-
+	//std::cout << "*** : " << path << ": ***" << std::endl;
 	if (_IsDirectory(path.c_str()))
 	{
 		std::cout << "Yes directory \n";
 		std::string indexPath = _ResolveIndexFile(path, config, loc);
-		std::cout << "indexPath: " << indexPath  << " autoindex : " << loc.autoindex << std::endl;
+		//std::cout << "indexPath: " << indexPath  << " autoindex : " << loc.autoindex << std::endl;
 		if (!indexPath.empty()) {
 			return serveFile(indexPath);
 		}
@@ -147,7 +147,7 @@ Response	RequestHandler::handleGET()
 			return BuildErrorResponse(403);
 		return BuildErrorResponse(403);
 	}
-	std::cout << "*** : " << path << ": ***" << std::endl;
+	//std::cout << "*** : " << path << ": ***" << std::endl;
 	return serveFile(path);
 }
 
