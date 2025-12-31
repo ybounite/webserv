@@ -1,5 +1,6 @@
 #include "../../includes/Webserv.hpp"
-
+#include "../response/Response.hpp"
+#include "../request/RequestHandler.hpp"
 
 void Server::addClientInEppol()
 {
@@ -28,7 +29,6 @@ void Server::readClientRequest(unsigned int clientFd)
 	int bytesRead;
 	char buffer[1024];
 	bytesRead = recv(clientFd, buffer, sizeof(buffer) - 1, 0);
-
 	if (bytesRead == 0)
 		return (deleteClientFromEpoll(clientFd));
 	else if (bytesRead < 0)
@@ -42,8 +42,6 @@ void Server::readClientRequest(unsigned int clientFd)
 	_ClientsMap[clientFd].last_activity = time(NULL);
 	modifySockEvents(_epollInstance, clientFd);
 }
-
-
 
 
 void Server::sendHttpResponse(unsigned int clientFd)

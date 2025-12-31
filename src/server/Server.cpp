@@ -1,4 +1,6 @@
 #include "../../includes/Webserv.hpp"
+#include "../response/Response.hpp"
+#include "../request/RequestHandler.hpp"
 
 bool running = 0;
 

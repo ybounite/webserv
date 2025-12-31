@@ -1,5 +1,6 @@
 #include "../../includes/Webserv.hpp"
-
+#include "../response/Response.hpp"
+#include "../request/RequestHandler.hpp"
 
 void Server::modifySockEvents(int epollfd, int fd)
 {
@@ -9,8 +10,6 @@ void Server::modifySockEvents(int epollfd, int fd)
 	// EPOLL_CTL_MOD this flag tell the kernel to modify the the event of the FD
 	epoll_ctl(epollfd, EPOLL_CTL_MOD, fd, &newClient);
 }
-
-
 
 void Server::deleteClientFromEpoll(unsigned int clientFd)
 {
@@ -24,8 +23,6 @@ void Server::deleteClientFromEpoll(unsigned int clientFd)
 	}
 	_ClientsMap.erase(clientFd);
 }
-
-
 
 size_t Server::contentLenght(std::string header)
 {
@@ -47,12 +44,9 @@ size_t Server::contentLenght(std::string header)
 	return atoi(Clenght.c_str());
 }
 
-
-
-
 void Server::getReadInfos(unsigned int fd)
 {
-	size_t sendBytes;
+	ssize_t sendBytes;
 	Request req(_ClientsMap[fd].request, _data);
 	RequestHandler ReqH(req, _data.servers[0]);
 	_ClientsMap[fd].clsResponse = new Response(ReqH.HandleMethod());
@@ -66,13 +60,9 @@ void Server::getReadInfos(unsigned int fd)
 	_ClientsMap[fd].firstTime = false;
 }
 
-
-
-
-
 void Server::errorSending(unsigned int fd)
 {
-	size_t sendBytes;
+	ssize_t sendBytes;
 	if (!_ClientsMap[fd].clsResponse->Body.empty())
 	{
 		sendBytes = send(fd, _ClientsMap[fd].clsResponse->Body.c_str(),
@@ -83,13 +73,10 @@ void Server::errorSending(unsigned int fd)
 	deleteClientFromEpoll(fd);
 }
 
-
-
-
 void Server::ReadSend(unsigned int fd)
 {
 	char buffer[1024];
-	size_t sendBytes;
+	ssize_t sendBytes;
 	ssize_t b_read = read(_ClientsMap[fd].clsResponse->Fd, buffer, sizeof(buffer));
 	if (b_read <= 0)
 	{
@@ -110,7 +97,4 @@ void Server::ReadSend(unsigned int fd)
 	}
 	_ClientsMap[fd].bytesread += sendBytes;
 }
-
-
-
 
