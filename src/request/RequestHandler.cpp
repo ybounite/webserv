@@ -12,19 +12,16 @@
 
 size_t RequestHandler::GetBodySize(const std::string &path) {
 	std::ifstream file(path.c_str(), std::ios::binary);
-	//if (!file.is_open()) {
-	//	std::cerr << "Error opening file: " << path << std::endl;
-	//	return 0;
-	//}
+	if (!file.is_open()) return 0;
+
 	file.seekg(0, std::ios::end);
-	long file_size = file.tellg();
+	ssize_t file_size = file.tellg();
 	file.seekg(0, std::ios::beg);
 	file.close();
-	if (file_size < 0)
-		return 0;
+	if (file_size < 0) return 0;
+
 	return file_size;
 }
-
 
 std::string RequestHandler::_BuildFileSystemPath(const std::string &root, const std::string &uri)
 {
@@ -121,6 +118,32 @@ Response	RequestHandler::serveFile(const std::string &path)
     return resp;
 }
 
+Response RequestHandler::_GenerateAutoindex(const std::string &DirPath) {
+    Response resp(req);
+    
+    DIR *dir = opendir(DirPath.c_str());
+    if (!dir)
+        return BuildErrorResponse(500);
+    
+    std::ostringstream html;
+    html << "<html><head><title>Index</title></head><body>";
+    html << "<h1>Index of " << req.getUri() << "</h1><ul>";
+    
+    struct dirent *entry;
+    while ((entry = readdir(dir)) != NULL) {
+        std::string name = entry->d_name;
+        if (name != "." && name != "..")
+            html << "<li><a href='" << name << "'>" << name << "</a></li>";
+    }
+    
+    html << "</ul></body></html>";
+    closedir(dir);
+    
+    resp.setStatusCode(200);
+    resp.setBody(html.str());
+    return resp;
+}
+
 Response	RequestHandler::handleGET()
 {
 	LocationConfig loc = GetMatchingLocation(config.locations, req.getUri());
@@ -133,20 +156,20 @@ Response	RequestHandler::handleGET()
 	std::string	path = _BuildFileSystemPath(root, req.getUri());
 	if (!_ResourceExists(path))
 		return BuildErrorResponse(404);
-	//std::cout << "*** : " << path << ": ***" << std::endl;
+	std::cout << "*** : " << path << ": ***" << std::endl;
 	if (_IsDirectory(path.c_str()))
 	{
-		std::cout << "Yes directory \n";
+		std::cout << "Yes directory: " << path << std::endl;
 		std::string indexPath = _ResolveIndexFile(path, config, loc);
-		//std::cout << "indexPath: " << indexPath  << " autoindex : " << loc.autoindex << std::endl;
-		if (!indexPath.empty()) {
-			return serveFile(indexPath);
-		}
-		if (!loc.autoindex)
+		//std::cout << YELLOW << "indexPath: " << indexPath  << " autoindex : " << loc.autoindex << RESET << std::endl;
+    	if (!indexPath.empty()) 
+        	return serveFile(indexPath);
+		else if (loc.autoindex) 
+			return _GenerateAutoindex(path);
+		else
 			return BuildErrorResponse(403);
-		return BuildErrorResponse(403);
 	}
-	//std::cout << "*** : " << path << ": ***" << std::endl;
+	std::cout << "*** : " << path << ": ***" << std::endl;
 	return serveFile(path);
 }
 
