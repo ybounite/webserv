@@ -26,7 +26,6 @@ std::map<std::string, std::string> LoadMimeTypes(std::string filename)
             mimeMap[ext] = mimeType;
         }
     }
-
     return mimeMap;
 }
 
