@@ -73,7 +73,7 @@ size_t contentLenght(std::string header)
 void Server::readClientRequest(unsigned int clientFd)
 {
 	int bytesRead;
-	char buffer[100];
+	char buffer[1024];
 	bytesRead = recv(clientFd, buffer, sizeof(buffer) - 1, 0);
 
 	if (bytesRead == 0)
@@ -91,9 +91,6 @@ void Server::readClientRequest(unsigned int clientFd)
 void Server::sendHttpResponse(unsigned int clientFd)
 {
 	// Check if client exists in the map
-	if (_ClientsMap.find(clientFd) == _ClientsMap.end())
-		return;
-		
 	std::cout << "Client Index [" << clientFd << "]\n";
 
 	ssize_t sendBytes;
@@ -103,28 +100,23 @@ void Server::sendHttpResponse(unsigned int clientFd)
 		RequestHandler ReqH(req, _data.servers[0]);
 		_ClientsMap[clientFd].clsResponse = new Response(ReqH.HandleMethod());
 		_ClientsMap[clientFd].response = _ClientsMap[clientFd].clsResponse->BuildHeaderResponse();
-		std::cout << "Header > : " <<  _ClientsMap[clientFd].response << std::endl;
+		std::cout << "Header > : " << _ClientsMap[clientFd].response << std::endl;
 		sendBytes = send(clientFd, _ClientsMap[clientFd].response.c_str(), _ClientsMap[clientFd].response.length(), 0);
-		if (sendBytes < 0) {
+		if (sendBytes < 0)
+		{
 			deleteClientFromEpoll(clientFd);
-			return;
+			throwing("send()");
 		}
 		_ClientsMap[clientFd].firstTime = false;
 		return;
 	}
 
-	if (_ClientsMap[clientFd].clsResponse == NULL)
+	if (_ClientsMap[clientFd].clsResponse->Fd == -1)
 	{
-		std::cout << "delete bucose response is empty $ " << std::endl;
-		deleteClientFromEpoll(clientFd);
-		return;
-	}
-
-	if (_ClientsMap[clientFd].clsResponse->Fd == -1) {
 		if (!_ClientsMap[clientFd].clsResponse->Body.empty())
 		{
-			sendBytes = send(clientFd, _ClientsMap[clientFd].clsResponse->Body.c_str(), 
-							_ClientsMap[clientFd].clsResponse->Body.length(), 0);
+			sendBytes = send(clientFd, _ClientsMap[clientFd].clsResponse->Body.c_str(),
+							 _ClientsMap[clientFd].clsResponse->Body.length(), 0);
 			if (sendBytes < 0)
 				throwing("send()");
 		}
@@ -141,7 +133,7 @@ void Server::sendHttpResponse(unsigned int clientFd)
 		else
 			std::cerr << "Error reading file: " << strerror(errno) << "\n";
 		deleteClientFromEpoll(clientFd);
-		return;
+		throwing("read()");
 	}
 
 	sendBytes = send(clientFd, buffer, b_read, 0);
@@ -149,7 +141,7 @@ void Server::sendHttpResponse(unsigned int clientFd)
 	{
 		std::cout << "delete bucose in send byts is nigative: " << sendBytes << std::endl;
 		deleteClientFromEpoll(clientFd);
-		return;
+		throwing("send()");
 	}
 
 	_ClientsMap[clientFd].bytesread += sendBytes;
