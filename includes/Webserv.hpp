@@ -113,7 +113,8 @@ public:
 
 class Config {
 public:
-    std::vector<ServerConfig> servers;
+    std::map<std::string, std::string>  MimeTypes;
+    std::vector<ServerConfig>           servers;
 };
 
 
@@ -140,10 +141,17 @@ std::string to_string(T &value) {
     return oss.str();
 }
 
+// Forward declarations
+class Request;
+class RequestHandler;
+class Response;
+
 # include "../src/server/Server.hpp"
 # include "../src/request/Request.hpp"
-# include "../src/response/Response.hpp"
-# include "../src/request/RequestHandler.hpp"
+
+// Forward declarations for classes used in function signatures below
+class RequestHandler;
+class Response;
 
 
 

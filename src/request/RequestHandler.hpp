@@ -39,6 +39,7 @@ private:
 	std::string			readFile(const std::string &path);
 	std::string			getErrorPage(int statusCode);
 	std::string			_BuildFileSystemPath(const std::string &root, const std::string &uri);
+	Response			_GenerateAutoindex(const std::string &dirPath, const std::string &uri);
 
 	bool					_ResourceExists( std::string &Path );
 	std::string				_ResolveIndexFile(const std::string &path, const ServerConfig &server, const LocationConfig &loc);

@@ -10,17 +10,18 @@
 
 
 Response::Response(const Response &Other)
-	: StatusCode(Other.StatusCode), Headers(Other.Headers), Fd(Other.Fd), BodySize(Other.BodySize),
-	  Header(Other.Header), Body(Other.Body), uri(Other.uri), StreamFile(Other.StreamFile),
-	  FilePath(Other.FilePath), StreamLength(Other.StreamLength), _req(Other._req) {}
+	: Request(Other), StatusCode(Other.StatusCode), Headers(Other.Headers), 
+	Fd(Other.Fd), BodySize(Other.BodySize), Header(Other.Header), Body(Other.Body), 
+	uri(Other.uri), FilePath(Other.FilePath) {}
 
 Response::~Response() {}
 
-// Build the complete HTTP response string
-std::string Response::BuildHeaderResponse() const {
-
+std::string Response::BuildHeaderResponse() {
+	std::cout << "Build Header Response\n";
 	std::ostringstream oss;
 	oss << "HTTP/1.1 " << StatusCode << " " << getStatusMessage(StatusCode) << "\r\n";
+	oss << "Content-Type: " << guessContentType(FilePath) << "\r\n";
+
 	for (std::map<std::string, std::string>::const_iterator it = Headers.begin(); it != Headers.end(); ++it)
 		oss << it->first << ": " << it->second << "\r\n";
 	oss << "Content-Length: " << BodySize << "\r\n";
@@ -57,24 +58,12 @@ std::string	Response::getStatusMessage(short code) const {
 }
 
 std::string	Response::guessContentType(const std::string &path) {
+
 	std::string::size_type dot = path.find_last_of('.');
 	std::string ext = (dot == std::string::npos) ? std::string("") : path.substr(dot + 1);
-	if (ext == "html" || ext == "htm") return "text/html";
-	if (ext == "css") return "text/css";
-	if (ext == "js") return "application/javascript";
-	if (ext == "json") return "application/json";
-	if (ext == "png") return "image/png";
-	if (ext == "jpg" || ext == "jpeg") return "image/jpeg";
-	if (ext == "gif") return "image/gif";
-	if (ext == "svg") return "image/svg+xml";
-	if (ext == "ico") return "image/x-icon";
-	if (ext == "pdf") return "application/pdf";
-	if (ext == "mp4") return "video/mp4";
-	return "application/octet-stream";
-}
 
-void		Response::setStreamFile(const std::string &path, size_t length) {
-	StreamFile = true;
-	FilePath = path;
-	StreamLength = length;
+	if (!_config.MimeTypes.empty()) 
+		return _config.MimeTypes[ext];
+
+	return "application/octet-stream";
 }

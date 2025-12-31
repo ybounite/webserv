@@ -1,5 +1,35 @@
 #include "../../includes/Webserv.hpp"
 
+std::map<std::string, std::string> LoadMimeTypes(std::string filename)
+{
+    std::map<std::string, std::string> mimeMap;
+    std::ifstream file(filename.c_str());
+
+    if (!file.is_open())
+        throw std::runtime_error("Failed to open mime types file: " + filename);
+
+    std::string line;
+    while (std::getline(file, line))
+    {
+        if (line.empty() || line[0] == '#')
+            continue;
+
+        std::istringstream iss(line);
+        std::string mimeType;
+        iss >> mimeType;
+
+        std::string ext;
+        while (iss >> ext)
+        {
+            if (ext[ext.size() - 1] == ';')
+                ext.erase(ext.size() - 1);
+            mimeMap[ext] = mimeType;
+        }
+    }
+
+    return mimeMap;
+}
+
 Config Parser::parse(const std::vector<std::string> &tokens)
 {
     Config config;
@@ -13,6 +43,7 @@ Config Parser::parse(const std::vector<std::string> &tokens)
         i++;
     }
     parse_config(config);
+    config.MimeTypes = LoadMimeTypes("configs/mimetypes.txt");
     return config;
 }
 

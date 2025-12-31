@@ -44,7 +44,6 @@ public:
 	void								ParseHeaders( std::istringstream &stream );
 	void								ParseBody( std::istringstream &stream );
 	void								ParseChunked( std::istringstream &stream ); //
-	std::string							response( void );
 	std::string							getHeader(const std::string &key) const;
 	size_t								getContentLength() const;
 
@@ -55,6 +54,9 @@ private:
 	std::map<std::string, std::string>	_Headers;
 	std::string							_Body;
 	std::string							_Path;
-	Config								_config;
+
 	bool								is_ValidRequest() const;
+	
+protected:
+	Config								_config;
 };
