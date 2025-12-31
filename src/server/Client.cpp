@@ -152,10 +152,8 @@ void Server::sendHttpResponse(unsigned int clientFd)
 		return;
 	}
 
-	// CRITICAL FIX: Increment by actual bytes SENT, not bytes READ
 	_ClientsMap[clientFd].bytesread += sendBytes;
 
-	// Check if we've sent everything
 	if (_ClientsMap[clientFd].bytesread >= static_cast<size_t>(_ClientsMap[clientFd].clsResponse->BodySize))
 	{
 		std::cout << "Full file sent\n";
