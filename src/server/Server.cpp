@@ -67,17 +67,9 @@ void Server::run()
             {
 
                 if (_clients[i].events & EPOLLIN) // do client ready to  send data to the server ?
-                {
                     readClientRequest(_clients[i].data.fd);
-                    printf("================================\n");
-                    std::cout << _ClientsMap[_clients[i].data.fd].request << std::endl;
-                    printf("================================\n");
-                }
                 if (_clients[i].events & EPOLLOUT) // if the clinet send a request this condition would be true and i will respond here
-                {
-
                     sendHttpResponse(_clients[i].data.fd);
-                }
             }
         }
     }

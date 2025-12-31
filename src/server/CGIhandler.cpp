@@ -1,5 +1,12 @@
 #include "../../includes/Webserv.hpp"
 
+
+void throwing(std::string fct)
+{
+	throw std::runtime_error(fct + std::string("failed: ") + strerror(errno));
+}
+
+
 std::string readOutput(int fd)
 {
     std::string output;

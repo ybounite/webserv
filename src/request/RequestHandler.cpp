@@ -99,7 +99,6 @@ LocationConfig	GetMatchingLocation(const std::vector<LocationConfig>& locations,
 			{ //Example: if uri = "/images/cat.jpg" and locPath = "/images", it matches because /images is at the start.
 				bestMatch = const_cast<LocationConfig*>(&locations[i]);
 				longestMatch = locPath.size();
-				std::cout << "Locations [" << i << "] -> " << locations[i].path << std::endl;
 			}
 		}
 	}
