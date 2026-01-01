@@ -176,7 +176,10 @@ ServerConfig Parser::parseServer(const std::vector<std::string> &tokens, unsigne
             server.locations.push_back(parseLocation(tokens, i));
             if (server.locations[server.locations.size() - 1].autoindex == true)
             {
-                server.locations[server.locations.size() - 1].list = buildDirectoryListing(server.root + server.locations[server.locations.size() - 1].path);
+                if (server.locations[server.locations.size() - 1].root == "")
+                    server.locations[server.locations.size() - 1].list = buildDirectoryListing(server.root + server.locations[server.locations.size() - 1].path);
+                else
+                    server.locations[server.locations.size() - 1].list = buildDirectoryListing(server.locations[server.locations.size() - 1].root + server.locations[server.locations.size() - 1].path);
                 Msg::error(server.locations[server.locations.size() - 1].list);
             }
         }
