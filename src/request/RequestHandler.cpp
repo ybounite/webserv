@@ -497,12 +497,27 @@ Response RequestHandler::handlePOST(const Request &req, const ServerConfig &conf
 
 Response RequestHandler::handleDELETE(const Request &req, const ServerConfig &config)
 {
-	Response resp;
-	(void)req;
-	(void)config;
+    Response resp;
 
-	resp.setStatusCode(204);
-	resp.setBody("");
+    std::string fullPath = config.root + req.getUri();
 
-	return resp;
+    struct stat st;
+    if (stat(fullPath.c_str(), &st) != 0)
+    {
+        resp.setStatusCode(404);
+        resp.setBody("<h1>404 Not Found</h1>");
+        return resp;
+    }
+
+    if (std::remove(fullPath.c_str()) != 0)
+    {
+        resp.setStatusCode(500);
+        resp.setBody("<h1>500 Internal Server Error</h1>");
+        return resp;
+    }
+
+    resp.setStatusCode(204);
+    resp.setBody("");
+    return resp;
 }
+
