@@ -521,3 +521,23 @@ Response RequestHandler::handleDELETE(const Request &req, const ServerConfig &co
     return resp;
 }
 
+// Response RequestHandler::handleDELETE()
+// {
+//     Response resp(req);
+
+// 	LocationConfig loc = GetMatchingLocation(config.locations, req.getUri());
+// 	// if (!_haseAllowed(loc.methods, HTTP_GET))
+// 	// 	return BuildErrorResponse(405);
+// 	std::string root = loc.root.empty() ? config.root : loc.root;
+// 	std::string	path = _BuildFileSystemPath(root, req.getUri());
+// 	struct stat st;
+// 	if (stat(path.c_str(), &st) != 0)
+// 		return BuildErrorResponse(404);
+
+// 	if (std::remove(path.c_str()) != 0)
+// 		return BuildErrorResponse(500);
+
+// 	resp.setStatusCode(204);
+// 	// resp.setBody("");
+// 	return resp;
+// }

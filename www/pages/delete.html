@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>DELETE Test</title>
+</head>
+<body>
+    <h1>Test DELETE Request</h1>
+
+    <label>File to delete (URI): </label>
+    <input id="file" type="text" value="/upload/test.txt" style="width:250px" />
+    <button onclick="deleteFile()">DELETE</button>
+
+    <p id="result"></p>
+
+    <script>
+        function deleteFile() {
+            var file = document.getElementById("file").value;
+
+            fetch(file, {
+                method: "DELETE"
+            })
+            .then(res => {
+                document.getElementById("result").innerText =
+                    "Status: " + res.status + " (" + res.statusText + ")";
+            })
+            .catch(err => {
+                document.getElementById("result").innerText = "Error: " + err;
+            });
+        }
+    </script>
+</body>
+</html>
