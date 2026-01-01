@@ -14,6 +14,7 @@ int main(int argc, char const *argv[])
 {
 	std::srand(std::time(0));
 	std::vector<std::string> vector;
+	signal(SIGPIPE, SIG_IGN); // ✅ THIS IS CRITICAL - prevents crash on broken pipe
 	if (argc == 1 || argc == 2)
 	{
 		try

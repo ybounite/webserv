@@ -1,5 +1,34 @@
 #include "../../includes/Webserv.hpp"
 
+std::map<std::string, std::string> LoadMimeTypes(std::string filename)
+{
+    std::map<std::string, std::string> mimeMap;
+    std::ifstream file(filename.c_str());
+
+    if (!file.is_open())
+        throw std::runtime_error("Failed to open mime types file: " + filename);
+
+    std::string line;
+    while (std::getline(file, line))
+    {
+        if (line.empty() || line[0] == '#')
+            continue;
+
+        std::istringstream iss(line);
+        std::string mimeType;
+        iss >> mimeType;
+
+        std::string ext;
+        while (iss >> ext)
+        {
+            if (ext[ext.size() - 1] == ';')
+                ext.erase(ext.size() - 1);
+            mimeMap[ext] = mimeType;
+        }
+    }
+    return mimeMap;
+}
+
 Config Parser::parse(const std::vector<std::string> &tokens)
 {
     Config config;
@@ -13,6 +42,7 @@ Config Parser::parse(const std::vector<std::string> &tokens)
         i++;
     }
     parse_config(config);
+    config.MimeTypes = LoadMimeTypes("configs/mimetypes.txt");
     return config;
 }
 
@@ -180,7 +210,6 @@ ServerConfig Parser::parseServer(const std::vector<std::string> &tokens, unsigne
                     server.locations[server.locations.size() - 1].list = buildDirectoryListing(server.root + server.locations[server.locations.size() - 1].path);
                 else
                     server.locations[server.locations.size() - 1].list = buildDirectoryListing(server.locations[server.locations.size() - 1].root + server.locations[server.locations.size() - 1].path);
-                Msg::error(server.locations[server.locations.size() - 1].list);
             }
         }
         else
@@ -189,6 +218,8 @@ ServerConfig Parser::parseServer(const std::vector<std::string> &tokens, unsigne
     if (tokens[i] != "}")
         throw std::runtime_error("Unexpected token in parseServer: should be `}` but token is " + tokens[i]);
     last_check_in_map(directive_flags);
+    if (server.index.empty())
+        server.index = "index.html";
     return server;
  }
 

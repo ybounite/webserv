@@ -183,28 +183,26 @@ void Request::CreateSessioncookies()
     }
 }
 
-void Request::handleRequest(std::string &raw)
+void	Request::handleRequest(std::string &raw)
 {
-    std::istringstream stream(raw);
-    std::string line;
+	std::istringstream stream(raw);
+	std::string line;
 
-    if (!std::getline(stream, line))
-        throw std::runtime_error("invalid request");
+	// printRequest(raw); // print request
 
-    if (!line.empty() && line[line.length() - 1] == '\r')
-        line.erase(line.length() - 1);
+	if (!std::getline(stream, line))
+		throw std::runtime_error("invalid request");
 
-    parseRequestLine(line);
-    ParseHeaders(stream);
-    ParseCookies();
-    ParseBody(stream);
-    CreateSessioncookies();
-}
-
-std::string Request::response()
-{
-	Response rsp = RequestHandler::handle(*this, this->_config);
-	return rsp.toString();
+	if (!line.empty() && line[line.length() - 1] == '\r')
+		line.erase(line.length() - 1);
+	try{
+		parseRequestLine(line);
+		ParseHeaders(stream);
+		ParseBody(stream);
+		CreateSessioncookies();
+		this->status = enVALID;
+	}
+	catch(std::exception &e) { std::cerr << e.what() << std::endl; }
 }
 
 std::string Request::getHeader(const std::string &key) const

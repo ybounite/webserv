@@ -17,18 +17,32 @@ class Response;
 
 class RequestHandler {
 public:
+	RequestHandler(const Request &Req, const ServerConfig &Conf): req(Req), config(Conf) {}
 	enum	enHttpMethod { HTTP_GET, HTTP_POST, HTTP_DELETE, HTTP_UNKNOWN };
+
 	// Static handler - processes Request and returns Response
-	static Response		handle( const Request &req, const Config &config );
-	static short		getMothod( const std::string &method );
+	Response		HandleMethod();
+	short			getMethod( const std::string &method );
+	Response		BuildErrorResponse( short code );
+	size_t			GetBodySize(const std::string &path);
 
 private:
+	const Request		&req;
+	const ServerConfig	&config;
 	// Helper methods for different HTTP methods
-	static Response		handleGET(const Request &req, const ServerConfig &config);
-	static Response		handlePOST(const Request &req, const ServerConfig &config);
-	static Response		handleDELETE(const Request &req, const ServerConfig &config);
-	
+	Response		handleGET();
+	Response		handlePOST();
+	Response		handleDELETE();
+
 	// Utility functions
-	static std::string	readFile(const std::string &path);
-	static std::string	getErrorPage(int statusCode);
+	std::string			readFile(const std::string &path);
+	std::string			getErrorPage(int statusCode);
+	std::string			_BuildFileSystemPath(const std::string &root, const std::string &uri);
+	Response			_GenerateAutoindex(const std::string &dirPath);
+	bool				_haseAllowed( std::vector<std::string> Methods, enHttpMethod AllowedMethod);
+	bool				search_Cookies(const std::map<std::string, std::string> &cookies);
+
+	bool					_ResourceExists( std::string &Path );
+	std::string				_ResolveIndexFile(const std::string &path, const ServerConfig &server, const LocationConfig &loc);
+	Response				serveFile(const std::string &path);
 };

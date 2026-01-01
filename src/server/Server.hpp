@@ -1,32 +1,25 @@
 #pragma once
 
-// #include <iostream>
-// #include <sys/socket.h>
-// #include <string.h>
-// #include <unistd.h>
-// #include <stdlib.h>
-// #include <netinet/in.h>
-// #include <errno.h>
-// #include <arpa/inet.h>
-// #include <signal.h>
-// #include <stdexcept>
-// #include <fcntl.h>
-// #include <poll.h>
-// #include <sys/epoll.h>
-// #include <vector>
-// #include <map>
 #include "../../includes/Webserv.hpp"
 
+class Response;
+
 #define MAX_CLIENTS_EVENTS 1000
-#define PORT 4445
 
 class Config;
 
 typedef struct s_clients
 {
+    s_clients() : fd(-1), firstTime(true), leftData(false), bytesread(0), clsResponse(NULL) {}
     int fd;
     std::string request;
     std::string response;
+    bool firstTime;
+    bool leftData;
+    ssize_t bytesread;
+    std::string DataLeft;
+    Response *clsResponse;
+    time_t last_activity; // ADD THIS LINE
 } t_clients;
 
 class Server
@@ -48,6 +41,12 @@ public:
     void sendHttpResponse(unsigned int clientFd);
     void CreateEpollInstance();
     void deleteClientFromEpoll(unsigned int clientFd);
+    void addNblock(unsigned int clientFd);
+    void getReadInfos(unsigned int fd);
+    void errorSending(unsigned int fd);
+    void ReadSend(unsigned int fd);
+    void modifySockEvents(int epollfd, int fd);
+    size_t contentLenght(std::string header);
     void run();
     std::map<int, t_clients> getClients() const;
     ~Server();

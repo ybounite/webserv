@@ -19,7 +19,6 @@ std::string buildDirectoryListing(const std::string &directoryPath)
     dir = opendir(directoryPath.c_str());
     if (!dir)
     {
-        std::cerr << "Cannot open directory." << std::endl;
         return "rah_had_Directory_makaynch.html";
     }
 

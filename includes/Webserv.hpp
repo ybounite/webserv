@@ -62,10 +62,10 @@
 #include "Config.hpp"
 #include "Msg.hpp"
 #include "Parser.hpp"
-#include "../src/server/Server.hpp"
-#include "../src/request/Request.hpp"
-#include "../src/response/Response.hpp"
-#include "../src/request/RequestHandler.hpp"
+//#include "../src/server/Server.hpp"
+//#include "../src/request/Request.hpp"
+//#include "../src/response/Response.hpp"
+//#include "../src/request/RequestHandler.hpp"
 
 class ConfigFileReader {
 public:
@@ -77,14 +77,20 @@ public:
     std::vector<std::string> tokenize(const std::string &content);
 };
 
-
 void parse_config(Config &config);
+
 template <typename T>
 std::string to_string(T &value) {
     std::ostringstream  oss;
     oss << value;
     return oss.str();
 }
+
+class Request;
+class RequestHandler;
+
+# include "../src/request/Request.hpp"
+# include "../src/server/Server.hpp"
 
 std::string getCookieValue(const Request &req, std::string key);
 void createNewSession(Request &req, ServerConfig &config);

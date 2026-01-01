@@ -10,25 +10,50 @@
 #include "Request.hpp"
 #include "../response/Response.hpp"
 
-std::string RequestHandler::readFile(const std::string &path)
-{
+size_t RequestHandler::GetBodySize(const std::string &path) {
 	std::ifstream file(path.c_str(), std::ios::binary);
-	if (!file.is_open())
-	{
-		std::cerr << "Error opening file: " << path << std::endl;
-		return "";
-	}
+	if (!file.is_open()) return 0;
 
 	file.seekg(0, std::ios::end);
-	long file_size = file.tellg();
+	ssize_t file_size = file.tellg();
 	file.seekg(0, std::ios::beg);
-	(void)file_size;
-	std::stringstream buffer;
-	buffer << file.rdbuf();
-	return buffer.str();
+	file.close();
+	if (file_size < 0) return 0;
+
+	return file_size;
 }
 
-bool isDirectory(const char *path)
+std::string	RequestHandler::_BuildFileSystemPath(const std::string &root, const std::string &uri)
+{
+    std::string path = root;
+    if (!path.empty() && path[path.size() -1 ] != '/')
+        path += "/";
+    path += (uri[0] == '/' ? uri.substr(1) : uri); // avoid double slash
+    return path;
+}
+
+bool		RequestHandler::_ResourceExists( std::string &Path ){
+	struct stat Buffer;
+	return (stat(Path.c_str(), &Buffer) == 0);
+}
+
+std::string RequestHandler::_ResolveIndexFile(const std::string &path, const ServerConfig &server, const LocationConfig &loc)
+{
+    std::string indexName = !loc.index.empty() ? loc.index : server.index;
+    if (indexName.empty())
+        return "";
+
+    std::string fullPath = path;
+    if (fullPath[fullPath.size() - 1] != '/')
+        fullPath += '/';
+    fullPath += indexName;
+    if (_ResourceExists(fullPath))
+        return fullPath;
+
+    return "";
+}
+
+bool	_IsDirectory(const char *path)
 {
 	struct stat st;
 	if (stat(path, &st) != 0)
@@ -36,23 +61,150 @@ bool isDirectory(const char *path)
 	return S_ISDIR(st.st_mode);
 }
 
-std::string RequestHandler::getErrorPage(int statusCode)
-{
-	std::ostringstream errorPath;
-	errorPath << "errors/" << statusCode << ".html";
-	std::string content = readFile(errorPath.str());
+Response	RequestHandler::BuildErrorResponse( short code ) {
 
-	if (content.empty())
-	{
-		// Fallback if error page doesn't exist
-		std::ostringstream fallback;
-		fallback << "<html><body><h1>" << statusCode << " Error</h1></body></html>";
-		return fallback.str();
+	Response resp(req);
+
+	resp.setStatusCode(code);
+
+	std::ostringstream errorPath;
+	errorPath << "errors/" << code << ".html";
+	resp.Fd = open(errorPath.str().c_str(), O_RDONLY);
+	if (resp.Fd == -1) {
+		std::cerr << "Error opening error file: " << errorPath.str() << std::endl;
+		// Fallback: set body with inline HTML instead of file
+		resp.setHeader("Content-Type", "text/html");
+		std::ostringstream fallbackBody;
+		fallbackBody << "<html><body><h1>" << code << " " << resp.getStatusMessage(code) << "</h1></body></html>";
+		resp.setBody(fallbackBody.str());
+		resp.BodySize = fallbackBody.str().size();
 	}
-	return content;
+	else {
+		resp.BodySize = GetBodySize(errorPath.str());
+		resp.FilePath = errorPath.str();
+	}
+	return resp;
 }
 
-short RequestHandler::getMothod(const std::string &method)
+LocationConfig	GetMatchingLocation(const std::vector<LocationConfig>& locations, const std::string& uri)
+{
+	LocationConfig* bestMatch = NULL;
+	size_t longestMatch = 0;
+	//std::cout << "===========================\n";
+	for (size_t i = 0; i < locations.size(); i++)
+	{
+		//std::cout << GREEN << "location : " << locations[i].path << "| root : " << locations[i].root << "| uri : " << uri<< RESET << std::endl;
+
+		const std::string& locPath = locations[i].path;
+		if (uri == locPath)
+		{
+			//std::cout << " loc Path : " << locPath << std::endl;
+			if (locPath.size() > longestMatch)
+			{ //Example: if uri = "/images/cat.jpg" and locPath = "/images", it matches because /images is at the start.
+				bestMatch = const_cast<LocationConfig*>(&locations[i]);
+				longestMatch = locPath.size();
+			}
+		}
+	}
+	//std::cout << "===========================\n";
+	if (bestMatch)
+		return *bestMatch;
+	return LocationConfig();
+}
+
+Response	RequestHandler::serveFile(const std::string &path)
+{
+    Response resp(req);
+	
+	resp.Fd = open(path.c_str(), O_RDONLY);
+	if (resp.Fd == -1)
+        return BuildErrorResponse(404);
+	resp.BodySize = GetBodySize(path);
+    resp.setStatusCode(200);
+	resp.FilePath = path;
+    return resp;
+}
+
+Response	RequestHandler::_GenerateAutoindex(const std::string &DirPath) {
+    Response resp(req);
+    
+    DIR *dir = opendir(DirPath.c_str());
+    if (!dir)
+        return BuildErrorResponse(500);
+    
+    std::ostringstream html;
+    html << "<html><head><title>Index</title></head><body>";
+    html << "<h1>Index of " << req.getUri() << "</h1><ul>";
+    
+    struct dirent *entry;
+    while ((entry = readdir(dir)) != NULL) {
+        std::string name = entry->d_name;
+        if (name != "." && name != "..")
+            html << "<li><a href='" << name << "'>" << name << "</a></li>";
+    }
+    
+    html << "</ul></body></html>";
+    closedir(dir);
+    
+    resp.setStatusCode(200);
+    resp.setBody(html.str());
+    return resp;
+}
+
+bool		RequestHandler::_haseAllowed( std::vector<std::string> Methods, enHttpMethod AllowedMethod)
+{
+	if (Methods.empty()) return true;
+	for (size_t i = 0; i < Methods.size(); i++)
+	{
+		if ((enHttpMethod)getMethod(Methods[i]) == AllowedMethod)
+			return true;
+	}
+	return false;
+}
+
+Response	RequestHandler::handleGET()
+{
+	LocationConfig loc = GetMatchingLocation(config.locations, req.getUri());
+	if (!_haseAllowed(loc.methods, HTTP_GET))
+	return BuildErrorResponse(405);
+	std::string root = loc.root.empty() ? config.root : loc.root;
+	
+	std::string	path = _BuildFileSystemPath(root, req.getUri());
+
+	if (!_ResourceExists(path))
+	return BuildErrorResponse(404);
+	if (_IsDirectory(path.c_str()))
+	{
+		std::string indexPath = _ResolveIndexFile(path, config, loc);
+		std::cout << YELLOW << "indexPath: " << indexPath  << " autoindex : " << loc.autoindex << RESET << std::endl;
+    	if (!indexPath.empty()) 
+		return serveFile(indexPath);
+		else if (loc.autoindex) 
+		return _GenerateAutoindex(path);
+		else
+		return BuildErrorResponse(403);
+	}
+	Msg::error(path);
+	bool isPublicPage = (path == "www/pages/login.html" ||
+				path == "www/pages/register.html" || 
+					path == "www/pages/index.html" ||
+					path == "/" ||
+					path.find("www/assets/") == 0);
+
+	if (!isPublicPage && !search_Cookies(req.cookies))
+	{
+		Response resp(req);
+		// std::cout << RED << "REDIRECTING TO LOGIN (no session)" << RESET << std::endl;
+		// Redirect to login page
+		resp.setStatusCode(302);
+		resp.setHeader("Location", "/pages/login.html");
+		resp.setBody("<html><body>Redirecting to login...</body></html>");
+		return resp;
+	}
+	return serveFile(path);
+}
+
+short		RequestHandler::getMethod(const std::string &method)
 {
 	if (method == "GET")
 		return HTTP_GET;
@@ -64,41 +216,24 @@ short RequestHandler::getMothod(const std::string &method)
 		return HTTP_UNKNOWN;
 }
 
-// Main handler - routes to appropriate method handler
-Response RequestHandler::handle(const Request &req, const Config &config)
+Response	RequestHandler::HandleMethod()
 {
-	
-	Response resp;
-	if (config.servers.empty())
-	{
-		resp.setStatusCode(500);
-		resp.setBody(getErrorPage(500));
-		return resp;
-	}
-	// std::map<std::string, std::string>::const_iterator it = req.cookies.begin();
-		// std::cout << RED << it->first << "------------------" << it->second << RESET << std::endl;
-	resp.cookies = req.cookies;
-	// Get the first server config (simplified - should match by host/port)
-	const ServerConfig &serverConf = config.servers[0];
-
-	// Route based on method
-	// std::string method = req.getMethod();
-	switch (getMothod(req.getMethod()))
+	if (req.status != Request::enVALID)
+		return BuildErrorResponse(400);
+	switch (getMethod(req.getMethod()))
 	{
 	case HTTP_GET:
-		return handleGET(req, serverConf);
+		return handleGET();
 	case HTTP_POST:
-		return handlePOST(req, serverConf);
+		return handlePOST();
 	case HTTP_DELETE:
-		return handleDELETE(req, serverConf);
+		return handleDELETE();
 	default:
-		resp.setStatusCode(405);
-		resp.setBody(getErrorPage(405));
-		return resp;
+		return BuildErrorResponse(405);
 	}
 }
 
-bool search_Cookies(const std::map<std::string, std::string> &cookies)
+bool		RequestHandler::search_Cookies(const std::map<std::string, std::string> &cookies)
 {
     std::ifstream file("src/data/data.txt");
     if (!file.is_open())
@@ -135,90 +270,6 @@ bool search_Cookies(const std::map<std::string, std::string> &cookies)
     file.close();
     return false;
 }
-
-
-
-
-
-Response RequestHandler::handleGET(const Request &req, const ServerConfig &config)
-{
-	Response resp;
-
-	// Build file path
-	std::string path = config.root + req.getUri();
-	std::string uri = req.getUri();
-	if (path[path.length() - 1] == '/')
-	{
-		path += config.index;
-	}
-	// if (path.find(".") == std::string::npos) path += ".html";
-	// Msg::info("GET: " + path);
-	bool isPublicPage = (uri == "/pages/login.html" ||
-					uri == "/pages/register.html" || 
-                     uri == "/pages/index.html" ||
-                     uri == "/" ||
-                     uri.find("/assets/") == 0);
-
-	// PrintCookies(req.cookies);
-	// Msg::success(path);
-	// std::cout << RED << search_Cookies(req.cookies) << RESET << std::endl;
-	// std::cout << RED << isPublicPage << RESET << std::endl;
-
-	if (!isPublicPage && !search_Cookies(req.cookies))
-	{
-		// std::cout << RED << "REDIRECTING TO LOGIN (no session)" << RESET << std::endl;
-		// Redirect to login page
-		resp.setStatusCode(302);
-		resp.setHeader("Location", "/pages/login.html");
-		resp.setBody("<html><body>Redirecting to login...</body></html>");
-		return resp;
-	}
-	/*Directory handling logic (GET request)
-
-	Typical webserv logic:
-	Case									Action
-	File exists & readable					Serve file
-	Directory + index exists				Serve index
-	Directory + autoindex ON				Generate listing
-	Directory + no index + autoindex OFF	403
-	Path does not exist						404*/
-
-	// Stream file instead of loading entirely into memory
-	if (!req.cookies.empty()){
-		for (std::map<std::string, std::string>::const_iterator it = req.cookies.begin(); it != req.cookies.end(); it++) {
-			// std::cout << RED << it->first << "------------------" << it->second << RESET << std::endl;
-			resp.setHeader(it->first, it->second);
-			// resp.setHeader("Set-Cookie:", "session_id=" + it->second + "; Max-Age=60");
-		}
-	}
-	std::ifstream file(path.c_str(), std::ios::in | std::ios::binary);
-	//
-	if (!file.is_open())
-	{
-		// File not found
-		std::cerr << "Error: unable to open file for reading" << std::endl;
-		resp.setStatusCode(404);
-		resp.setBody(getErrorPage(404));
-	}
-	else
-	{
-		// std::cout << "open : " << path << std::endl;
-		// Determine file size
-		file.seekg(0, std::ios::end);
-		std::streampos end = file.tellg();
-		file.seekg(0, std::ios::beg);
-		size_t length = static_cast<size_t>(end);
-
-		resp.setStatusCode(200);
-		// Content-Type will be guessed in Response::send if not set
-		resp.setHeader("Cache-Control", "no-cache");
-		resp.setHeader("Connection", "close");
-		resp.setStreamFile(path, length);
-	}
-
-	return resp;
-}
-
 /////////////////////
 std::map<std::string, std::string> parseUrlEncoded(const std::string &body)
 {
@@ -269,9 +320,9 @@ bool createDirectory(const std::string &path) {
 
 ////////////////////
 
-Response RequestHandler::handlePOST(const Request &req, const ServerConfig &config)
+Response RequestHandler::handlePOST()
 {
-	Response resp;
+	Response resp(req);
 	std::string bodyData = req.getBody();
 	std::string contentType = req.getHeader("Content-Type");
 	if (bodyData.empty())
@@ -495,49 +546,56 @@ Response RequestHandler::handlePOST(const Request &req, const ServerConfig &conf
 	return resp;
 }
 
-Response RequestHandler::handleDELETE(const Request &req, const ServerConfig &config)
+Response RequestHandler::handleDELETE()
 {
-    Response resp;
+	Response resp(req);
 
-    std::string fullPath = config.root + req.getUri();
+	LocationConfig loc = GetMatchingLocation(config.locations, req.getUri());
+	// if (!_haseAllowed(loc.methods, HTTP_GET))
+	// 	return BuildErrorResponse(405);
+	std::string root = loc.root.empty() ? config.root : loc.root;
+	std::string	path = _BuildFileSystemPath(root, req.getUri());
+	struct stat st;
+	if (stat(path.c_str(), &st) != 0)
+		return BuildErrorResponse(404);
 
-    struct stat st;
-    if (stat(fullPath.c_str(), &st) != 0)
-    {
-        resp.setStatusCode(404);
-        resp.setBody("<h1>404 Not Found</h1>");
-        return resp;
-    }
+	if (std::remove(path.c_str()) != 0)
+		return BuildErrorResponse(500);
 
-    if (std::remove(fullPath.c_str()) != 0)
-    {
-        resp.setStatusCode(500);
-        resp.setBody("<h1>500 Internal Server Error</h1>");
-        return resp;
-    }
-
-    resp.setStatusCode(204);
-    resp.setBody("");
-    return resp;
+	resp.setStatusCode(204);
+	// resp.setBody("");
+	return resp;
 }
 
-// Response RequestHandler::handleDELETE()
-// {
-//     Response resp(req);
 
-// 	LocationConfig loc = GetMatchingLocation(config.locations, req.getUri());
-// 	// if (!_haseAllowed(loc.methods, HTTP_GET))
-// 	// 	return BuildErrorResponse(405);
-// 	std::string root = loc.root.empty() ? config.root : loc.root;
-// 	std::string	path = _BuildFileSystemPath(root, req.getUri());
-// 	struct stat st;
-// 	if (stat(path.c_str(), &st) != 0)
-// 		return BuildErrorResponse(404);
+std::string RequestHandler::readFile(const std::string &path)
+{
+	std::ifstream file(path.c_str(), std::ios::in | std::ios::binary);
+	if (!file.is_open())
+		return "";
+	std::ostringstream ss;
+	ss << file.rdbuf();
+	return ss.str();
+}
 
-// 	if (std::remove(path.c_str()) != 0)
-// 		return BuildErrorResponse(500);
+std::string RequestHandler::getErrorPage(int statusCode)
+{
+	std::map<int, std::string>::const_iterator it = config.error_pages.find(statusCode);
+	std::string path;
+	if (it != config.error_pages.end())
+		path = it->second;
+	else
+	{
+		std::ostringstream oss;
+		oss << "errors/" << statusCode << ".html";
+		path = oss.str();
+	}
 
-// 	resp.setStatusCode(204);
-// 	// resp.setBody("");
-// 	return resp;
-// }
+	std::string content = readFile(path);
+	if (!content.empty())
+		return content;
+
+	std::ostringstream fallback;
+	fallback << "<html><body><h1>" << statusCode << " " << statusCode << "</h1></body></html>";
+	return fallback.str();
+}
