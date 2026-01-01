@@ -149,6 +149,7 @@ Response RequestHandler::_GenerateAutoindex(const std::string &DirPath) {
 
 bool	RequestHandler::_haseAllowed( std::vector<std::string> Methods, enHttpMethod AllowedMethod)
 {
+	if (Methods.empty()) return true;
 	for (size_t i = 0; i < Methods.size(); i++)
 	{
 		if ((enHttpMethod)getMethod(Methods[i]) == AllowedMethod)
@@ -176,7 +177,7 @@ Response	RequestHandler::handleGET()
 	{
 		//std::cout << "Yes directory: " << path << std::endl;
 		std::string indexPath = _ResolveIndexFile(path, config, loc);
-		//std::cout << YELLOW << "indexPath: " << indexPath  << " autoindex : " << loc.autoindex << RESET << std::endl;
+		std::cout << YELLOW << "indexPath: " << indexPath  << " autoindex : " << loc.autoindex << RESET << std::endl;
     	if (!indexPath.empty()) 
         	return serveFile(indexPath);
 		else if (loc.autoindex) 
