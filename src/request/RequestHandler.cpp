@@ -86,12 +86,15 @@ LocationConfig	GetMatchingLocation(const std::vector<LocationConfig>& locations,
 {
 	LocationConfig* bestMatch = NULL;
 	size_t longestMatch = 0;
-
+	//std::cout << "===========================\n";
 	for (size_t i = 0; i < locations.size(); i++)
 	{
+		//std::cout << GREEN << "location : " << locations[i].path << "| root : " << locations[i].root << "| uri : " << uri<< RESET << std::endl;
+
 		const std::string& locPath = locations[i].path;
-		if (uri.find(locPath) == 0)
+		if (uri == locPath)
 		{
+			//std::cout << " loc Path : " << locPath << std::endl;
 			if (locPath.size() > longestMatch)
 			{ //Example: if uri = "/images/cat.jpg" and locPath = "/images", it matches because /images is at the start.
 				bestMatch = const_cast<LocationConfig*>(&locations[i]);
@@ -99,7 +102,7 @@ LocationConfig	GetMatchingLocation(const std::vector<LocationConfig>& locations,
 			}
 		}
 	}
-
+	//std::cout << "===========================\n";
 	if (bestMatch)
 		return *bestMatch;
 	return LocationConfig();
@@ -144,22 +147,34 @@ Response RequestHandler::_GenerateAutoindex(const std::string &DirPath) {
     return resp;
 }
 
+bool	RequestHandler::_haseAllowed( std::vector<std::string> Methods, enHttpMethod AllowedMethod)
+{
+	for (size_t i = 0; i < Methods.size(); i++)
+	{
+		if ((enHttpMethod)getMethod(Methods[i]) == AllowedMethod)
+			return true;
+	}
+	return false;
+}
+
 Response	RequestHandler::handleGET()
 {
 	LocationConfig loc = GetMatchingLocation(config.locations, req.getUri());
-
+	if (!_haseAllowed(loc.methods, HTTP_GET))
+		return BuildErrorResponse(405);
 	std::string root = loc.root.empty() ? config.root : loc.root;
-	//std::cout << RED << "location : " << loc.root << RESET << std::endl;
-	//std::cout << GREEN << "root : " << config.root << RESET << std::endl;
+	//std::cout << LIGHT_BLUE << "location : " << loc.path << RESET << std::endl;
+	//std::cout << GREEN << "root location  : " << loc.root << RESET << std::endl;
+	//std::cout << GREEN << "new root : " << root << RESET << std::endl;
 	//std::cout << YELLOW << "URI : " << req.getUri() << RESET << std::endl;
 
 	std::string	path = _BuildFileSystemPath(root, req.getUri());
 	if (!_ResourceExists(path))
 		return BuildErrorResponse(404);
-	std::cout << "*** : " << path << ": ***" << std::endl;
+	//std::cout << "*** : " << path << ": ***" << std::endl;
 	if (_IsDirectory(path.c_str()))
 	{
-		std::cout << "Yes directory: " << path << std::endl;
+		//std::cout << "Yes directory: " << path << std::endl;
 		std::string indexPath = _ResolveIndexFile(path, config, loc);
 		//std::cout << YELLOW << "indexPath: " << indexPath  << " autoindex : " << loc.autoindex << RESET << std::endl;
     	if (!indexPath.empty()) 
@@ -169,7 +184,7 @@ Response	RequestHandler::handleGET()
 		else
 			return BuildErrorResponse(403);
 	}
-	std::cout << "*** : " << path << ": ***" << std::endl;
+	//std::cout << "*** : " << path << ": ***" << std::endl;
 	return serveFile(path);
 }
 
