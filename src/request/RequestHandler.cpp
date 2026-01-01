@@ -23,7 +23,7 @@ size_t RequestHandler::GetBodySize(const std::string &path) {
 	return file_size;
 }
 
-std::string RequestHandler::_BuildFileSystemPath(const std::string &root, const std::string &uri)
+std::string	RequestHandler::_BuildFileSystemPath(const std::string &root, const std::string &uri)
 {
     std::string path = root;
     if (!path.empty() && path[path.size() -1 ] != '/')
@@ -64,21 +64,25 @@ bool	_IsDirectory(const char *path)
 Response	RequestHandler::BuildErrorResponse( short code ) {
 
 	Response resp(req);
+
+	resp.setStatusCode(code);
+
 	std::ostringstream errorPath;
 	errorPath << "errors/" << code << ".html";
 	resp.Fd = open(errorPath.str().c_str(), O_RDONLY);
 	if (resp.Fd == -1) {
 		std::cerr << "Error opening error file: " << errorPath.str() << std::endl;
 		// Fallback: set body with inline HTML instead of file
+		resp.setHeader("Content-Type", "text/html");
 		std::ostringstream fallbackBody;
 		fallbackBody << "<html><body><h1>" << code << " " << resp.getStatusMessage(code) << "</h1></body></html>";
 		resp.setBody(fallbackBody.str());
 		resp.BodySize = fallbackBody.str().size();
-	} else {
-		resp.BodySize = GetBodySize(errorPath.str());
 	}
-	resp.FilePath = errorPath.str();
-	resp.setStatusCode(code);
+	else {
+		resp.BodySize = GetBodySize(errorPath.str());
+		resp.FilePath = errorPath.str();
+	}
 	return resp;
 }
 
@@ -121,7 +125,7 @@ Response	RequestHandler::serveFile(const std::string &path)
     return resp;
 }
 
-Response RequestHandler::_GenerateAutoindex(const std::string &DirPath) {
+Response	RequestHandler::_GenerateAutoindex(const std::string &DirPath) {
     Response resp(req);
     
     DIR *dir = opendir(DirPath.c_str());
@@ -147,7 +151,7 @@ Response RequestHandler::_GenerateAutoindex(const std::string &DirPath) {
     return resp;
 }
 
-bool	RequestHandler::_haseAllowed( std::vector<std::string> Methods, enHttpMethod AllowedMethod)
+bool		RequestHandler::_haseAllowed( std::vector<std::string> Methods, enHttpMethod AllowedMethod)
 {
 	if (Methods.empty()) return true;
 	for (size_t i = 0; i < Methods.size(); i++)
@@ -203,7 +207,8 @@ short		RequestHandler::getMethod(const std::string &method)
 
 Response	RequestHandler::HandleMethod()
 {
-	Response resp(req);
+	if (req.status != Request::enVALID)
+		return BuildErrorResponse(400);
 	switch (getMethod(req.getMethod()))
 	{
 	case HTTP_GET:
@@ -213,9 +218,7 @@ Response	RequestHandler::HandleMethod()
 	case HTTP_DELETE:
 		return handleDELETE();
 	default:
-		resp.setStatusCode(405);
-		resp.setBody(getErrorPage(405));
-		return resp;
+		return BuildErrorResponse(405);
 	}
 }
 

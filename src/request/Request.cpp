@@ -192,11 +192,14 @@ void	Request::handleRequest(std::string &raw)
 
 	if (!line.empty() && line[line.length() - 1] == '\r')
 		line.erase(line.length() - 1);
-
-	parseRequestLine(line);
-	ParseHeaders(stream);
-	ParseBody(stream);
-	CreateSessioncookies();
+	try{
+		parseRequestLine(line);
+		ParseHeaders(stream);
+		ParseBody(stream);
+		CreateSessioncookies();
+		this->status = enVALID;
+	}
+	catch(std::exception &e) { std::cerr << e.what() << std::endl; }
 }
 
 std::string Request::getHeader(const std::string &key) const
