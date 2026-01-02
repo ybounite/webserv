@@ -176,10 +176,7 @@ void Request::CreateSessioncookies()
     if (_URI == "/pages/login.html" || _URI == "/pages/register.html")
     {
         if (cookies.find("session_id") != cookies.end())
-        {
-            Msg::error("Existing session ID = " + cookies["session_id"]);
             return;
-        }
 
         std::string newId = createNewSession(_config.servers[0]);
         cookies["session_id"] = newId;

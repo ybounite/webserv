@@ -240,16 +240,8 @@ Response	RequestHandler::handleGET()
 		else
 		return BuildErrorResponse(403);
 	}
-	Msg::error(path);
-	bool isPublicPage = (path == config.root + "/pages/login.html" ||
-				path == config.root + "/pages/register.html" || 
-					path == config.root + "/pages/index.html" ||
-					path.find("/assets/") == 0);
+	bool isPublicPage = (path == config.root + "/pages/login.html" || path == config.root + "/pages/register.html");
 
-	PrintCookies(req.cookies);
-	Msg::success(path);
-	std::cout << RED << search_Cookies(req.cookies) << RESET << std::endl;
-	std::cout << RED << isPublicPage << RESET << std::endl;
 
  if (!isPublicPage && !search_Cookies(req.cookies))
     {
