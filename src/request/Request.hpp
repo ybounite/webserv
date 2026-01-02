@@ -39,7 +39,6 @@ public:
 	void								setHeader(const std::string &key, const std::string &value);
 	void								handleRequest( std::string &raw );
 	void								CreateSessioncookies();
-	void 								createNewSession(ServerConfig &config);
 
 	void								parseRequestLine( const std::string &line );
 	void								ParseHeaders( std::istringstream &stream );
@@ -49,6 +48,7 @@ public:
 	size_t								getContentLength() const;
 	///
 	void ParseCookies();
+	std::string createNewSession(ServerConfig &config);
 
 private:
 	std::string							_Method;

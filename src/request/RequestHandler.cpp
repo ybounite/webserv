@@ -122,6 +122,14 @@ Response	RequestHandler::serveFile(const std::string &path)
 	resp.BodySize = GetBodySize(path);
     resp.setStatusCode(200);
 	resp.FilePath = path;
+	if (req.cookies.find("session_id") != req.cookies.end())
+	{
+		resp.setHeader(
+			"Set-Cookie",
+			"session_id=" + req.cookies.at("session_id") +
+			"; Path=/; HttpOnly; Max-Age=3600"
+		);
+	}
     return resp;
 }
 
@@ -243,15 +251,27 @@ Response	RequestHandler::handleGET()
 	std::cout << RED << search_Cookies(req.cookies) << RESET << std::endl;
 	std::cout << RED << isPublicPage << RESET << std::endl;
 
-	if (!isPublicPage && !search_Cookies(req.cookies))
-	{
-		Response resp(req);
-		resp.setStatusCode(302);
-		resp.setHeader("Location", "/pages/login.html");
-		resp.setBody("<html><body>Redirecting to login...</body></html>");
-		return resp;
-	}
-	return serveFile(path);
+ if (!isPublicPage && !search_Cookies(req.cookies))
+    {
+        Response resp(req);
+        resp.setStatusCode(302);
+        resp.setHeader("Location", "/pages/login.html");
+        resp.setBody("<html><body>Redirecting to login...</body></html>");
+        return resp;
+    }
+
+    Response resp = serveFile(path);
+
+    if (req.cookies.find("session_id") != req.cookies.end())
+    {
+        resp.setHeader(
+            "Set-Cookie",
+            "session_id=" + req.cookies.at("session_id") +
+            "; Path=/; HttpOnly; Max-Age=3600"
+        );
+    }
+
+    return resp;
 }
 
 short		RequestHandler::getMethod(const std::string &method)

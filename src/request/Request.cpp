@@ -163,15 +163,11 @@ void	Request::ParseBody( std::istringstream &stream ) {
 	}
 }
 
-void Request::createNewSession(ServerConfig &config)
+std::string Request::createNewSession(ServerConfig &config)
 {
     std::string id = generateSessionId();
     config.sessions[id]["username"] = "Soufiane";
-
-
-    cookies["Set-Cookie"] = "session_id=" + id + "; HttpOnly; Path=/; Max-Age=3600";
-    
-    cookies["session_id"] = id;
+    return id;
 }
 
 
@@ -185,9 +181,11 @@ void Request::CreateSessioncookies()
             return;
         }
 
-        createNewSession(_config.servers[0]);
+        std::string newId = createNewSession(_config.servers[0]);
+        cookies["session_id"] = newId;
     }
 }
+
 
 
 void	Request::handleRequest(std::string &raw)
@@ -205,6 +203,7 @@ void	Request::handleRequest(std::string &raw)
 	try{
 		parseRequestLine(line);
 		ParseHeaders(stream);
+		ParseCookies();
 		ParseBody(stream);
 		CreateSessioncookies();
 		this->status = enVALID;
@@ -235,29 +234,30 @@ size_t Request::getContentLength() const
 
 void Request::ParseCookies()
 {
-    std::string cookieHeader = getHeader("Cookie"); // declare once
-
+    std::string cookieHeader = getHeader("Cookie");
     if (cookieHeader.empty())
-    {
-        //Msg::error("No Cookie header in request");
         return;
-    }
 
-    std::istringstream ss(cookieHeader);
+    std::stringstream ss(cookieHeader);
     std::string token;
+
     while (std::getline(ss, token, ';'))
     {
-        trim(token);
         size_t pos = token.find('=');
-        if (pos != std::string::npos)
-        {
-            std::string key = token.substr(0, pos);
-            std::string value = token.substr(pos + 1);
-            cookies[key] = value;
-            //Msg::warning("Cookie parsed: " + key + " = " + value);
-        }
+        if (pos == std::string::npos)
+            continue;
+
+        std::string key = token.substr(0, pos);
+        std::string value = token.substr(pos + 1);
+
+        // trim spaces
+        while (!key.empty() && key[0] == ' ')
+            key.erase(0, 1);
+
+        cookies[key] = value;
     }
 }
+
 
 
 
