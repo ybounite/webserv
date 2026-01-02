@@ -24,7 +24,7 @@ public:
 	
 	short									StatusCode;
 	std::map<std::string, std::string>		Headers;
-	std::map<std::string, std::string>		cookies;
+	// std::map<std::string, std::string>		cookies;
 	int										Fd;
 	ssize_t									BodySize;
 	std::string								Header;

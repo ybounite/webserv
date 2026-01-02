@@ -18,7 +18,15 @@ Request::Request(std::string &raw, Config &ConfigFile) : _config(ConfigFile)
 
 Request::Request(const Request &Other)
 {
-	*this = Other;
+	_Method = Other._Method;
+	_URI = Other._URI;
+	_Protocol = Other._Protocol;
+	_Headers = Other._Headers;
+	_Body = Other._Body;
+	_Path = Other._Path;
+	_config = Other._config;
+	cookies = Other.cookies;
+	status = Other.status;
 }
 
 Request &Request::operator=(const Request &Other)
@@ -32,6 +40,8 @@ Request &Request::operator=(const Request &Other)
 		_Body = Other._Body;
 		_Path = Other._Path;
 		_config = Other._config;
+		cookies = Other.cookies;
+		status = Other.status;
 	}
 	return *this;
 }
@@ -159,27 +169,25 @@ void Request::createNewSession(ServerConfig &config)
     config.sessions[id]["username"] = "Soufiane";
 
 
-    cookies["Set-Cookie"] = "session_id=" + id + "; HttpOnly; Path=/; Max-Age=30";
-    
+    cookies["Set-Cookie"] = "session_id=" + id + "; HttpOnly; Path=/; Max-Age=3600";
     cookies["session_id"] = id;
 }
 
 
 void Request::CreateSessioncookies()
 {
-    if (_URI == "/pages/login.html")
+    if (_URI == "/pages/login.html" || _URI == "/pages/register.html")
     {
-        // Check if session_id already exists in cookies from the request
+        
         if (cookies.find("session_id") != cookies.end())
         {
             std::string Id = cookies["session_id"];
-            //Msg::error("Existing session ID = " + Id);
-            return; // Don't create a new session
+			Msg::success("return");
+            return;
         }
 
-        // No session exists, create new session
         createNewSession(_config.servers[0]);
-        //Msg::error("New session created");
+        Msg::error("New session created");
     }
 }
 

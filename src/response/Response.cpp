@@ -25,6 +25,14 @@ std::string	Response::BuildHeaderResponse() {
 	for (std::map<std::string, std::string>::const_iterator it = Headers.begin(); it != Headers.end(); ++it)
 		oss << it->first << ": " << it->second << "\r\n";
 	oss << "Content-Length: " << BodySize << "\r\n";
+		// PrintCookies(Headers);
+	if (cookies.empty())
+		Msg::debug("response empty cookies\n");
+ 	if (!cookies.empty()) {
+		for (std::map<std::string, std::string>::const_iterator it = cookies.begin(); it != cookies.end(); ++it)
+			oss << it->first << ": " << it->second << "\r\n";
+	}
+
 	oss << "\r\n";
 	return oss.str();
 }

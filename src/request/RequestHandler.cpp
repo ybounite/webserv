@@ -185,17 +185,15 @@ Response	RequestHandler::handleGET()
 		return BuildErrorResponse(403);
 	}
 	Msg::error(path);
-	bool isPublicPage = (path == "www/pages/login.html" ||
-				path == "www/pages/register.html" || 
-					path == "www/pages/index.html" ||
-					path == "/" ||
-					path.find("www/assets/") == 0);
-
+	bool isPublicPage = (path == config.root + "/pages/login.html" ||
+				path == config.root + "/pages/register.html" || 
+					path == config.root + "/pages/index.html" ||
+					path.find(config.root + "/assets/") == 0);
+	if (!req.cookies.empty())
+		Msg::debug("empty cookies\n");
 	if (!isPublicPage && !search_Cookies(req.cookies))
 	{
 		Response resp(req);
-		// std::cout << RED << "REDIRECTING TO LOGIN (no session)" << RESET << std::endl;
-		// Redirect to login page
 		resp.setStatusCode(302);
 		resp.setHeader("Location", "/pages/login.html");
 		resp.setBody("<html><body>Redirecting to login...</body></html>");
@@ -306,16 +304,6 @@ std::string clean(const std::string &str)
     while (!s.empty() && (s[s.size()-1] == '\n' || s[s.size()-1] == '\r'))
         s.erase(s.size()-1);
     return s;
-}
-
-bool createDirectory(const std::string &path) {
-	
-    if (mkdir(path.c_str(), 0755) == 0) {
-        return true;
-    } else {
-        throw("mkdir");
-        return false;
-    }
 }
 
 ////////////////////
@@ -503,7 +491,6 @@ Response RequestHandler::handlePOST()
 						resp.setBody(getErrorPage(500));
 						return resp;
 					}
-					createDirectory(uploadDir);
 					std::string fullPath = uploadDir + "/" + filename;
 					std::ofstream out(fullPath.c_str(), std::ios::binary);
 					if (!out.is_open())
