@@ -30,9 +30,9 @@ private:
 	const Request		&req;
 	const ServerConfig	&config;
 	// Helper methods for different HTTP methods
-	Response		handleGET();
-	Response		handlePOST();
-	Response		handleDELETE();
+	Response			handleGET();
+	Response			handlePOST();
+	Response			handleDELETE();
 
 	// Utility functions
 	std::string			readFile(const std::string &path);
@@ -40,6 +40,7 @@ private:
 	std::string			_BuildFileSystemPath(const std::string &root, const std::string &uri);
 	Response			_GenerateAutoindex(const std::string &dirPath);
 	bool				_haseAllowed( std::vector<std::string> Methods, enHttpMethod AllowedMethod);
+	Response			_Rdirect(LocationConfig loc);
 
 	bool					_ResourceExists( std::string &Path );
 	std::string				_ResolveIndexFile(const std::string &path, const ServerConfig &server, const LocationConfig &loc);

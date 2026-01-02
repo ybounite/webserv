@@ -67,12 +67,23 @@ Response	RequestHandler::BuildErrorResponse( short code ) {
 
 	resp.setStatusCode(code);
 
-	std::ostringstream errorPath;
-	errorPath << "errors/" << code << ".html";
-	resp.Fd = open(errorPath.str().c_str(), O_RDONLY);
+	std::map<int, std::string>::const_iterator it = config.error_pages.find(code);
+	std::string errorPath;
+	
+	if (it != config.error_pages.end()) {
+		errorPath = it->second;
+		if (!errorPath.empty() && errorPath[0] == '/')
+			errorPath = errorPath.substr(1);
+		errorPath = config.root + "/" + errorPath;
+	} else {
+		std::ostringstream oss;
+		oss << "errors/" << code << ".html";
+		errorPath = oss.str();
+	}
+
+	resp.Fd = open(errorPath.c_str(), O_RDONLY);
 	if (resp.Fd == -1) {
-		std::cerr << "Error opening error file: " << errorPath.str() << std::endl;
-		// Fallback: set body with inline HTML instead of file
+		std::cerr << "Error opening error file: " << errorPath << std::endl;
 		resp.setHeader("Content-Type", "text/html");
 		std::ostringstream fallbackBody;
 		fallbackBody << "<html><body><h1>" << code << " " << resp.getStatusMessage(code) << "</h1></body></html>";
@@ -80,8 +91,8 @@ Response	RequestHandler::BuildErrorResponse( short code ) {
 		resp.BodySize = fallbackBody.str().size();
 	}
 	else {
-		resp.BodySize = GetBodySize(errorPath.str());
-		resp.FilePath = errorPath.str();
+		resp.BodySize = GetBodySize(errorPath);
+		resp.FilePath = errorPath;
 	}
 	return resp;
 }
@@ -96,7 +107,8 @@ LocationConfig	GetMatchingLocation(const std::vector<LocationConfig>& locations,
 		//std::cout << GREEN << "location : " << locations[i].path << "| root : " << locations[i].root << "| uri : " << uri<< RESET << std::endl;
 
 		const std::string& locPath = locations[i].path;
-		if (uri == locPath)
+		// Check if URI starts with location path (prefix match)
+		if (uri.find(locPath) == 0)
 		{
 			//std::cout << " loc Path : " << locPath << std::endl;
 			if (locPath.size() > longestMatch)
@@ -134,29 +146,29 @@ Response	RequestHandler::serveFile(const std::string &path)
 }
 
 Response	RequestHandler::_GenerateAutoindex(const std::string &DirPath) {
-    Response resp(req);
-    
-    DIR *dir = opendir(DirPath.c_str());
-    if (!dir)
-        return BuildErrorResponse(500);
-    
-    std::ostringstream html;
-    html << "<html><head><title>Index</title></head><body>";
-    html << "<h1>Index of " << req.getUri() << "</h1><ul>";
-    
-    struct dirent *entry;
-    while ((entry = readdir(dir)) != NULL) {
-        std::string name = entry->d_name;
-        if (name != "." && name != "..")
-            html << "<li><a href='" << name << "'>" << name << "</a></li>";
-    }
-    
-    html << "</ul></body></html>";
-    closedir(dir);
-    
-    resp.setStatusCode(200);
-    resp.setBody(html.str());
-    return resp;
+	Response resp(req);
+	
+	DIR *dir = opendir(DirPath.c_str());
+	if (!dir)
+		return BuildErrorResponse(500);
+	
+	std::ostringstream html;
+	html << "<html><head><title>Index</title></head><body>";
+	html << "<h1>Index of " << req.getUri() << "</h1><ul>";
+	
+	struct dirent *entry;
+	while ((entry = readdir(dir)) != NULL) {
+		std::string name = entry->d_name;
+		if (name != "." && name != "..")
+			html << "<li><a href='" << name << "'>" << name << "</a></li>";
+	}
+	
+	html << "</ul></body></html>";
+	closedir(dir);
+	
+	resp.setStatusCode(200);
+	resp.setBody(html.str());
+	return resp;
 }
 
 bool		RequestHandler::_haseAllowed( std::vector<std::string> Methods, enHttpMethod AllowedMethod)
@@ -208,43 +220,61 @@ bool search_Cookies(const std::map<std::string, std::string> &cookies)
     return false;
 }
 
-void PrintCookies( std::map<std::string, std::string> header)
-{
-    std::cout << GREEN << "---- Cookies Map ----" << RESET << std::endl;
-    for (std::map<std::string, std::string>::const_iterator it = header.begin(); it != header.end(); ++it)
-    {
-        std::cout << it->first << " " << it->second << std::endl;
-    }
-    std::cout << GREEN << "--------------------" << RESET << std::endl;
+//void PrintCookies( std::map<std::string, std::string> header)
+//{
+//    std::cout << GREEN << "---- Cookies Map ----" << RESET << std::endl;
+//    for (std::map<std::string, std::string>::const_iterator it = header.begin(); it != header.end(); ++it)
+//    {
+//        std::cout << it->first << " " << it->second << std::endl;
+//    }
+//    std::cout << GREEN << "--------------------" << RESET << std::endl;
+//}
+Response	RequestHandler::_Rdirect(LocationConfig loc){
+
+	Response resp(req);
+	std::cout << RED << "Path Rdirect: " << loc.return_url  << " code  : " << loc.return_code << RESET << std::endl;
+
+	resp.setStatusCode(loc.return_code);
+    resp.setHeader("Location", loc.return_url);
+	resp.BodySize = 0;
+	if (req.cookies.find("session_id") != req.cookies.end())
+	{
+		resp.setHeader(
+			"Set-Cookie",
+			"session_id=" + req.cookies.at("session_id") +
+			"; Path=/; HttpOnly; Max-Age=30"
+		);
+	}
+	return resp;
 }
 
 Response	RequestHandler::handleGET()
 {
 	LocationConfig loc = GetMatchingLocation(config.locations, req.getUri());
 	if (!_haseAllowed(loc.methods, HTTP_GET))
-	return BuildErrorResponse(405);
+		return BuildErrorResponse(405);
 	std::string root = loc.root.empty() ? config.root : loc.root;
 	
 	std::string	path = _BuildFileSystemPath(root, req.getUri());
 
 	if (!_ResourceExists(path))
-	return BuildErrorResponse(404);
+		return BuildErrorResponse(404);
 	if (_IsDirectory(path.c_str()))
 	{
 		std::string indexPath = _ResolveIndexFile(path, config, loc);
 		std::cout << YELLOW << "indexPath: " << indexPath  << " autoindex : " << loc.autoindex << RESET << std::endl;
-    	if (!indexPath.empty()) 
-		return serveFile(indexPath);
+		if (!indexPath.empty())
+			return serveFile(indexPath);
+		else if (loc.return_code >= 300 && loc.return_code < 400)
+				return _Rdirect(loc);
 		else if (loc.autoindex) 
-		return _GenerateAutoindex(path);
+			return _GenerateAutoindex(path);
 		else
-		return BuildErrorResponse(403);
+			return BuildErrorResponse(403);
 	}
-	bool isPublicPage = (path == config.root + "/pages/login.html" || path == config.root + "/pages/register.html");
+	bool isPublicPage = (path == config.root + "/pages/uploads.html" || path == config.root + "/pages/delete.html");
 
-
- if (!isPublicPage && !search_Cookies(req.cookies))
-    {
+	if (isPublicPage && !search_Cookies(req.cookies)) {
         Response resp(req);
         resp.setStatusCode(302);
         resp.setHeader("Location", "/pages/login.html");
@@ -281,7 +311,7 @@ short		RequestHandler::getMethod(const std::string &method)
 Response	RequestHandler::HandleMethod()
 {
 	if (req.status != Request::enVALID)
-		return BuildErrorResponse(400);
+		return BuildErrorResponse(403);
 	switch (getMethod(req.getMethod()))
 	{
 	case HTTP_GET:
@@ -566,19 +596,30 @@ Response RequestHandler::handleDELETE()
 	Response resp(req);
 
 	LocationConfig loc = GetMatchingLocation(config.locations, req.getUri());
-	// if (!_haseAllowed(loc.methods, HTTP_GET))
-	// 	return BuildErrorResponse(405);
+	std::cout << RED << "DELETE called for URI: " << req.getUri() << RESET << std::endl;
+	if (!_haseAllowed(loc.methods, HTTP_DELETE))
+	{
+		std::cout << RED << "DELETE method not allowed for this location" << RESET << std::endl;
+		return BuildErrorResponse(405);
+	}
 	std::string root = loc.root.empty() ? config.root : loc.root;
 	std::string	path = _BuildFileSystemPath(root, req.getUri());
+	std::cout << YELLOW << "DELETE path: " << path << RESET << std::endl;
 	struct stat st;
 	if (stat(path.c_str(), &st) != 0)
+	{
+		std::cout << RED << "File not found: " << path << RESET << std::endl;
 		return BuildErrorResponse(404);
+	}
 
 	if (std::remove(path.c_str()) != 0)
+	{
+		std::cout << RED << "Failed to delete file" << RESET << std::endl;
 		return BuildErrorResponse(500);
-
+	}
+	std::cout << GREEN << "DELETE SUCCESS for: " << path << RESET << std::endl;
 	resp.setStatusCode(204);
-	// resp.setBody("");
+	resp.setHeader("Content-Length", "0");
 	return resp;
 }
 
