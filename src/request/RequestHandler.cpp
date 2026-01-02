@@ -162,6 +162,54 @@ bool		RequestHandler::_haseAllowed( std::vector<std::string> Methods, enHttpMeth
 	return false;
 }
 
+bool search_Cookies(const std::map<std::string, std::string> &cookies)
+{
+    std::ifstream file("src/data/data.txt");
+    if (!file.is_open())
+    {
+        std::cerr << "Cannot open data.txt file!" << std::endl;
+        return false;
+    }
+
+    std::string line;
+    while (std::getline(file, line))
+    {
+        if (line.empty())
+            continue;
+
+        for (std::map<std::string,std::string>::const_iterator it = cookies.begin(); it != cookies.end(); ++it)
+        {
+            std::string cookie_str = it->first + "=" + it->second;
+            std::string key = "session_id=";
+
+            size_t pos = line.find(key);
+            if (pos == std::string::npos)
+                continue;
+
+            std::string sessionPart = line.substr(pos);
+
+            if (sessionPart == cookie_str)
+            {
+                file.close();
+                return true;
+            }
+        }
+    }
+
+    file.close();
+    return false;
+}
+
+void PrintCookies( std::map<std::string, std::string> header)
+{
+    std::cout << GREEN << "---- Cookies Map ----" << RESET << std::endl;
+    for (std::map<std::string, std::string>::const_iterator it = header.begin(); it != header.end(); ++it)
+    {
+        std::cout << it->first << " " << it->second << std::endl;
+    }
+    std::cout << GREEN << "--------------------" << RESET << std::endl;
+}
+
 Response	RequestHandler::handleGET()
 {
 	LocationConfig loc = GetMatchingLocation(config.locations, req.getUri());
@@ -188,9 +236,13 @@ Response	RequestHandler::handleGET()
 	bool isPublicPage = (path == config.root + "/pages/login.html" ||
 				path == config.root + "/pages/register.html" || 
 					path == config.root + "/pages/index.html" ||
-					path.find(config.root + "/assets/") == 0);
-	if (!req.cookies.empty())
-		Msg::debug("empty cookies\n");
+					path.find("/assets/") == 0);
+
+	PrintCookies(req.cookies);
+	Msg::success(path);
+	std::cout << RED << search_Cookies(req.cookies) << RESET << std::endl;
+	std::cout << RED << isPublicPage << RESET << std::endl;
+
 	if (!isPublicPage && !search_Cookies(req.cookies))
 	{
 		Response resp(req);
@@ -231,43 +283,7 @@ Response	RequestHandler::HandleMethod()
 	}
 }
 
-bool		RequestHandler::search_Cookies(const std::map<std::string, std::string> &cookies)
-{
-    std::ifstream file("src/data/data.txt");
-    if (!file.is_open())
-    {
-        std::cerr << "Cannot open data.txt file!" << std::endl;
-        return false;
-    }
 
-    std::string line;
-    while (std::getline(file, line))
-    {
-        if (line.empty())
-            continue;
-
-        for (std::map<std::string,std::string>::const_iterator it = cookies.begin(); it != cookies.end(); ++it)
-        {
-            std::string cookie_str = it->first + "=" + it->second;
-            std::string key = "session_id=";
-
-            size_t pos = line.find(key);
-            if (pos == std::string::npos)
-                continue;
-
-            std::string sessionPart = line.substr(pos);
-
-            if (sessionPart == cookie_str)
-            {
-                file.close();
-                return true;
-            }
-        }
-    }
-
-    file.close();
-    return false;
-}
 /////////////////////
 std::map<std::string, std::string> parseUrlEncoded(const std::string &body)
 {
@@ -586,3 +602,4 @@ std::string RequestHandler::getErrorPage(int statusCode)
 	fallback << "<html><body><h1>" << statusCode << " " << statusCode << "</h1></body></html>";
 	return fallback.str();
 }
+

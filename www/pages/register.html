@@ -6,6 +6,7 @@
     <title>Register</title>
 </head>
 <body class="bg-gray-50 min-h-screen">
+    <!-- Navigation Bar في اللول -->
     <nav class="bg-white shadow-md sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 py-3">
             <div class="flex flex-wrap gap-2 justify-center items-center">
@@ -15,8 +16,8 @@
                 <button type="button" class="text-blue-600 bg-white border-2 border-blue-600 hover:bg-blue-600 hover:text-white focus:ring-4 focus:ring-blue-300 shadow-md font-medium rounded-lg text-sm px-5 py-2.5 transition-all duration-200 hover:scale-105" onclick="window.location.href='/pages/about.html'">
                     📖 About
                 </button>
-                <button type="button" class="text-white bg-purple-600 hover:bg-purple-700 focus:ring-4 focus:ring-purple-300 shadow-md font-medium rounded-lg text-sm px-5 py-2.5 transition-all duration-200 hover:scale-105" onclick="window.location.href='/pages/login.html'">
-                    🔐 Login
+                <button type="button" class="text-white bg-green-600 hover:bg-green-700 focus:ring-4 focus:ring-green-300 shadow-md font-medium rounded-lg text-sm px-5 py-2.5 transition-all duration-200 hover:scale-105" onclick="window.location.href='/pages/register.html'">
+                    ✍️ Register
                 </button>
             </div>
         </div>
@@ -25,7 +26,7 @@
     <!-- Register Form -->
     <div class="flex items-center justify-center min-h-[calc(100vh-80px)] p-4">
         <div class="bg-white shadow-2xl max-w-md w-full rounded-xl p-8 border border-gray-100">
-            <form action="/pages/home.html" class="w-full" method="POST">
+            <form class="w-full" method="POST">
                 <div class="mb-8">
                     <h1 class="text-4xl font-bold text-green-600 mb-2">Create Account</h1>
                     <p class="text-gray-500 text-sm">Join us today! Please fill in your details.</p>
@@ -73,6 +74,9 @@
     <footer class="bg-white border-t border-gray-200 mt-8">
         <div class="max-w-7xl mx-auto px-4 py-4">
             <div class="flex flex-wrap gap-2 justify-center">
+                <a href="/pages/cookies.html" class="text-gray-600 hover:text-green-600 text-sm font-medium transition-colors">
+                    🍪 Cookies Policy
+                </a>
                 <span class="text-gray-300">|</span>
                 <a href="/pages/home.html" class="text-gray-600 hover:text-green-600 text-sm font-medium transition-colors">
                     🏡 Home

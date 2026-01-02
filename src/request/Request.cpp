@@ -170,6 +170,7 @@ void Request::createNewSession(ServerConfig &config)
 
 
     cookies["Set-Cookie"] = "session_id=" + id + "; HttpOnly; Path=/; Max-Age=3600";
+    
     cookies["session_id"] = id;
 }
 
@@ -178,18 +179,16 @@ void Request::CreateSessioncookies()
 {
     if (_URI == "/pages/login.html" || _URI == "/pages/register.html")
     {
-        
         if (cookies.find("session_id") != cookies.end())
         {
-            std::string Id = cookies["session_id"];
-			Msg::success("return");
+            Msg::error("Existing session ID = " + cookies["session_id"]);
             return;
         }
 
         createNewSession(_config.servers[0]);
-        Msg::error("New session created");
     }
 }
+
 
 void	Request::handleRequest(std::string &raw)
 {

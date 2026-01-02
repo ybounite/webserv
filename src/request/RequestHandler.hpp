@@ -40,7 +40,6 @@ private:
 	std::string			_BuildFileSystemPath(const std::string &root, const std::string &uri);
 	Response			_GenerateAutoindex(const std::string &dirPath);
 	bool				_haseAllowed( std::vector<std::string> Methods, enHttpMethod AllowedMethod);
-	bool				search_Cookies(const std::map<std::string, std::string> &cookies);
 
 	bool					_ResourceExists( std::string &Path );
 	std::string				_ResolveIndexFile(const std::string &path, const ServerConfig &server, const LocationConfig &loc);
