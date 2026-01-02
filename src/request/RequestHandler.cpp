@@ -535,7 +535,7 @@ Response RequestHandler::handlePOST()
 		}
 		resp.setStatusCode(201);
 		resp.setHeader("Content-Type", "text/html");
-		resp.setBody(readFile("www/uploaded.html"));
+		resp.setBody(readFile("www/pages/uploaded.html"));
 	}
 	else
 	{
