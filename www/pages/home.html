@@ -1,49 +1,28 @@
 <!DOCTYPE html>
 <html>
-
-<head>
-    <meta charset="UTF-8" />
-    <title>WEBSERVER</title>
-    <meta name="description" content="this Is Our Book Store" />
-    <link
-        href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
-        rel="stylesheet">
-    <link
-        href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300..700&family=Outfit:wght@100..900&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
-        rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-
-    <!-- <style> 
-            body { background-color: rgb(187, 175, 175); }
-            button { 
-                padding: 10px 20px; 
-                font-size: 16px; 
-                cursor: pointer; 
-                margin-top: 20px;
-            }
-        </style> -->
-        <link rel="stylesheet" href="./assets/css/main.css">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Webserv — Home</title>
+        <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     </head>
-    <body>
-        <h1>WEB SERVER</h1>
-        
-        <p>DAHANI SOUFIANE</p>
-        <p>YOUSSEF BOUNITE</p>
-        <strong>ILYAS SIR GAD PARTIE DIALK</strong>
-        <hr>
-        <img src="" alt="">
+    <body class="bg-gradient-to-br from-indigo-500 to-purple-700 min-h-screen flex items-center justify-center p-6">
+        <div class="bg-white rounded-xl shadow-2xl max-w-3xl w-full p-16 text-center">
+            <h1 class="text-3xl font-bold mb-4">WEB SERVER</h1>
+            <p class="text-gray-600 mb-6">A small HTTP server implementation for the 42 school project "webserv" — supports request parsing, static files, uploads (POST), deletes (DELETE), and CGI.</p>
 
-        <!-- Redirect Button -->
-        <button class="btn" onclick="window.location.href='/uploads.html'">
-            Go to Uploads
-        </button>
-        <button class="btn" onclick="window.location.href='/pages/about.html'">Go to About</button>
-        <button class="btn" onclick="window.location.href='/pages/contact.html'">Go to Contact</button>
-        <button class="btn" onclick="window.location.href='/pages/cookies.html'">Go to Cookies</button>
-        <button class="btn" onclick="window.location.href='/pages/home.html'">Go to Home</button>
-        <button class="btn" onclick="window.location.href='/pages/login.html'">Go to Login</button>
-        <button class="btn" onclick="window.location.href='/pages/register.html'">Go to Register</button>
-        <button class="btn" onclick="window.location.href='/pages/services.html'">Go to Services</button>
-        
+            <div class="grid gap-3 sm:grid-cols-3 mb-6">
+                <a href="/pages/uploads.html" class="inline-block bg-green-500 text-white rounded-md py-3 px-4 font-semibold hover:bg-green-600">Uploads</a>
+                <a href="/pages/delete.html" class="inline-block bg-red-500 text-white rounded-md py-3 px-4 font-semibold hover:bg-red-600">Delete</a>
+                <a href="/pages/cgi.html" class="inline-block bg-blue-500 text-white rounded-md py-3 px-4 font-semibold hover:bg-blue-600">CGI</a>
+            </div>
+
+            <div class="flex flex-wrap justify-center gap-3">
+                <a href="/pages/about.html" class="bg-indigo-500 text-white rounded-md py-2 px-4">About</a>
+                <a href="/pages/login.html" class="bg-indigo-500 text-white rounded-md py-2 px-4">Login</a>
+                <a href="/pages/register.html" class="bg-indigo-500 text-white rounded-md py-2 px-4">Register</a>
+            </div>
+
+        </div>
     </body>
 </html>

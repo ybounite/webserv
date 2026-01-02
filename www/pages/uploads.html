@@ -1,21 +1,91 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
     <meta charset="UTF-8">
     <title>File Upload</title>
-    <link rel="stylesheet" href="./assets/css/main.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; }
+        .container { background: white; border-radius: 10px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); padding: 60px 40px; max-width: 600px; width: 100%; }
+        h1 { color: #333; margin-bottom: 24px; text-align: center; }
+        .form-group { margin-bottom: 20px; }
+        label { display:block; margin-bottom:8px; color:#555; font-weight:500; }
+        input[type="file"] { width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 6px; background: #fafafa; }
+        .button-group { display:flex; gap:10px; margin-top:20px; }
+        button { flex:1; padding:12px; font-size:16px; border:none; border-radius:6px; cursor:pointer; font-weight:600; transition: all 0.2s; }
+        .upload-btn { background: #28a745; color:white; }
+        .upload-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(40,167,69,0.25); }
+        .cancel-btn { background:#95a5a6; color:white; }
+        #result { margin-top:16px; padding:12px; border-radius:6px; display:none; font-weight:500; text-align:center; }
+        #result.success { display:block; background:#d4edda; color:#155724; border:1px solid #c3e6cb; }
+        #result.error { display:block; background:#f8d7da; color:#721c24; border:1px solid #f5c6cb; }
+        .nav-buttons { margin-top:18px; display:flex; gap:8px; justify-content:center; align-items:center; }
+        .nav-buttons button { flex: none; padding:8px 12px; background:#3498db; color:white; border-radius:6px; }
+    </style>
 </head>
 <body>
+    <div class="container">
+        <h1>📤 Upload a File</h1>
 
-    <h2>Upload a file</h2>
+        <div class="form-group">
+            <label for="file">Choose file to upload</label>
+            <input id="fileInput" type="file" name="file">
+        </div>
 
-<form action="/upload" method="POST" enctype="multipart/form-data">
-    <input class="input-box" type="file" name="file">
-    <button class="btn" type="submit">Upload</button>
-</form>
-    <button class="btn" onclick="window.location.href='/pages/about.html'">Go to About</button>
-    <button class="btn" onclick="window.location.href='/pages/contact.html'">Go to Contact</button>
-    <button class="btn" onclick="window.location.href='/pages/cookies.html'">Go to Cookies</button>
-    <button class="btn" onclick="window.location.href='/pages/home.html'">Go to Home</button>
+        <div class="button-group">
+            <button id="uploadBtn" class="upload-btn" onclick="uploadFile()">Upload</button>
+            <button class="cancel-btn" onclick="goHome()">Cancel</button>
+        </div>
+
+        <div id="result"></div>
+
+        <div class="nav-buttons">
+            <button onclick="window.location.href='/pages/about.html'">About</button>
+            <button onclick="window.location.href='/pages/home.html'">Home</button>
+            <button onclick="window.location.href='/pages/index.html'">Index</button>
+        </div>
+    </div>
+
+    <script>
+        function showResult(message, isSuccess) {
+            var r = document.getElementById('result');
+            r.textContent = message;
+            r.className = isSuccess ? 'success' : 'error';
+        }
+
+        function goHome() { window.location.href = '/pages/home.html'; }
+
+        function uploadFile() {
+            var input = document.getElementById('fileInput');
+            var file = input.files[0];
+            var uploadBtn = document.getElementById('uploadBtn');
+            if (!file) { showResult('❌ Please choose a file', false); return; }
+
+            uploadBtn.disabled = true; uploadBtn.textContent = 'Uploading...';
+
+            var formData = new FormData();
+            formData.append('file', file);
+
+            fetch('/upload', { method: 'POST', body: formData })
+            .then(function(res) {
+                if (res.status === 201 || res.status === 200) {
+                    showResult('✅ Upload successful!', true);
+                    setTimeout(function(){ window.location.href = '/pages/uploaded.html'; }, 700);
+                } else if (res.status === 413) {
+                    showResult('❌ File too large (413)', false);
+                    uploadBtn.disabled = false; uploadBtn.textContent = 'Upload';
+                } else if (res.status === 405) {
+                    showResult('❌ POST not allowed (405) - check config', false);
+                    uploadBtn.disabled = false; uploadBtn.textContent = 'Upload';
+                } else {
+                    res.text().then(function(t){ showResult('❌ Error ' + res.status + ': ' + (res.statusText || t), false); uploadBtn.disabled = false; uploadBtn.textContent = 'Upload'; });
+                }
+            })
+            .catch(function(err) {
+                showResult('❌ Upload failed: ' + err.message, false);
+                uploadBtn.disabled = false; uploadBtn.textContent = 'Upload';
+            });
+        }
+    </script>
 </body>
 </html>
