@@ -1,4 +1,0 @@
-admin admin
-dB8t3BE6yRM1dUkA
-admin admin session_id=session_id=1lwyDnyxAPVbgjbT; HttpOnly; Path=/; Max-Age=30
-admin admin session_id=session_id=1lwyDnyxAPVbgjbT; HttpOnly; Path=/; Max-Age=30
