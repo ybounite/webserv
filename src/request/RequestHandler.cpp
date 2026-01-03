@@ -97,23 +97,20 @@ LocationConfig GetMatchingLocation(const std::vector<LocationConfig> &locations,
 {
 	LocationConfig *bestMatch = NULL;
 	size_t longestMatch = 0;
-	// std::cout << "===========================\n";
+
 	for (size_t i = 0; i < locations.size(); i++)
 	{
-		// std::cout << GREEN << "location : " << locations[i].path << "| root : " << locations[i].root << "| uri : " << uri<< RESET << std::endl;
-
 		const std::string &locPath = locations[i].path;
-		if (uri == locPath)
+		if (!locPath.empty() && uri.compare(0, locPath.size(), locPath) == 0)
 		{
-			// std::cout << " loc Path : " << locPath << std::endl;
 			if (locPath.size() > longestMatch)
-			{ // Example: if uri = "/images/cat.jpg" and locPath = "/images", it matches because /images is at the start.
+			{
 				bestMatch = const_cast<LocationConfig *>(&locations[i]);
 				longestMatch = locPath.size();
 			}
 		}
 	}
-	// std::cout << "===========================\n";
+
 	if (bestMatch)
 		return *bestMatch;
 	return LocationConfig();
@@ -128,15 +125,14 @@ bool isCGi(const std::string &path)
 	return false;
 }
 
-Response RequestHandler::serveFile(const std::string &path)
+Response RequestHandler::serveFile(const std::string &path, const LocationConfig &loc)
 {
 	Response resp(req);
-	if (isCGi(path))
+	if (!loc.cgi_path.empty() || isCGi(path))
 	{
-		Msg::error("ENTER CGI");
 		resp.isCGI = true;
 		resp.FilePath = path;
-		std::cout << resp.isCGI << std::endl;
+		resp.cgi_path = loc.cgi_path;
 		return resp;
 	}
 
@@ -208,16 +204,15 @@ Response RequestHandler::handleGET()
 	{
 		// std::cout << "Yes directory: " << path << std::endl;
 		std::string indexPath = _ResolveIndexFile(path, config, loc);
-		std::cout << YELLOW << "indexPath: " << indexPath << " autoindex : " << loc.autoindex << RESET << std::endl;
 		if (!indexPath.empty())
-			return serveFile(indexPath);
+			return serveFile(indexPath, loc);
 		else if (loc.autoindex)
 			return _GenerateAutoindex(path);
 		else
 			return BuildErrorResponse(403);
 	}
 	// std::cout << "*** : " << path << ": ***" << std::endl;
-	return serveFile(path);
+	return serveFile(path, loc);
 }
 
 short RequestHandler::getMethod(const std::string &method)

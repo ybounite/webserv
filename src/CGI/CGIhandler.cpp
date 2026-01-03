@@ -169,13 +169,25 @@ int cgi::runCGI(std::string fileName)
         dup2(pfd[1], STDOUT_FILENO);
         close(pfd[1]);
 
-        char *argv[] = {
-            const_cast<char *>(fileName.c_str()),
-            NULL};
+        char *argv_exec[2];
+        // if (interpreter.empty())
+        // {
+            argv_exec[0] = const_cast<char *>(fileName.c_str());
+            argv_exec[1] = NULL;
+        // }
+        // else
+        // {
+        //     argv_exec[0] = const_cast<char *>(interpreter.c_str());
+        //     argv_exec[1] = const_cast<char *>(fileName.c_str());
+        //     argv_exec[2] = NULL;
+        // }
 
         char **envp = buildCgiEnv("GET", fileName, "", "0", "");
 
-        execve(fileName.c_str(), argv, envp);
+        // if (interpreter.empty())
+            execve(fileName.c_str(), argv_exec, envp);
+        // else
+        //     execve(interpreter.c_str(), argv_exec, envp);
     }
 
     close(pfd[1]);

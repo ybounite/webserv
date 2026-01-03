@@ -39,7 +39,8 @@ public:
     int getServerFd();
     void addClientInEppol();
     void readClientRequest(unsigned int clientFd);
-    void sendHttpResponse(unsigned int clientFd);
+    void readCGIPipe(unsigned int pipeFd);
+    void sendHttpResponse(int clientFd);
     void CreateEpollInstance();
     void deleteClientFromEpoll(unsigned int clientFd);
     void addNblock(unsigned int clientFd);

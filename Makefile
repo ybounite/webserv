@@ -9,7 +9,8 @@ UP			=	\033[A
 CUT			=	\033[K
 
 CXX = c++
-FLAGS = -Wall -Wextra -Werror -std=c++98 -g3
+FLAGS = -Wall -Wextra -Werror -std=c++98 -g3 -fPIE
+LDFLAGS = -pie
 RM = rm -rf
 
 CONFIG_PARSER_DIR = src/config_parser
@@ -38,7 +39,7 @@ OBJ = $(SRC:src/%.cpp=$(OBJ_DIR)%.o)
 all: $(NAME)
 
 $(NAME): $(OBJ)
-	$(CXX) $(FLAGS) -o $(NAME) $(OBJ)
+	$(CXX) $(FLAGS) $(LDFLAGS) -o $(NAME) $(OBJ)
 
 $(OBJ_DIR)%.o: src/%.cpp
 	@mkdir -p $(dir $@)

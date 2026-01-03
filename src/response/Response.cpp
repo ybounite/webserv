@@ -12,7 +12,7 @@
 Response::Response(const Response &Other)
 	: Request(Other), StatusCode(Other.StatusCode), Headers(Other.Headers), 
 	Fd(Other.Fd), BodySize(Other.BodySize), Header(Other.Header), Body(Other.Body), 
-	uri(Other.uri), FilePath(Other.FilePath) {}
+	uri(Other.uri), FilePath(Other.FilePath), isCGI(Other.isCGI), cgi_path(Other.cgi_path) {}
 
 Response::~Response() {}
 
@@ -22,7 +22,8 @@ std::string Response::BuildHeaderResponse() {
 	oss << "HTTP/1.1 " << StatusCode << " " << getStatusMessage(StatusCode) << "\r\n";
 	oss << "Content-Type: " << guessContentType(FilePath) << "\r\n";
 	if (isCGI == 1) {
-		oss << "Transfer-Encoding: chunked\r\n";
+		oss << "Connection: close\r\n";
+		oss << "\r\n";
 		return oss.str();
 	}
 	for (std::map<std::string, std::string>::const_iterator it = Headers.begin(); it != Headers.end(); ++it)

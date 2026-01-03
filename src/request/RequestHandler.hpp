@@ -43,5 +43,5 @@ private:
 
 	bool					_ResourceExists( std::string &Path );
 	std::string				_ResolveIndexFile(const std::string &path, const ServerConfig &server, const LocationConfig &loc);
-	Response				serveFile(const std::string &path);
+	Response				serveFile(const std::string &path, const LocationConfig &loc);
 };

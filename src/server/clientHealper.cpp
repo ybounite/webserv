@@ -53,19 +53,27 @@ void Server::getReadInfos(unsigned int fd)
 	
 	Msg::debug("start epolling ...");
 	Msg::debug(_ClientsMap[fd].clsResponse->FilePath);
+	printf("%d\n",_ClientsMap[fd].clsResponse->isCGI);
 	if (_ClientsMap[fd].clsResponse->isCGI == 1)
 	{
-		printf("%d",_ClientsMap[fd].clsResponse->isCGI);
 		cgi Cgi;
+		std::cout << "CGI PATH: " <<	std::endl;
+		std::cout << _ClientsMap[fd].clsResponse->cgi_path << std::endl;
 		Cgi.CGIhandler(_ClientsMap[fd].clsResponse->FilePath);
+		int pipeFd = Cgi._pipeFd;
+		_ClientsMap[fd].clsResponse->CGIPipeFd = pipeFd;
+		addNblock(pipeFd);
+		
 		epoll_event events;
-		events.data.fd = Cgi._pipeFd;
-		events.data.fd = EPOLLIN;
-		epoll_ctl(_epollInstance, EPOLL_CTL_ADD, Cgi._pipeFd, &events);
+		events.data.fd = pipeFd;
+		events.events = EPOLLIN;
+		epoll_ctl(_epollInstance, EPOLL_CTL_ADD, pipeFd, &events);
 		t_clients client;
 		client.fd = fd;
-		client.CGIfd = Cgi._pipeFd;
-		_ClientsMap[Cgi._pipeFd] = client;
+		client.CGIfd = pipeFd;
+		_ClientsMap[pipeFd] = client;
+		_ClientsMap[pipeFd].last_activity = time(NULL);
+		
 		_ClientsMap[fd].clsResponse->setStatusCode(200);
 		std::string header = _ClientsMap[fd].clsResponse->BuildHeaderResponse();
 		sendBytes = send(fd, header.c_str(), header.length(), 0);
@@ -74,6 +82,7 @@ void Server::getReadInfos(unsigned int fd)
 			deleteClientFromEpoll(fd);
 			throwing("send()");
 		}
+		_ClientsMap[fd].firstTime = false;
 		return;
 	}
 	_ClientsMap[fd].response = _ClientsMap[fd].clsResponse->BuildHeaderResponse();

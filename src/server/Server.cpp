@@ -63,16 +63,28 @@ void Server::run()
             throwing("epoll_wait() failed: ");
         for (int i = 0; i < readyClients; i++)
         {
+            int fd = _clients[i].data.fd;
             if (_clients[i].data.fd == _ServerFd) // a new client request need to be accepted.
                 addClientInEppol();
-            else
-            {
-
-                if (_clients[i].events & EPOLLIN) // do client ready to  send data to the server ?
-                    readClientRequest(_clients[i].data.fd);
-                if (_clients[i].events & EPOLLOUT) // if the clinet send a request this condition would be true and i will respond here
-                    sendHttpResponse(_clients[i].data.fd);
-            }
+            // else
+            // {
+                
+                // Check if this is a CGI pipe FD
+                // if (_ClientsMap.find(fd) != _ClientsMap.end() && _ClientsMap[fd].CGIfd == fd)
+                // {
+                //     // This is a CGI pipe FD
+                //     if (_clients[i].events & EPOLLIN)
+                //         readCGIPipe(fd);
+                // }
+                else
+                {
+                    // This is a regular client socket FD
+                    if (_clients[i].events & EPOLLIN) // do client ready to  send data to the server ?
+                        readClientRequest(fd);
+                    if (_clients[i].events & EPOLLOUT) // if the client send a request this condition would be true and i will respond here
+                        sendHttpResponse(fd);
+                }
+            // }
         }
     }
 }
