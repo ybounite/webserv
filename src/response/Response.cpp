@@ -21,7 +21,10 @@ std::string Response::BuildHeaderResponse() {
 	std::ostringstream oss;
 	oss << "HTTP/1.1 " << StatusCode << " " << getStatusMessage(StatusCode) << "\r\n";
 	oss << "Content-Type: " << guessContentType(FilePath) << "\r\n";
-
+	if (isCGI == 1) {
+		oss << "Transfer-Encoding: chunked\r\n";
+		return oss.str();
+	}
 	for (std::map<std::string, std::string>::const_iterator it = Headers.begin(); it != Headers.end(); ++it)
 		oss << it->first << ": " << it->second << "\r\n";
 	oss << "Content-Length: " << BodySize << "\r\n";

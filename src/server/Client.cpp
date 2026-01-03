@@ -21,8 +21,6 @@ void Server::addClientInEppol()
 	_ClientsMap[clientFd] = client;
 }
 
-
-
 // this function add the EPOLLOUT flag to the socket in the epoll instance to watch also if the client is ready to recv data
 void Server::readClientRequest(unsigned int clientFd)
 {
@@ -43,10 +41,40 @@ void Server::readClientRequest(unsigned int clientFd)
 	modifySockEvents(_epollInstance, clientFd);
 }
 
-
 void Server::sendHttpResponse(unsigned int clientFd)
 {
 	time_t current_time = time(NULL);
+	// if (_ClientsMap[clientFd].CGIfd > -1)
+	// {
+	// 	Msg::error("heree\n");
+	// 	char buffer[1024];
+	// 	ssize_t sendBytes;
+	// 	ssize_t b_read = read(_ClientsMap[clientFd].CGIfd, buffer, sizeof(buffer));
+	// 	if (b_read < 0)
+	// 	{
+	// 		deleteClientFromEpoll(clientFd);
+	// 		deleteClientFromEpoll(_ClientsMap[clientFd].fd);
+	// 		throwing("read()");
+	// 	}
+	// 	if (b_read == 0)
+	// 	{
+	// 		std::string std = to_string(b_read) + "\r\n\r\n";
+	// 		sendBytes = send(clientFd, std.c_str(), std.length(), 0);
+	// 		deleteClientFromEpoll(clientFd);
+	// 		deleteClientFromEpoll(_ClientsMap[clientFd].fd);
+	// 		return;
+	// 	}
+	// 	std::string std = to_string(b_read) + "\r\n" + buffer + "\r\n";
+	// 	sendBytes = send(clientFd, std.c_str(), std.length(), 0);
+	// 	if (sendBytes < 0)
+	// 	{
+	// 		std::cout << "delete bucose in send byts is nigative: " << sendBytes << std::endl;
+	// 		deleteClientFromEpoll(clientFd);
+	// 		deleteClientFromEpoll(_ClientsMap[clientFd].fd);
+	// 		throwing("send()");
+	// 	}
+	// 	return;
+	// }
 	if (current_time - _ClientsMap[clientFd].last_activity > 10) // 30 seconds timeout
 	{
 		std::cout << "Client timeout, closing connection\n";

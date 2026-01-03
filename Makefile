@@ -16,7 +16,7 @@ CONFIG_PARSER_DIR = src/config_parser
 REQUEST_PARSER_DIR = src/request
 REQUEST_RESPONSE_DIR = src/response
 SERVER_DIR = src/server
-
+CGI = src/CGI
 SRC = src/main.cpp \
       $(CONFIG_PARSER_DIR)/Print.cpp \
       $(CONFIG_PARSER_DIR)/Tokenization.cpp \
@@ -25,7 +25,7 @@ SRC = src/main.cpp \
       $(CONFIG_PARSER_DIR)/Config.cpp \
 	  $(SERVER_DIR)/Server.cpp \
 	  $(SERVER_DIR)/Client.cpp \
-	  $(SERVER_DIR)/CGIhandler.cpp \
+	  $(CGI)/CGIhandler.cpp \
 	  $(SERVER_DIR)/clientHealper.cpp \
 	  src/sessions/sessions.cpp\
 	  $(REQUEST_PARSER_DIR)/Request.cpp\
@@ -60,9 +60,9 @@ re: fclean all
 
 .SECONDARY: $(OBJS)
 
-run: $(NAME)
+run: re
 	@./$(NAME)
-BRANCH = main
+BRANCH = new-branch
 p:
 	@read -p "Commit message: " msg; \
 	git add -f . && git commit -m "$$msg" && git push origin $(BRANCH)

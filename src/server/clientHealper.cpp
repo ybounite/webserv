@@ -50,6 +50,32 @@ void Server::getReadInfos(unsigned int fd)
 	Request req(_ClientsMap[fd].request, _data);
 	RequestHandler ReqH(req, _data.servers[0]);
 	_ClientsMap[fd].clsResponse = new Response(ReqH.HandleMethod());
+	
+	Msg::debug("start epolling ...");
+	Msg::debug(_ClientsMap[fd].clsResponse->FilePath);
+	if (_ClientsMap[fd].clsResponse->isCGI == 1)
+	{
+		printf("%d",_ClientsMap[fd].clsResponse->isCGI);
+		cgi Cgi;
+		Cgi.CGIhandler(_ClientsMap[fd].clsResponse->FilePath);
+		epoll_event events;
+		events.data.fd = Cgi._pipeFd;
+		events.data.fd = EPOLLIN;
+		epoll_ctl(_epollInstance, EPOLL_CTL_ADD, Cgi._pipeFd, &events);
+		t_clients client;
+		client.fd = fd;
+		client.CGIfd = Cgi._pipeFd;
+		_ClientsMap[Cgi._pipeFd] = client;
+		_ClientsMap[fd].clsResponse->setStatusCode(200);
+		std::string header = _ClientsMap[fd].clsResponse->BuildHeaderResponse();
+		sendBytes = send(fd, header.c_str(), header.length(), 0);
+		if (sendBytes < 0)
+		{
+			deleteClientFromEpoll(fd);
+			throwing("send()");
+		}
+		return;
+	}
 	_ClientsMap[fd].response = _ClientsMap[fd].clsResponse->BuildHeaderResponse();
 	sendBytes = send(fd, _ClientsMap[fd].response.c_str(), _ClientsMap[fd].response.length(), 0);
 	if (sendBytes < 0)
@@ -97,4 +123,3 @@ void Server::ReadSend(unsigned int fd)
 	}
 	_ClientsMap[fd].bytesread += sendBytes;
 }
-

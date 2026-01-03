@@ -10,50 +10,54 @@
 #include "Request.hpp"
 #include "../response/Response.hpp"
 
-size_t RequestHandler::GetBodySize(const std::string &path) {
+size_t RequestHandler::GetBodySize(const std::string &path)
+{
 	std::ifstream file(path.c_str(), std::ios::binary);
-	if (!file.is_open()) return 0;
+	if (!file.is_open())
+		return 0;
 
 	file.seekg(0, std::ios::end);
 	ssize_t file_size = file.tellg();
 	file.seekg(0, std::ios::beg);
 	file.close();
-	if (file_size < 0) return 0;
+	if (file_size < 0)
+		return 0;
 
 	return file_size;
 }
 
-std::string	RequestHandler::_BuildFileSystemPath(const std::string &root, const std::string &uri)
+std::string RequestHandler::_BuildFileSystemPath(const std::string &root, const std::string &uri)
 {
-    std::string path = root;
-    if (!path.empty() && path[path.size() -1 ] != '/')
-        path += "/";
-    path += (uri[0] == '/' ? uri.substr(1) : uri); // avoid double slash
-    return path;
+	std::string path = root;
+	if (!path.empty() && path[path.size() - 1] != '/')
+		path += "/";
+	path += (uri[0] == '/' ? uri.substr(1) : uri); // avoid double slash
+	return path;
 }
 
-bool		RequestHandler::_ResourceExists( std::string &Path ){
+bool RequestHandler::_ResourceExists(std::string &Path)
+{
 	struct stat Buffer;
 	return (stat(Path.c_str(), &Buffer) == 0);
 }
 
 std::string RequestHandler::_ResolveIndexFile(const std::string &path, const ServerConfig &server, const LocationConfig &loc)
 {
-    std::string indexName = !loc.index.empty() ? loc.index : server.index;
-    if (indexName.empty())
-        return "";
+	std::string indexName = !loc.index.empty() ? loc.index : server.index;
+	if (indexName.empty())
+		return "";
 
-    std::string fullPath = path;
-    if (fullPath[fullPath.size() - 1] != '/')
-        fullPath += '/';
-    fullPath += indexName;
-    if (_ResourceExists(fullPath))
-        return fullPath;
+	std::string fullPath = path;
+	if (fullPath[fullPath.size() - 1] != '/')
+		fullPath += '/';
+	fullPath += indexName;
+	if (_ResourceExists(fullPath))
+		return fullPath;
 
-    return "";
+	return "";
 }
 
-bool	_IsDirectory(const char *path)
+bool _IsDirectory(const char *path)
 {
 	struct stat st;
 	if (stat(path, &st) != 0)
@@ -61,7 +65,8 @@ bool	_IsDirectory(const char *path)
 	return S_ISDIR(st.st_mode);
 }
 
-Response	RequestHandler::BuildErrorResponse( short code ) {
+Response RequestHandler::BuildErrorResponse(short code)
+{
 
 	Response resp(req);
 
@@ -70,7 +75,8 @@ Response	RequestHandler::BuildErrorResponse( short code ) {
 	std::ostringstream errorPath;
 	errorPath << "errors/" << code << ".html";
 	resp.Fd = open(errorPath.str().c_str(), O_RDONLY);
-	if (resp.Fd == -1) {
+	if (resp.Fd == -1)
+	{
 		std::cerr << "Error opening error file: " << errorPath.str() << std::endl;
 		// Fallback: set body with inline HTML instead of file
 		resp.setHeader("Content-Type", "text/html");
@@ -79,81 +85,102 @@ Response	RequestHandler::BuildErrorResponse( short code ) {
 		resp.setBody(fallbackBody.str());
 		resp.BodySize = fallbackBody.str().size();
 	}
-	else {
+	else
+	{
 		resp.BodySize = GetBodySize(errorPath.str());
 		resp.FilePath = errorPath.str();
 	}
 	return resp;
 }
 
-LocationConfig	GetMatchingLocation(const std::vector<LocationConfig>& locations, const std::string& uri)
+LocationConfig GetMatchingLocation(const std::vector<LocationConfig> &locations, const std::string &uri)
 {
-	LocationConfig* bestMatch = NULL;
+	LocationConfig *bestMatch = NULL;
 	size_t longestMatch = 0;
-	//std::cout << "===========================\n";
+	// std::cout << "===========================\n";
 	for (size_t i = 0; i < locations.size(); i++)
 	{
-		//std::cout << GREEN << "location : " << locations[i].path << "| root : " << locations[i].root << "| uri : " << uri<< RESET << std::endl;
+		// std::cout << GREEN << "location : " << locations[i].path << "| root : " << locations[i].root << "| uri : " << uri<< RESET << std::endl;
 
-		const std::string& locPath = locations[i].path;
+		const std::string &locPath = locations[i].path;
 		if (uri == locPath)
 		{
-			//std::cout << " loc Path : " << locPath << std::endl;
+			// std::cout << " loc Path : " << locPath << std::endl;
 			if (locPath.size() > longestMatch)
-			{ //Example: if uri = "/images/cat.jpg" and locPath = "/images", it matches because /images is at the start.
-				bestMatch = const_cast<LocationConfig*>(&locations[i]);
+			{ // Example: if uri = "/images/cat.jpg" and locPath = "/images", it matches because /images is at the start.
+				bestMatch = const_cast<LocationConfig *>(&locations[i]);
 				longestMatch = locPath.size();
 			}
 		}
 	}
-	//std::cout << "===========================\n";
+	// std::cout << "===========================\n";
 	if (bestMatch)
 		return *bestMatch;
 	return LocationConfig();
 }
 
-Response	RequestHandler::serveFile(const std::string &path)
+bool isCGi(const std::string &path)
 {
-    Response resp(req);
-	
+	std::string::size_type dot = path.find_last_of('.');
+	std::string ext = (dot == std::string::npos) ? std::string("") : path.substr(dot + 1);
+	if (ext == "py" || ext == "cpp")
+		return true;
+	return false;
+}
+
+Response RequestHandler::serveFile(const std::string &path)
+{
+	Response resp(req);
+	if (isCGi(path))
+	{
+		Msg::error("ENTER CGI");
+		resp.isCGI = true;
+		resp.FilePath = path;
+		std::cout << resp.isCGI << std::endl;
+		return resp;
+	}
+
 	resp.Fd = open(path.c_str(), O_RDONLY);
 	if (resp.Fd == -1)
-        return BuildErrorResponse(404);
+		return BuildErrorResponse(404);
 	resp.BodySize = GetBodySize(path);
-    resp.setStatusCode(200);
+	resp.setStatusCode(200);
 	resp.FilePath = path;
-    return resp;
+	return resp;
 }
 
-Response	RequestHandler::_GenerateAutoindex(const std::string &DirPath) {
-    Response resp(req);
-    
-    DIR *dir = opendir(DirPath.c_str());
-    if (!dir)
-        return BuildErrorResponse(500);
-    
-    std::ostringstream html;
-    html << "<html><head><title>Index</title></head><body>";
-    html << "<h1>Index of " << req.getUri() << "</h1><ul>";
-    
-    struct dirent *entry;
-    while ((entry = readdir(dir)) != NULL) {
-        std::string name = entry->d_name;
-        if (name != "." && name != "..")
-            html << "<li><a href='" << name << "'>" << name << "</a></li>";
-    }
-    
-    html << "</ul></body></html>";
-    closedir(dir);
-    
-    resp.setStatusCode(200);
-    resp.setBody(html.str());
-    return resp;
-}
-
-bool		RequestHandler::_haseAllowed( std::vector<std::string> Methods, enHttpMethod AllowedMethod)
+Response RequestHandler::_GenerateAutoindex(const std::string &DirPath)
 {
-	if (Methods.empty()) return true;
+	Response resp(req);
+
+	DIR *dir = opendir(DirPath.c_str());
+	if (!dir)
+		return BuildErrorResponse(500);
+
+	std::ostringstream html;
+	html << "<html><head><title>Index</title></head><body>";
+	html << "<h1>Index of " << req.getUri() << "</h1><ul>";
+
+	struct dirent *entry;
+	while ((entry = readdir(dir)) != NULL)
+	{
+		std::string name = entry->d_name;
+		if (name != "." && name != "..")
+			html << "<li><a href='" << name << "'>" << name << "</a></li>";
+	}
+
+	html << "</ul></body></html>";
+	closedir(dir);
+
+	resp.setStatusCode(200);
+	resp.setBody(html.str());
+	return resp;
+}
+
+bool RequestHandler::_haseAllowed(std::vector<std::string> Methods, enHttpMethod AllowedMethod)
+{
+	if (Methods.empty())
+		return true;
 	for (size_t i = 0; i < Methods.size(); i++)
 	{
 		if ((enHttpMethod)getMethod(Methods[i]) == AllowedMethod)
@@ -162,38 +189,38 @@ bool		RequestHandler::_haseAllowed( std::vector<std::string> Methods, enHttpMeth
 	return false;
 }
 
-Response	RequestHandler::handleGET()
+Response RequestHandler::handleGET()
 {
 	LocationConfig loc = GetMatchingLocation(config.locations, req.getUri());
 	if (!_haseAllowed(loc.methods, HTTP_GET))
 		return BuildErrorResponse(405);
 	std::string root = loc.root.empty() ? config.root : loc.root;
-	//std::cout << LIGHT_BLUE << "location : " << loc.path << RESET << std::endl;
-	//std::cout << GREEN << "root location  : " << loc.root << RESET << std::endl;
-	//std::cout << GREEN << "new root : " << root << RESET << std::endl;
-	//std::cout << YELLOW << "URI : " << req.getUri() << RESET << std::endl;
+	// std::cout << LIGHT_BLUE << "location : " << loc.path << RESET << std::endl;
+	// std::cout << GREEN << "root location  : " << loc.root << RESET << std::endl;
+	// std::cout << GREEN << "new root : " << root << RESET << std::endl;
+	// std::cout << YELLOW << "URI : " << req.getUri() << RESET << std::endl;
 
-	std::string	path = _BuildFileSystemPath(root, req.getUri());
+	std::string path = _BuildFileSystemPath(root, req.getUri());
 	if (!_ResourceExists(path))
 		return BuildErrorResponse(404);
-	//std::cout << "*** : " << path << ": ***" << std::endl;
+	// std::cout << "*** : " << path << ": ***" << std::endl;
 	if (_IsDirectory(path.c_str()))
 	{
-		//std::cout << "Yes directory: " << path << std::endl;
+		// std::cout << "Yes directory: " << path << std::endl;
 		std::string indexPath = _ResolveIndexFile(path, config, loc);
-		std::cout << YELLOW << "indexPath: " << indexPath  << " autoindex : " << loc.autoindex << RESET << std::endl;
-    	if (!indexPath.empty()) 
-        	return serveFile(indexPath);
-		else if (loc.autoindex) 
+		std::cout << YELLOW << "indexPath: " << indexPath << " autoindex : " << loc.autoindex << RESET << std::endl;
+		if (!indexPath.empty())
+			return serveFile(indexPath);
+		else if (loc.autoindex)
 			return _GenerateAutoindex(path);
 		else
 			return BuildErrorResponse(403);
 	}
-	//std::cout << "*** : " << path << ": ***" << std::endl;
+	// std::cout << "*** : " << path << ": ***" << std::endl;
 	return serveFile(path);
 }
 
-short		RequestHandler::getMethod(const std::string &method)
+short RequestHandler::getMethod(const std::string &method)
 {
 	if (method == "GET")
 		return HTTP_GET;
@@ -205,7 +232,7 @@ short		RequestHandler::getMethod(const std::string &method)
 		return HTTP_UNKNOWN;
 }
 
-Response	RequestHandler::HandleMethod()
+Response RequestHandler::HandleMethod()
 {
 	if (req.status != Request::enVALID)
 		return BuildErrorResponse(400);
@@ -350,17 +377,18 @@ Response RequestHandler::handlePOST()
 		resp.setHeader("Content-Type", "text/html");
 
 		std::string responseBody = "<html>"
-		"<head>"
-		"<meta charset='UTF-8'>"
-		"<meta name='viewport' content='width=device-width, initial-scale=1.0'>"
-		"<title>POST Result</title>"
-		"<link rel='stylesheet' href='/assets/css/main.css'>"
-		"</head>"
-		"<body>"
-		"<h1>POST received</h1>"
-		"<pre>" + bodyData + "</pre>"
-		"</body>"
-		"</html>";
+								   "<head>"
+								   "<meta charset='UTF-8'>"
+								   "<meta name='viewport' content='width=device-width, initial-scale=1.0'>"
+								   "<title>POST Result</title>"
+								   "<link rel='stylesheet' href='/assets/css/main.css'>"
+								   "</head>"
+								   "<body>"
+								   "<h1>POST received</h1>"
+								   "<pre>" +
+								   bodyData + "</pre>"
+											  "</body>"
+											  "</html>";
 
 		resp.setBody(responseBody);
 	}

@@ -10,11 +10,12 @@ class Config;
 
 typedef struct s_clients
 {
-    s_clients() : fd(-1), firstTime(true), leftData(false), bytesread(0), clsResponse(NULL) {}
+    s_clients() : fd(-1), firstTime(true), CGIfd(-1), leftData(false), bytesread(0), clsResponse(NULL) {}
     int fd;
     std::string request;
     std::string response;
     bool firstTime;
+    int CGIfd;
     bool leftData;
     ssize_t bytesread;
     std::string DataLeft;

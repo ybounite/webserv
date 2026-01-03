@@ -143,6 +143,7 @@ class RequestHandler;
 
 # include "../src/request/Request.hpp"
 # include "../src/server/Server.hpp"
+# include "../src/CGI/cgi.hpp"
 
 std::string getCookieValue(const Request &req, std::string key);
 void createNewSession(Request &req, ServerConfig &config);

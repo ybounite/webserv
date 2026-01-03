@@ -20,7 +20,7 @@ public:
 
 	Response( const Request &req )
 		: Request(req), StatusCode(200), Headers(), Fd(-1), BodySize(0), Header(""),
-			Body(""), uri(""), FilePath("") {}
+			Body(""), uri(""), FilePath(""), isCGI(false){}
 	
 	short									StatusCode;
 	std::map<std::string, std::string>		Headers;
@@ -30,6 +30,8 @@ public:
 	std::string								Body;
 	std::string								uri;
 	std::string								FilePath;
+	bool										isCGI;
+
 	
 	Response(const Response &Other);
 	~Response();
