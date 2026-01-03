@@ -4,7 +4,8 @@
 class ServerConfig {
 public:
     std::map<std::string, std::map<std::string, std::string> > sessions;
-    int listen_port;
+    // int listen_port;
+    std::vector<int> listen_ports;
     std::string index;
     std::string server_name;
     std::string root;

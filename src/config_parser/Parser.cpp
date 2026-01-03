@@ -126,7 +126,6 @@ void expect(const std::vector<std::string> &tokens, unsigned long &i)
 
 void init_map(std::map<std::string, bool> &directive_flags)
 {
-    directive_flags["listen"] = false;
     directive_flags["root"] = false;
     directive_flags["client_max_body_size"] = false;
     directive_flags["server_name"] = false;
@@ -166,8 +165,7 @@ ServerConfig Parser::parseServer(const std::vector<std::string> &tokens, unsigne
     {
         if (tokens[i] == "listen")
         {
-            check_map(directive_flags, tokens[i]);
-            server.listen_port = parseListen(tokens, i);
+            server.listen_ports.push_back(parseListen(tokens, i));
             expect(tokens, i);
         }
         else if (tokens[i] == "root")
@@ -220,6 +218,8 @@ ServerConfig Parser::parseServer(const std::vector<std::string> &tokens, unsigne
     last_check_in_map(directive_flags);
     if (server.index.empty())
         server.index = "index.html";
+    if (server.listen_ports.empty())
+        throw std::runtime_error("No listenport in config file");
     return server;
  }
 
