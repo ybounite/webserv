@@ -248,53 +248,50 @@ Response	RequestHandler::_Rdirect(LocationConfig loc){
 	return resp;
 }
 
-Response	RequestHandler::handleGET()
+Response RequestHandler::handleGET()
 {
-	LocationConfig loc = GetMatchingLocation(config.locations, req.getUri());
-	if (!_haseAllowed(loc.methods, HTTP_GET))
-		return BuildErrorResponse(405);
-	std::string root = loc.root.empty() ? config.root : loc.root;
-	
-	std::string	path = _BuildFileSystemPath(root, req.getUri());
+    LocationConfig loc = GetMatchingLocation(config.locations, req.getUri());
+    if (!_haseAllowed(loc.methods, HTTP_GET))
+        return BuildErrorResponse(405);
+    
+    std::string root = loc.root.empty() ? config.root : loc.root;
+    std::string path = _BuildFileSystemPath(root, req.getUri());
 
-	if (!_ResourceExists(path))
-		return BuildErrorResponse(404);
-	if (_IsDirectory(path.c_str()))
-	{
-		std::string indexPath = _ResolveIndexFile(path, config, loc);
-		std::cout << YELLOW << "indexPath: " << indexPath  << " autoindex : " << loc.autoindex << RESET << std::endl;
-		if (!indexPath.empty())
-			return serveFile(indexPath);
-		else if (loc.return_code >= 300 && loc.return_code < 400)
-				return _Rdirect(loc);
-		else if (loc.autoindex) 
-			return _GenerateAutoindex(path);
-		else
-			return BuildErrorResponse(403);
-	}
-	bool isPublicPage = (path == config.root + "/pages/uploads.html" || path == config.root + "/pages/delete.html");
+    if (!_ResourceExists(path))
+        return BuildErrorResponse(404);
+    
+    if (_IsDirectory(path.c_str()))
+    {
+        std::string indexPath = _ResolveIndexFile(path, config, loc);
+        if (!indexPath.empty())
+            return serveFile(indexPath);
+        else if (loc.return_code >= 300 && loc.return_code < 400)
+            return _Rdirect(loc);
+        else if (loc.autoindex) 
+            return _GenerateAutoindex(path);
+        else
+            return BuildErrorResponse(403);
+    }
 
-	if (isPublicPage && !search_Cookies(req.cookies)) {
+    bool isPublicPage = (path == config.root + "/pages/uploads.html" || path == config.root + "/pages/delete.html" || path == config.root + "/pages/home.html");
+    
+    // Debugging the cookies and conditions
+    std::cout << "isPublicPage: " << isPublicPage << std::endl;
+    //std::cout << "Session ID: " << req.cookies["session_id"] << std::endl;
+    
+
+    if (isPublicPage && !search_Cookies(req.cookies)) {
+        std::cout << "Redirecting to login..." << std::endl;
         Response resp(req);
-        resp.setStatusCode(302);
+        resp.setStatusCode(302);  // Redirection code
         resp.setHeader("Location", "/pages/login.html");
         resp.setBody("<html><body>Redirecting to login...</body></html>");
         return resp;
     }
 
-    Response resp = serveFile(path);
-
-    if (req.cookies.find("session_id") != req.cookies.end())
-    {
-        resp.setHeader(
-            "Set-Cookie",
-            "session_id=" + req.cookies.at("session_id") +
-            "; Path=/; HttpOnly; Max-Age=3600"
-        );
-    }
-
-    return resp;
+    return serveFile(path);  // Continue normal processing if no redirect
 }
+
 
 short		RequestHandler::getMethod(const std::string &method)
 {
