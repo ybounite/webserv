@@ -12,6 +12,9 @@ void sighandler(int status)
 
 void Server::addNblock(unsigned int fd)
 {
+    if ((int)fd < 0)
+        throwing("addNblock(): invalid fd");
+
     int flags = fcntl(fd, F_GETFL, 0);
     if (flags < 0)
         throwing("fcntl(F_GETFL)");
@@ -23,17 +26,19 @@ Server::Server(Config &data) : _data(data)
 {
     int opt = 1;
     signal(SIGINT, sighandler);
+    /* Prevent the process from being killed by SIGPIPE when writing to closed sockets */
+    signal(SIGPIPE, SIG_IGN);
     _data = data;
     _ServerFd = socket(AF_INET, SOCK_STREAM, 0);
     setsockopt(_ServerFd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+    if (_ServerFd < 0)
+        throwing("socket()");
+
     addNblock(_ServerFd);
     memset((void *)&_address, 0, sizeof(sockaddr_in));
     _address.sin_family = AF_INET;
     _address.sin_addr.s_addr = INADDR_ANY;
     _address.sin_port = htons(_data.servers[0].listen_port);
-
-    if (_ServerFd < 0)
-        throwing("socket()");
     if (bind(_ServerFd, (const struct sockaddr *)&_address, sizeof(struct sockaddr_in)) < 0) // now we assign to this socket a port and an address family to get conection with.
         throwing("bind()");
     if (listen(_ServerFd, 1000) < 0) // now the server is listening for new requests.
@@ -64,29 +69,66 @@ void Server::run()
         for (int i = 0; i < readyClients; i++)
         {
             int fd = _clients[i].data.fd;
-            if (_clients[i].data.fd == _ServerFd) // a new client request need to be accepted.
+            if (fd == _ServerFd)
                 addClientInEppol();
-            // else
-            // {
-                
-                // Check if this is a CGI pipe FD
-                // if (_ClientsMap.find(fd) != _ClientsMap.end() && _ClientsMap[fd].CGIfd == fd)
-                // {
-                //     // This is a CGI pipe FD
-                //     if (_clients[i].events & EPOLLIN)
-                //         readCGIPipe(fd);
-                // }
-                else
-                {
-                    // This is a regular client socket FD
-                    if (_clients[i].events & EPOLLIN) // do client ready to  send data to the server ?
-                        readClientRequest(fd);
-                    if (_clients[i].events & EPOLLOUT) // if the client send a request this condition would be true and i will respond here
-                        sendHttpResponse(fd);
-                }
-            // }
+            else if (_ClientsMap.find(fd) != _ClientsMap.end() &&
+                     _ClientsMap[fd].CGIfd == fd)
+                readCGIPipe(fd);
+            else
+            {
+                if (_clients[i].events & EPOLLIN)
+                    readClientRequest(fd);
+                if (_clients[i].events & EPOLLOUT)
+                    sendHttpResponse(fd);
+            }
         }
     }
+}
+
+// New function to handle CGI pipe reads
+void Server::readCGIPipe(int pipeFd)
+{
+    int sock = _ClientsMap[pipeFd].fd;
+    char buffer[1024];
+    ssize_t b_read = read(pipeFd, buffer, sizeof(buffer));
+
+    std::cout << "Read from CGI pipe " << pipeFd << " : " << b_read << " bytes" << std::endl;
+
+    if (b_read < 0)
+    {
+        std::cout << "Error reading pipe: " << std::endl;
+        deleteClientFromEpoll(pipeFd);
+        deleteClientFromEpoll(sock);
+        return;
+    }
+
+    if (b_read == 0)
+    {
+        std::cout << "EOF from CGI pipe - child process finished" << std::endl;
+        const char *final_chunk = "\r\n\r\n";
+        send(sock, final_chunk, strlen(final_chunk), MSG_NOSIGNAL);
+        deleteClientFromEpoll(pipeFd);
+        deleteClientFromEpoll(sock);
+        return;
+    }
+
+    // Refresh activity timestamp since we successfully read data from CGI
+    _ClientsMap[pipeFd].last_activity = time(NULL);
+    ssize_t sendBytes = send(sock, buffer, b_read, MSG_NOSIGNAL);
+    if (sendBytes < 0)
+    {
+        deleteClientFromEpoll(pipeFd);
+        deleteClientFromEpoll(sock);
+        return;
+    }
+    if (time(NULL) - _ClientsMap[pipeFd].last_activity > 10) // 30 seconds timeout
+    {
+        std::cout << "Client timeout, closing connection\n";
+        deleteClientFromEpoll(pipeFd);
+        deleteClientFromEpoll(sock);
+        return;
+    }
+    std::cout << "Sent " << sendBytes << " bytes to client" << std::endl;
 }
 
 std::map<int, t_clients> Server::getClients() const

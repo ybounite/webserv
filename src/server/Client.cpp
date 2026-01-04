@@ -75,35 +75,9 @@ void Server::readClientRequest(unsigned int clientFd)
 
 void Server::sendHttpResponse(int clientFd)
 {
-	time_t current_time = time(NULL);
-	if (_ClientsMap[clientFd].CGIfd > clientFd)
-	{
-		int pfd = _ClientsMap[clientFd].CGIfd;
-		int sock = _ClientsMap[clientFd].fd;
-		char buffer[1024];
-		ssize_t b_read = read(pfd, buffer, sizeof(buffer));
-		if (b_read < 0)
-		{
-			deleteClientFromEpoll(pfd);
-			deleteClientFromEpoll(sock);
-			throwing("read()");
-		}
-		if (b_read == 0)
-		{
-			deleteClientFromEpoll(pfd);
-			deleteClientFromEpoll(sock);
-			return;
-		}
-		ssize_t sendBytes = send(sock, buffer, b_read, 0);
-		if (sendBytes < 0)
-		{
-			deleteClientFromEpoll(pfd);
-			deleteClientFromEpoll(sock);
-			throwing("send()");
-		}
+	if (_ClientsMap[clientFd].CGIfd == 1)
 		return;
-	}
-	if (current_time - _ClientsMap[clientFd].last_activity > 10) // 30 seconds timeout
+	if (time(NULL) - _ClientsMap[clientFd].last_activity > 10) // 30 seconds timeout
 	{
 		std::cout << "Client timeout, closing connection\n";
 		deleteClientFromEpoll(clientFd);
@@ -112,14 +86,12 @@ void Server::sendHttpResponse(int clientFd)
 	if (_ClientsMap[clientFd].firstTime)
 		return getReadInfos(clientFd);
 
-	// For CGI requests, don't try to read from Fd (which is -1)
-	// The pipe data is being sent directly in the EPOLLIN handler for the pipe FD
 	if (_ClientsMap[clientFd].clsResponse->isCGI)
 		return;
 
 	if (_ClientsMap[clientFd].clsResponse->Fd == -1)
 		return errorSending(clientFd);
-
+	
 	ReadSend(clientFd);
 
 	if (_ClientsMap[clientFd].bytesread >= _ClientsMap[clientFd].clsResponse->BodySize)

@@ -14,6 +14,7 @@
 # include <cctype>
 # include <ctime>
 # include <cstdarg>
+# include <cerrno>
 
 /* STL Containers */
 # include <map>

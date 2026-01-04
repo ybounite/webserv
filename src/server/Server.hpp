@@ -48,6 +48,9 @@ public:
     void errorSending(unsigned int fd);
     void ReadSend(unsigned int fd);
     void modifySockEvents(int epollfd, int fd);
+    // void Server::isCGIPipe(int fd);
+    void readCGIPipe(int pipeFd);
+    void CGIerror(int code, int fd, RequestHandler &ReqH);
     size_t contentLenght(std::string header);
     void run();
     std::map<int, t_clients> getClients() const;

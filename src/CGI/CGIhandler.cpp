@@ -110,47 +110,6 @@ void throwing(std::string fct)
     throw std::runtime_error(fct + std::string("failed: ") + strerror(errno));
 }
 
-// ssize_t cgi::readOutput(int fd)
-// {
-//     ssize_t total = 0;
-//     time_t start = time(NULL);
-
-//     _fileFd = open("/tmp/file.txt", O_CREAT | O_TRUNC | O_WRONLY, 0644);
-//     if (_fileFd < 0)
-//         throwing("open()");
-
-//     char buffer[1024];
-
-//     while (true)
-//     {
-//         ssize_t n = read(fd, buffer, sizeof(buffer));
-
-//         if (n == 0)
-//             break;
-
-//         if (n < 0)
-//             throwing("read()");
-
-//         write(_fileFd, buffer, n);
-//         total += n;
-
-//         if (time(NULL) - start > 1)
-//         {
-//             isTimeOut = 1;
-
-//             kill(fd, SIGKILL);
-//             waitpid(fd, NULL, 0);
-
-//             close(fd);
-//             close(_fileFd);
-//             return -1;
-//         }
-//     }
-//     close(fd);
-//     close(_fileFd);
-//     return total;
-// }
-
 int cgi::runCGI(std::string fileName)
 {
     int pfd[2];
@@ -170,24 +129,11 @@ int cgi::runCGI(std::string fileName)
         close(pfd[1]);
 
         char *argv_exec[2];
-        // if (interpreter.empty())
-        // {
-            argv_exec[0] = const_cast<char *>(fileName.c_str());
-            argv_exec[1] = NULL;
-        // }
-        // else
-        // {
-        //     argv_exec[0] = const_cast<char *>(interpreter.c_str());
-        //     argv_exec[1] = const_cast<char *>(fileName.c_str());
-        //     argv_exec[2] = NULL;
-        // }
-
+        argv_exec[0] = const_cast<char *>(fileName.c_str());
+        argv_exec[1] = NULL;
         char **envp = buildCgiEnv("GET", fileName, "", "0", "");
-
-        // if (interpreter.empty())
-            execve(fileName.c_str(), argv_exec, envp);
-        // else
-        //     execve(interpreter.c_str(), argv_exec, envp);
+        if (execve(fileName.c_str(), argv_exec, envp) == -1)
+            return -1;
     }
 
     close(pfd[1]);
@@ -198,11 +144,4 @@ int cgi::runCGI(std::string fileName)
 void cgi::CGIhandler(std::string fileName)
 {
     _pipeFd = runCGI(fileName);
-    
-    // _bodySize = readOutput(pipefd);
-
-    // if (isTimeOut == 0)
-    //     waitpid(fd, NULL, WNOHANG);
-
-    // _fileFd = open("/tmp/file.txt", O_RDONLY);
 }

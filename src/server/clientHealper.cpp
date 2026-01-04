@@ -44,26 +44,49 @@ size_t Server::contentLenght(std::string header)
 	return atoi(Clenght.c_str());
 }
 
+void Server::CGIerror(int code, int fd, RequestHandler &ReqH)
+{
+	ssize_t sendBytes;
+
+	if (_ClientsMap[fd].clsResponse)
+		delete _ClientsMap[fd].clsResponse;
+	_ClientsMap[fd].clsResponse = new Response(ReqH.BuildErrorResponse(code));
+	if (_ClientsMap[fd].clsResponse->Fd == -1)
+	{
+		sendBytes = send(fd, _ClientsMap[fd].clsResponse->Body.c_str(),
+						 _ClientsMap[fd].clsResponse->Body.length(), 0);
+	}
+	else
+	{
+		std::string header = _ClientsMap[fd].clsResponse->BuildHeaderResponse();
+		std::ifstream file(_ClientsMap[fd].clsResponse->FilePath.c_str(), std::ios::binary);
+		std::ostringstream ss;
+		ss << file.rdbuf();
+		std::string body = ss.str();
+		header += body;
+		send(fd, header.c_str(), header.length(), 0);
+		return deleteClientFromEpoll(fd);
+	}
+}
+
 void Server::getReadInfos(unsigned int fd)
 {
 	ssize_t sendBytes;
 	Request req(_ClientsMap[fd].request, _data);
 	RequestHandler ReqH(req, _data.servers[0]);
 	_ClientsMap[fd].clsResponse = new Response(ReqH.HandleMethod());
-	
-	Msg::debug("start epolling ...");
-	Msg::debug(_ClientsMap[fd].clsResponse->FilePath);
-	printf("%d\n",_ClientsMap[fd].clsResponse->isCGI);
 	if (_ClientsMap[fd].clsResponse->isCGI == 1)
 	{
+		Msg::debug("start epolling ...");
 		cgi Cgi;
-		std::cout << "CGI PATH: " <<	std::endl;
-		std::cout << _ClientsMap[fd].clsResponse->cgi_path << std::endl;
 		Cgi.CGIhandler(_ClientsMap[fd].clsResponse->FilePath);
 		int pipeFd = Cgi._pipeFd;
-		_ClientsMap[fd].clsResponse->CGIPipeFd = pipeFd;
-		addNblock(pipeFd);
-		
+
+		if (pipeFd < 0)
+		{
+			CGIerror(500, fd, ReqH);
+			return;
+		}
 		epoll_event events;
 		events.data.fd = pipeFd;
 		events.events = EPOLLIN;
@@ -71,27 +94,20 @@ void Server::getReadInfos(unsigned int fd)
 		t_clients client;
 		client.fd = fd;
 		client.CGIfd = pipeFd;
+		client.last_activity = time(NULL);
 		_ClientsMap[pipeFd] = client;
-		_ClientsMap[pipeFd].last_activity = time(NULL);
-		
 		_ClientsMap[fd].clsResponse->setStatusCode(200);
 		std::string header = _ClientsMap[fd].clsResponse->BuildHeaderResponse();
 		sendBytes = send(fd, header.c_str(), header.length(), 0);
 		if (sendBytes < 0)
-		{
-			deleteClientFromEpoll(fd);
-			throwing("send()");
-		}
-		_ClientsMap[fd].firstTime = false;
+			return (deleteClientFromEpoll(fd), deleteClientFromEpoll(pipeFd));
+		_ClientsMap[fd].CGIfd = 1;
 		return;
 	}
 	_ClientsMap[fd].response = _ClientsMap[fd].clsResponse->BuildHeaderResponse();
 	sendBytes = send(fd, _ClientsMap[fd].response.c_str(), _ClientsMap[fd].response.length(), 0);
 	if (sendBytes < 0)
-	{
-		deleteClientFromEpoll(fd);
-		throwing("send()");
-	}
+		return deleteClientFromEpoll(fd);
 	_ClientsMap[fd].firstTime = false;
 }
 
@@ -103,7 +119,7 @@ void Server::errorSending(unsigned int fd)
 		sendBytes = send(fd, _ClientsMap[fd].clsResponse->Body.c_str(),
 						 _ClientsMap[fd].clsResponse->Body.length(), 0);
 		if (sendBytes < 0)
-			throwing("send()");
+			return deleteClientFromEpoll(fd);
 	}
 	deleteClientFromEpoll(fd);
 }
@@ -115,20 +131,14 @@ void Server::ReadSend(unsigned int fd)
 	ssize_t b_read = read(_ClientsMap[fd].clsResponse->Fd, buffer, sizeof(buffer));
 	if (b_read <= 0)
 	{
-		if (b_read == 0)
-			std::cout << "Full read file \n";
-		else
-			std::cerr << "Error reading file: " << strerror(errno) << "\n";
 		deleteClientFromEpoll(fd);
-		throwing("read()");
+		return;
 	}
-
 	sendBytes = send(fd, buffer, b_read, 0);
 	if (sendBytes < 0)
 	{
-		std::cout << "delete bucose in send byts is nigative: " << sendBytes << std::endl;
 		deleteClientFromEpoll(fd);
-		throwing("send()");
+		return;
 	}
 	_ClientsMap[fd].bytesread += sendBytes;
 }
