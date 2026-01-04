@@ -30,7 +30,7 @@ Server::Server(Config &data) : _data(data)
     memset((void *)&_address, 0, sizeof(sockaddr_in));
     _address.sin_family = AF_INET;
     _address.sin_addr.s_addr = INADDR_ANY;
-    _address.sin_port = htons(_data.servers[0].listen_port);
+    _address.sin_port = htons(_data.servers[0].listen_ports[0]);
 
     if (_ServerFd < 0)
         throwing("socket()");
@@ -55,7 +55,7 @@ void Server::CreateEpollInstance()
 void Server::run()
 {
     CreateEpollInstance();
-    std::cout << "Server running on http://localhost:" << _data.servers[0].listen_port << std::endl;
+    std::cout << "Server running on http://localhost:" << _data.servers[0].listen_ports[0] << std::endl;
     while (true)
     {
         readyClients = epoll_wait(_epollInstance, _clients, MAX_CLIENTS_EVENTS, -1);
