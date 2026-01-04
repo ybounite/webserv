@@ -132,12 +132,13 @@ int cgi::runCGI(std::string fileName)
         argv_exec[0] = const_cast<char *>(fileName.c_str());
         argv_exec[1] = NULL;
         char **envp = buildCgiEnv("GET", fileName, "", "0", "");
-        if (execve(fileName.c_str(), argv_exec, envp) == -1)
+        if (execve(fileName.c_str(), argv_exec, envp))
             return -1;
     }
 
     close(pfd[1]);
-    waitpid(fd, NULL, WNOHANG);
+    int status;
+    waitpid(fd, &status, WNOHANG);
     return pfd[0];
 }
 

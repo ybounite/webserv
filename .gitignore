@@ -6,7 +6,7 @@ obj/
 # Executables
 webserv
 a.out
-
+./obj
 # Logs / temp files
 *.log
 *.tmp
