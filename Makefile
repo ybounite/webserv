@@ -64,7 +64,3 @@ re: fclean all
 
 run: re
 	@./$(NAME)
-BRANCH = main
-p:
-	@read -p "Commit message: " msg; \
-	git add -f . && git commit -m "$$msg" && git push origin $(BRANCH)
