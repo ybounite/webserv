@@ -143,6 +143,20 @@ std::string to_string(T &value) {
 class Request;
 class RequestHandler;
 
+struct	stCgiInfo
+{
+	stCgiInfo() : FileName(""), QueryString(""), PathInfo(""),
+		Method(""), ContentLenght(-1), Body("") {}
+    stCgiInfo (const stCgiInfo &Other ) : FileName(Other.FileName), QueryString(Other.QueryString),
+        PathInfo(Other.PathInfo), Method(Other.Method), ContentLenght(Other.ContentLenght), Body(Other.Body){}
+	std::string	FileName;
+	std::string	QueryString;
+	std::string	PathInfo;
+	std::string	Method;
+	ssize_t		ContentLenght;
+	std::string	Body;
+};
+
 # include "../src/request/Request.hpp"
 # include "../src/server/Server.hpp"
 # include "../src/CGI/cgi.hpp"

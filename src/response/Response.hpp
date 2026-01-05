@@ -15,18 +15,6 @@
 
 class	Request;
 
-struct	stCgiInfo
-{
-	stCgiInfo() : FileName(""), QueryString(""), PathInfo(""),
-		Method(""), ContentLenght(-1), Body("") {}
-	std::string	FileName;
-	std::string	QueryString;
-	std::string	PathInfo;
-	std::string	Method;
-	ssize_t		ContentLenght;
-	std::string	Body;
-};
-
 class Response : protected Request {
 public:
 

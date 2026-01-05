@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>CGI Test Form</title>
+</head>
+<body>
+
+    <h2>CGI Test Form</h2>
+
+    <form action="www/file.py" method="get">
+        <label>
+            Name:
+            <input type="text" name="name" type="hidden">
+        </label>
+        <br><br>
+
+        <label>
+            Message:
+            <input type="text" name="message">
+        </label>
+        <br><br>
+
+        <input type="submit" value="Submit">
+    </form>
+
+</body>
+</html>

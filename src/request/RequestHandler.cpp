@@ -120,8 +120,8 @@ bool isCGi(const std::string &path)
 	std::string::size_type dot = path.find_last_of('.');
 	std::string ext = (dot == std::string::npos) ? std::string("") : path.substr(dot + 1);
 
-	std::string	 ScriptBasedCGI[] = { "py", "php", "sh", "pl", "rb", "lua" };
-	for (size_t i = 0; i < 6; i++){
+	std::string	 ScriptBasedCGI[] = { "py", "php", "sh", "pl", "rb", "lua", "cgi" };
+	for (size_t i = 0; i < 7; i++){
 		if (ScriptBasedCGI[i] == ext)
 			return true;
 	}
@@ -230,16 +230,7 @@ Response	RequestHandler::BuildCGIResponse(const std::string &path)
 	resp.cgiInfo.PathInfo = req.getPathInfo();
 	
 	// DEBUG: Print CGI information
-	std::cout << GREEN << "=== CGI Info Debug ===" << RESET << std::endl;
-	std::cout << "FileName: " << resp.cgiInfo.FileName << std::endl;
-	std::cout << "Method: " << resp.cgiInfo.Method << std::endl;
-	std::cout << "QueryString: " << resp.cgiInfo.QueryString << std::endl;
-	std::cout << "Path Info: " << resp.cgiInfo.PathInfo << std::endl;
-	std::cout << "ContentLength: " << resp.cgiInfo.ContentLenght << std::endl;
-	std::cout << "Body: " << resp.cgiInfo.Body << std::endl;
-	std::cout << "isCGI: " << (resp.isCGI ? "true" : "false") << std::endl;
-	std::cout << GREEN << "======================" << RESET << std::endl;
-	
+
 	return resp;
 }
 

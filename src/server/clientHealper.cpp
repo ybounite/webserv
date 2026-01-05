@@ -48,11 +48,12 @@ void Server::ifCGI(int fd)
 {
 	// ssize_t sendBytes;
 	cgi Cgi;
-	Cgi.CGIhandler(_ClientsMap[fd].clsResponse->FilePath);
+	Cgi.CGIhandler(_ClientsMap[fd].clsResponse->cgiInfo);
 	int pipeFd = Cgi._pipeFd;
 
 	if (pipeFd < 0)
 	{
+		std::cout << "pipfd";
 		SendErrorPage(fd, "500");
 		deleteClientFromEpoll(fd);
 		return;
@@ -85,6 +86,16 @@ void Server::getReadInfos(unsigned int fd)
 	Request req(_ClientsMap[fd].request, _data);
 	RequestHandler ReqH(req, _data.servers[0]);
 	_ClientsMap[fd].clsResponse = new Response(ReqH.HandleMethod());
+	std::cout << GREEN << "=== CGI Info Debug ===" << RESET << std::endl;
+	std::cout << "FileName: " << _ClientsMap[fd].clsResponse->cgiInfo.FileName << std::endl;
+	std::cout << "Method: " << _ClientsMap[fd].clsResponse->cgiInfo.Method << std::endl;
+	std::cout << "QueryString: " << _ClientsMap[fd].clsResponse->cgiInfo.QueryString << std::endl;
+	std::cout << "Path Info: " << _ClientsMap[fd].clsResponse->cgiInfo.PathInfo << std::endl;
+	std::cout << "ContentLength: " << _ClientsMap[fd].clsResponse->cgiInfo.ContentLenght << std::endl;
+	std::cout << "Body: " << _ClientsMap[fd].clsResponse->cgiInfo.Body << std::endl;
+	std::cout << "isCGI: " << (_ClientsMap[fd].clsResponse->isCGI ? "true" : "false") << std::endl;
+	std::cout << GREEN << "======================" << RESET << std::endl;
+
 	if (_ClientsMap[fd].clsResponse->isCGI == 1)
 	{
 		ifCGI(fd);
@@ -94,6 +105,7 @@ void Server::getReadInfos(unsigned int fd)
 	sendBytes = send(fd, _ClientsMap[fd].response.c_str(), _ClientsMap[fd].response.length(), 0);
 	if (sendBytes < 0)
 	{
+		std::cout << "send";
 		SendErrorPage(fd, "500");
 		return deleteClientFromEpoll(fd);
 	}

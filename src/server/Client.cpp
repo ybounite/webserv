@@ -17,6 +17,7 @@ void Server::addClientInEppol()
 	newClient.events = EPOLLIN;
 	if (epoll_ctl(_epollInstance, EPOLL_CTL_ADD, clientFd, &newClient) < 0)
 	{
+		std::cout << "epoll_ctl";
 		close(clientFd);
 		SendErrorPage(clientFd, "500");
 		return;
@@ -43,6 +44,7 @@ void Server::readClientRequest(unsigned int clientFd)
 	if (contentLenght(_ClientsMap[clientFd].request) > _ClientsMap[clientFd].request.length() - headerEnd - 4)
 		return;
 	_ClientsMap[clientFd].last_activity = time(NULL);
+	std::cout << GREEN << _ClientsMap[clientFd].request << RESET << std::endl;
 	modifySockEvents(_epollInstance, clientFd);
 }
 

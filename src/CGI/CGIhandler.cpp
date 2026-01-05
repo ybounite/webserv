@@ -7,23 +7,18 @@ static char *dupEnv(const std::string &s)
     return env;
 }
 
-char **buildCgiEnv(
-    const std::string &method,
-    const std::string &filePath,
-    const std::string &query,
-    const std::string &bodySize,
-    const std::string &contentType)
+char **buildCgiEnv(stCgiInfo &info)
 {
     std::vector<std::string> env;
 
     env.push_back("GATEWAY_INTERFACE=CGI/1.1");
     env.push_back("SERVER_PROTOCOL=HTTP/1.1");
-    env.push_back("REQUEST_METHOD=" + method);
-    env.push_back("SCRIPT_FILENAME=" + filePath);
-    env.push_back("SCRIPT_NAME=" + filePath);
-    env.push_back("QUERY_STRING=" + query);
-    env.push_back("CONTENT_LENGTH=" + bodySize);
-    env.push_back("CONTENT_TYPE=" + contentType);
+    env.push_back("REQUEST_METHOD=" + info.Method);
+    env.push_back("SCRIPT_FILENAME=" + info.FileName);
+    env.push_back("SCRIPT_NAME=" + info.FileName);
+    env.push_back("QUERY_STRING=" + info.QueryString);
+    env.push_back("CONTENT_LENGTH=" + to_string(info.ContentLenght));
+    env.push_back("CONTENT_TYPE=" + std::string(""));
     env.push_back("SERVER_NAME=localhost");
     env.push_back("SERVER_PORT=8080");
     env.push_back("REDIRECT_STATUS=200"); // PHP needs this
@@ -41,29 +36,39 @@ void throwing(std::string fct)
     throw std::runtime_error(fct + std::string("failed: ") + strerror(errno));
 }
 
-int cgi::runCGI(std::string &fileName, std::string &pathInfo, std::string &QueryString, std::string &body, std::string &method)
+int cgi::runCGI(stCgiInfo &info)
 {
+    int pfd1[2];
+    if (info.Method == "POST")
+    {
+
+        if (pipe(pfd1) < 0)
+            return -1;
+        write(pfd1[1], info.Body.c_str(), info.ContentLenght);
+        close(pfd1[1]);
+    }
     int pfd[2];
 
     if (pipe(pfd) < 0)
-        throwing("pipe()");
+        return -1;
 
     int fd = fork();
     if (fd < 0)
-        throwing("fork()");
+        return -1;
 
     if (fd == 0)
     {
         close(pfd[0]);
 
         dup2(pfd[1], STDOUT_FILENO);
+        dup2(pfd1[0], STDIN_FILENO);
         close(pfd[1]);
 
         char *argv_exec[2];
-        argv_exec[0] = const_cast<char *>(fileName.c_str());
+        argv_exec[0] = const_cast<char *>(info.FileName.c_str());
         argv_exec[1] = NULL;
-        char **envp = buildCgiEnv("GET", fileName, "", "0", "");
-        if (execve(fileName.c_str(), argv_exec, envp))
+        char **envp = buildCgiEnv(info);
+        if (execve(info.FileName.c_str(), argv_exec, envp))
         {
             return -1;
         }
@@ -75,14 +80,14 @@ int cgi::runCGI(std::string &fileName, std::string &pathInfo, std::string &Query
     return pfd[0];
 }
 
-void cgi::CGIhandler(std::string &fileName, std::string &pathInfo, std::string &QueryString, std::string &body, std::string &method)
+void cgi::CGIhandler(stCgiInfo &info)
 {
-
-    if (access(fileName.c_str(), X_OK) == -1)
+    if (access(info.FileName.c_str(), X_OK) == -1)
     {
         Msg::error("ENTERED");
+        std::cout << info.FileName << std::endl;
         _pipeFd = -1;
         return;
     }
-    _pipeFd = runCGI(fileName, pathInfo, QueryString, body, method);
+    _pipeFd = runCGI(info);
 }

@@ -4,6 +4,7 @@
 
 void Server::SendErrorPage(int sockfd, std::string code)
 {
+    std::cout << "------------------------" << std::endl;
     std::ostringstream errorPath;
     std::ostringstream oss;
     errorPath << "errors/" << code << ".html";
@@ -41,6 +42,7 @@ void Server::readCGIPipe(int pipeFd)
 
     if (b_read < 0)
     {
+		std::cout << "bread";
         deleteClientFromEpoll(pipeFd);
         deleteClientFromEpoll(sock);
         SendErrorPage(sock, "500");
@@ -63,6 +65,7 @@ void Server::readCGIPipe(int pipeFd)
 
     if (sendBytes < 0)
     {
+		std::cout << "sendbytes";
         deleteClientFromEpoll(pipeFd);
         deleteClientFromEpoll(sock);
         SendErrorPage(sock, "500");

@@ -8,8 +8,8 @@ class cgi
 
 public:
     int _pipeFd;
-    void CGIhandler(std::string &fileName, std::string &pathInfo, std::string &QueryString, std::string &body, std::string &method);
-    int runCGI(std::string &fileName, std::string &pathInfo, std::string &QueryString, std::string &body, std::string &method);
+    void CGIhandler(stCgiInfo &info);
+    int runCGI(stCgiInfo &info);
 
     cgi() : _pipeFd(-1) {}
     ~cgi() {}

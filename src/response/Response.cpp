@@ -10,9 +10,9 @@
 
 
 Response::Response(const Response &Other)
-	: Request(Other), StatusCode(Other.StatusCode), Headers(Other.Headers), 
+	: Request(Other), cgiInfo(Other.cgiInfo),StatusCode(Other.StatusCode), Headers(Other.Headers), 
 	Fd(Other.Fd), BodySize(Other.BodySize), Header(Other.Header), Body(Other.Body), 
-	uri(Other.uri), FilePath(Other.FilePath), isCGI(Other.isCGI), cgi_path(Other.cgi_path) {}
+	uri(Other.uri), FilePath(Other.FilePath), isCGI(Other.isCGI), cgi_path(Other.cgi_path){}
 
 Response::~Response() {}
 
