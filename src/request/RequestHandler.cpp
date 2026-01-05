@@ -101,24 +101,18 @@ LocationConfig	GetMatchingLocation(const std::vector<LocationConfig>& locations,
 {
 	LocationConfig* bestMatch = NULL;
 	size_t longestMatch = 0;
-	//std::cout << "===========================\n";
 	for (size_t i = 0; i < locations.size(); i++)
 	{
-		//std::cout << GREEN << "location : " << locations[i].path << "| root : " << locations[i].root << "| uri : " << uri<< RESET << std::endl;
-
 		const std::string& locPath = locations[i].path;
-		// Check if URI starts with location path (prefix match)
 		if (uri.find(locPath) == 0)
 		{
-			//std::cout << " loc Path : " << locPath << std::endl;
 			if (locPath.size() > longestMatch)
-			{ //Example: if uri = "/images/cat.jpg" and locPath = "/images", it matches because /images is at the start.
+			{
 				bestMatch = const_cast<LocationConfig*>(&locations[i]);
 				longestMatch = locPath.size();
 			}
 		}
 	}
-	//std::cout << "===========================\n";
 	if (bestMatch)
 		return *bestMatch;
 	return LocationConfig();
@@ -292,7 +286,6 @@ Response RequestHandler::handleGET()
     return serveFile(path);  // Continue normal processing if no redirect
 }
 
-
 short		RequestHandler::getMethod(const std::string &method)
 {
 	if (method == "GET")
@@ -305,10 +298,57 @@ short		RequestHandler::getMethod(const std::string &method)
 		return HTTP_UNKNOWN;
 }
 
+bool	isCGi(const std::string &path)
+{
+	std::string::size_type dot = path.find_last_of('.');
+	std::string ext = (dot == std::string::npos) ? std::string("") : path.substr(dot + 1);
+
+	std::string	 ScriptBasedCGI[] = { "py", "php", "sh", "pl", "rb", "lua", "cgi" };
+	for (size_t i = 0; i < 7; i++){
+		if (ScriptBasedCGI[i] == ext)
+			return true;
+	}
+	return false;
+}
+
+Response	RequestHandler::_BuildCGIResponse(const std::string &path)
+{
+	Response resp(req);
+	resp.setStatusCode(200);
+	resp.isCGI = true;
+	resp.FilePath = path;
+	resp.cgiInfo.FileName = path;
+	resp.cgiInfo.Method = req.getMethod();
+	resp.cgiInfo.QueryString = req.getQueryString();
+	resp.cgiInfo.ContentLenght = req.getContentLength();
+	resp.cgiInfo.Body = req.getBody();
+	resp.cgiInfo.PathInfo = req.getPathInfo();
+	
+	return resp;
+}
+
 Response	RequestHandler::HandleMethod()
 {
 	if (req.status != Request::enVALID)
 		return BuildErrorResponse(403);
+
+	if (isCGi(req.getUri())) {
+		std::cout << GREEN << "yes CGI " << RESET << std::endl;
+		LocationConfig loc = GetMatchingLocation(config.locations, req.getUri());
+		if (!_haseAllowed(loc.methods, (enHttpMethod)getMethod(req.getMethod())))
+			return BuildErrorResponse(405);
+		std::string root = loc.root.empty() ? config.root : loc.root;
+
+		std::string path = _BuildFileSystemPath(root, req.getUri());
+		if (!_ResourceExists(path))
+			return BuildErrorResponse(404);
+		std::cout << LIGHT_BLUE << "Path is: " + path << RESET << std::endl;
+		std::cout << GREEN << "About to call BuildCGIResponse" << RESET << std::endl;
+		Response cgiResp = _BuildCGIResponse(path);
+		std::cout << GREEN << "BuildCGIResponse completed" << RESET << std::endl;
+		return cgiResp;
+	}
+
 	switch (getMethod(req.getMethod()))
 	{
 	case HTTP_GET:

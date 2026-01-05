@@ -41,6 +41,7 @@ private:
 	Response			_GenerateAutoindex(const std::string &dirPath);
 	bool				_haseAllowed( std::vector<std::string> Methods, enHttpMethod AllowedMethod);
 	Response			_Rdirect(LocationConfig loc);
+	Response			_BuildCGIResponse(const std::string &path);
 
 	bool					_ResourceExists( std::string &Path );
 	std::string				_ResolveIndexFile(const std::string &path, const ServerConfig &server, const LocationConfig &loc);

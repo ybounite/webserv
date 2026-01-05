@@ -14,6 +14,8 @@ const std::string &Request::getHTTPversion(void) const { return _Protocol; }
 const std::map<std::string, std::string> &Request::getHeaders(void) const { return _Headers; }
 const std::string &Request::getBody(void) const { return _Body; }
 const std::string &Request::getPath(void) const { return _Path; }
+const std::string &Request::getPathInfo(void) const { return _PathInfo; }
+const std::string &Request::getQueryString(void) const { return _QueryString; }
 
 void		Request::setHeader(const std::string &key, const std::string &value) {
 	_Headers[key] = value;
@@ -52,7 +54,7 @@ std::string	Request::extractPathInfo(const std::string &uri) const
 	return uri.substr(endOfScript);
 }
 
-bool Request::is_ValidRequest() const {
+bool	Request::is_ValidRequest() const {
     return !_Method.empty() && !_URI.empty() && !_Protocol.empty();
 }
 
@@ -228,9 +230,3 @@ void	Request::ParseCookies()
         cookies[key] = value;
     }
 }
-
-
-
-
-
-
