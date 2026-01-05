@@ -65,8 +65,8 @@ void Server::ifCGI(int fd)
 	t_clients client;
 	client.fd = fd;
 	client.CGIfd = pipeFd;
-	_ClientsMap[pipeFd] = client;
 	client.last_activity = time(NULL);
+	_ClientsMap[pipeFd] = client;
 	// _ClientsMap[fd].clsResponse->setStatusCode(200);
 	// std::string header = _ClientsMap[fd].clsResponse->BuildHeaderResponse();
 	// sendBytes = send(fd, header.c_str(), header.length(), 0);

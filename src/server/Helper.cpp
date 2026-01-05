@@ -36,13 +36,19 @@ void Server::readCGIPipe(int pipeFd)
 {
     int sock = _ClientsMap[pipeFd].fd;
     char buffer[1024];
+
+    // timeout
+    if (time(NULL) - _ClientsMap[pipeFd].last_activity > 2)
+    {
+        deleteClientFromEpoll(pipeFd);
+        deleteClientFromEpoll(sock);
+        SendErrorPage(sock, "408");
+        return;
+    }
+
     ssize_t b_read = read(pipeFd, buffer, sizeof(buffer));
-
-    std::cout << "Read from CGI pipe " << pipeFd << " : " << b_read << " bytes" << std::endl;
-
     if (b_read < 0)
     {
-		std::cout << "bread";
         deleteClientFromEpoll(pipeFd);
         deleteClientFromEpoll(sock);
         SendErrorPage(sock, "500");
@@ -51,33 +57,52 @@ void Server::readCGIPipe(int pipeFd)
 
     if (b_read == 0)
     {
-        std::cout << "EOF from CGI pipe - closing connection\n";
         deleteClientFromEpoll(pipeFd);
         deleteClientFromEpoll(sock);
         return;
     }
 
-    // Refresh activity timestamp since we successfully read data from CGI
     _ClientsMap[pipeFd].last_activity = time(NULL);
 
-    // Forward CGI output directly to client (don't wrap in chunks)
-    ssize_t sendBytes = send(sock, buffer, b_read, MSG_NOSIGNAL);
-
-    if (sendBytes < 0)
+    /* ================= FIRST READ ================= */
+    if (!_ClientsMap[pipeFd].cgi_headers_parsed)
     {
-		std::cout << "sendbytes";
+        std::string data(buffer, b_read);
+
+        size_t header_end = data.find("\r\n");
+        if (header_end == std::string::npos)
+        {
+            deleteClientFromEpoll(pipeFd);
+            deleteClientFromEpoll(sock);
+            SendErrorPage(sock, "500");
+            return;
+        }
+
+        int status = 200;
+        size_t status_pos = data.find("Status:");
+        if (status_pos != std::string::npos)
+            status = atoi(data.c_str() + status_pos + 7);
+
+        std::string http =
+            "HTTP/1.1 " + to_string(status) + "\r\n"
+                                              "Connection: close\r\n";
+
+        size_t body_start = header_end + 2;
+        http += data.c_str() + body_start;
+        send(sock, http.c_str(), http.size(), MSG_NOSIGNAL);
+
+        // send already-read body part
+
+        _ClientsMap[pipeFd].cgi_headers_parsed = true;
+        return;
+    }
+
+    /* ================= NORMAL FLOW (UNCHANGED) ================= */
+    if (send(sock, buffer, b_read, MSG_NOSIGNAL) < 0)
+    {
         deleteClientFromEpoll(pipeFd);
         deleteClientFromEpoll(sock);
         SendErrorPage(sock, "500");
         return;
     }
-    if (time(NULL) - _ClientsMap[pipeFd].last_activity > 10) // 30 seconds timeout
-    {
-        std::cout << "Client timeout, closing connection\n";
-        deleteClientFromEpoll(pipeFd);
-        deleteClientFromEpoll(sock);
-        SendErrorPage(sock, "408");
-        return;
-    }
-    std::cout << "Sent " << sendBytes << " bytes to client" << std::endl;
 }

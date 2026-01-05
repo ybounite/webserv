@@ -10,7 +10,7 @@ class Config;
 
 typedef struct s_clients
 {
-    s_clients() : fd(-1), firstTime(true), CGIfd(-1), leftData(false), bytesread(0), clsResponse(NULL) {}
+    s_clients() : fd(-1), firstTime(true), CGIfd(-1), leftData(false), bytesread(0), clsResponse(NULL), cgi_headers_parsed(false) {}
     int fd;
     std::string request;
     std::string response;
@@ -22,6 +22,7 @@ typedef struct s_clients
     Response *clsResponse;
     time_t last_activity; // ADD THIS LINE
     epoll_event event;
+    bool cgi_headers_parsed;
 } t_clients;
 
 class Server

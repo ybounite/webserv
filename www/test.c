@@ -9,9 +9,9 @@ int main(void)
     printf("Content-Type: text/plain\n\n");
     printf("\r\n");
 
-    while ((n = fread(buffer, 1, sizeof(buffer), stdin)) > 0)
+    while (1)
     {
-        fwrite(buffer, 1, n, stdout);
+        printf("hehe\n");
     }
     return 0;
 }
