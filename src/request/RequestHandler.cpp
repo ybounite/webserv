@@ -214,19 +214,10 @@ bool search_Cookies(const std::map<std::string, std::string> &cookies)
     return false;
 }
 
-//void PrintCookies( std::map<std::string, std::string> header)
-//{
-//    std::cout << GREEN << "---- Cookies Map ----" << RESET << std::endl;
-//    for (std::map<std::string, std::string>::const_iterator it = header.begin(); it != header.end(); ++it)
-//    {
-//        std::cout << it->first << " " << it->second << std::endl;
-//    }
-//    std::cout << GREEN << "--------------------" << RESET << std::endl;
-//}
 Response	RequestHandler::_Rdirect(LocationConfig loc){
 
 	Response resp(req);
-	std::cout << RED << "Path Rdirect: " << loc.return_url  << " code  : " << loc.return_code << RESET << std::endl;
+	//std::cout << RED << "Path Rdirect: " << loc.return_url  << " code  : " << loc.return_code << RESET << std::endl;
 
 	resp.setStatusCode(loc.return_code);
     resp.setHeader("Location", loc.return_url);
@@ -269,21 +260,15 @@ Response RequestHandler::handleGET()
 
     bool isPublicPage = (path == config.root + "/pages/uploads.html" || path == config.root + "/pages/delete.html" || path == config.root + "/pages/home.html");
     
-    // Debugging the cookies and conditions
-    std::cout << "isPublicPage: " << isPublicPage << std::endl;
-    //std::cout << "Session ID: " << req.cookies["session_id"] << std::endl;
-    
-
     if (isPublicPage && !search_Cookies(req.cookies)) {
-        std::cout << "Redirecting to login..." << std::endl;
         Response resp(req);
-        resp.setStatusCode(302);  // Redirection code
+        resp.setStatusCode(302);
         resp.setHeader("Location", "/pages/login.html");
         resp.setBody("<html><body>Redirecting to login...</body></html>");
         return resp;
     }
 
-    return serveFile(path);  // Continue normal processing if no redirect
+    return serveFile(path);
 }
 
 short		RequestHandler::getMethod(const std::string &method)
@@ -423,9 +408,6 @@ Response	RequestHandler::handlePOST()
 	else if (contentType.find("application/x-www-form-urlencoded") != std::string::npos)
 	{
 		std::map<std::string, std::string> form = parseUrlEncoded(bodyData);
-
-		// for (std::map<std::string,std::string>::iterator it = form.begin(); it != form.end(); ++it)
-		// 	std::cout << "FORM: [" << it->first << "] = [" << it->second << "]" << std::endl;
 
 		std::string username = form.count("username") ? form["username"] : "";
 		std::string password = form.count("password") ? form["password"] : "";

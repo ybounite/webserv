@@ -13,8 +13,6 @@
 /*                          Request Class                                     */
 /* ************************************************************************** */
 
-# define LINE_BREAK "\r\n"
-
 class Request {
 public:
 
