@@ -10,7 +10,7 @@
 #include "Request.hpp"
 #include "../response/Response.hpp"
 
-size_t RequestHandler::GetBodySize(const std::string &path)
+size_t		RequestHandler::GetBodySize(const std::string &path)
 {
 	std::ifstream file(path.c_str(), std::ios::binary);
 	if (!file.is_open())
@@ -26,7 +26,7 @@ size_t RequestHandler::GetBodySize(const std::string &path)
 	return file_size;
 }
 
-std::string RequestHandler::_BuildFileSystemPath(const std::string &root, const std::string &uri)
+std::string	RequestHandler::_BuildFileSystemPath(const std::string &root, const std::string &uri)
 {
 	std::string path = root;
 	if (!path.empty() && path[path.size() - 1] != '/')
@@ -35,13 +35,13 @@ std::string RequestHandler::_BuildFileSystemPath(const std::string &root, const 
 	return path;
 }
 
-bool RequestHandler::_ResourceExists(std::string &Path)
+bool		RequestHandler::_ResourceExists(std::string &Path)
 {
 	struct stat Buffer;
 	return (stat(Path.c_str(), &Buffer) == 0);
 }
 
-std::string RequestHandler::_ResolveIndexFile(const std::string &path, const ServerConfig &server, const LocationConfig &loc)
+std::string	RequestHandler::_ResolveIndexFile(const std::string &path, const ServerConfig &server, const LocationConfig &loc)
 {
 	std::string indexName = !loc.index.empty() ? loc.index : server.index;
 	if (indexName.empty())
@@ -57,7 +57,7 @@ std::string RequestHandler::_ResolveIndexFile(const std::string &path, const Ser
 	return "";
 }
 
-bool _IsDirectory(const char *path)
+bool		_IsDirectory(const char *path)
 {
 	struct stat st;
 	if (stat(path, &st) != 0)
@@ -65,7 +65,7 @@ bool _IsDirectory(const char *path)
 	return S_ISDIR(st.st_mode);
 }
 
-Response RequestHandler::BuildErrorResponse(short code)
+Response	RequestHandler::BuildErrorResponse(short code)
 {
 
 	Response resp(req);
@@ -78,7 +78,6 @@ Response RequestHandler::BuildErrorResponse(short code)
 	if (resp.Fd == -1)
 	{
 		std::cerr << "Error opening error file: " << errorPath.str() << std::endl;
-		// Fallback: set body with inline HTML instead of file
 		resp.setHeader("Content-Type", "text/html");
 		std::ostringstream fallbackBody;
 		fallbackBody << "<html><body><h1>" << code << " " << resp.getStatusMessage(code) << "</h1></body></html>";
@@ -93,7 +92,7 @@ Response RequestHandler::BuildErrorResponse(short code)
 	return resp;
 }
 
-LocationConfig GetMatchingLocation(const std::vector<LocationConfig> &locations, const std::string &uri)
+LocationConfig	GetMatchingLocation(const std::vector<LocationConfig> &locations, const std::string &uri)
 {
 	LocationConfig *bestMatch = NULL;
 	size_t longestMatch = 0;
@@ -120,21 +119,18 @@ bool isCGi(const std::string &path)
 {
 	std::string::size_type dot = path.find_last_of('.');
 	std::string ext = (dot == std::string::npos) ? std::string("") : path.substr(dot + 1);
-	if (ext == "py" || ext == "cpp")
-		return true;
+
+	std::string	 ScriptBasedCGI[] = { "py", "php", "sh", "pl", "rb", "lua" };
+	for (size_t i = 0; i < 6; i++){
+		if (ScriptBasedCGI[i] == ext)
+			return true;
+	}
 	return false;
 }
 
-Response RequestHandler::serveFile(const std::string &path, const LocationConfig &loc)
+Response	RequestHandler::serveFile(const std::string &path)
 {
 	Response resp(req);
-	if (!loc.cgi_path.empty() || isCGi(path))
-	{
-		resp.isCGI = true;
-		resp.FilePath = path;
-		resp.cgi_path = loc.cgi_path;
-		return resp;
-	}
 
 	resp.Fd = open(path.c_str(), O_RDONLY);
 	if (resp.Fd == -1)
@@ -145,7 +141,7 @@ Response RequestHandler::serveFile(const std::string &path, const LocationConfig
 	return resp;
 }
 
-Response RequestHandler::_GenerateAutoindex(const std::string &DirPath)
+Response	RequestHandler::_GenerateAutoindex(const std::string &DirPath)
 {
 	Response resp(req);
 
@@ -173,7 +169,7 @@ Response RequestHandler::_GenerateAutoindex(const std::string &DirPath)
 	return resp;
 }
 
-bool RequestHandler::_haseAllowed(std::vector<std::string> Methods, enHttpMethod AllowedMethod)
+bool		RequestHandler::_haseAllowed(std::vector<std::string> Methods, enHttpMethod AllowedMethod)
 {
 	if (Methods.empty())
 		return true;
@@ -185,37 +181,30 @@ bool RequestHandler::_haseAllowed(std::vector<std::string> Methods, enHttpMethod
 	return false;
 }
 
-Response RequestHandler::handleGET()
+Response	RequestHandler::handleGET()
 {
 	LocationConfig loc = GetMatchingLocation(config.locations, req.getUri());
 	if (!_haseAllowed(loc.methods, HTTP_GET))
 		return BuildErrorResponse(405);
 	std::string root = loc.root.empty() ? config.root : loc.root;
-	// std::cout << LIGHT_BLUE << "location : " << loc.path << RESET << std::endl;
-	// std::cout << GREEN << "root location  : " << loc.root << RESET << std::endl;
-	// std::cout << GREEN << "new root : " << root << RESET << std::endl;
-	// std::cout << YELLOW << "URI : " << req.getUri() << RESET << std::endl;
 
 	std::string path = _BuildFileSystemPath(root, req.getUri());
 	if (!_ResourceExists(path))
 		return BuildErrorResponse(404);
-	// std::cout << "*** : " << path << ": ***" << std::endl;
 	if (_IsDirectory(path.c_str()))
 	{
-		// std::cout << "Yes directory: " << path << std::endl;
 		std::string indexPath = _ResolveIndexFile(path, config, loc);
 		if (!indexPath.empty())
-			return serveFile(indexPath, loc);
+			return serveFile(indexPath);
 		else if (loc.autoindex)
 			return _GenerateAutoindex(path);
 		else
 			return BuildErrorResponse(403);
 	}
-	// std::cout << "*** : " << path << ": ***" << std::endl;
-	return serveFile(path, loc);
+	return serveFile(path);
 }
 
-short RequestHandler::getMethod(const std::string &method)
+short		RequestHandler::getMethod(const std::string &method)
 {
 	if (method == "GET")
 		return HTTP_GET;
@@ -227,10 +216,57 @@ short RequestHandler::getMethod(const std::string &method)
 		return HTTP_UNKNOWN;
 }
 
-Response RequestHandler::HandleMethod()
+Response	RequestHandler::BuildCGIResponse(const std::string &path)
+	{
+	Response resp(req);
+	resp.setStatusCode(200);
+	resp.isCGI = true;
+	resp.FilePath = path;
+	resp.cgiInfo.FileName = path;
+	resp.cgiInfo.Method = req.getMethod();
+	resp.cgiInfo.QueryString = req.getQueryString();
+	resp.cgiInfo.ContentLenght = req.getContentLength();
+	resp.cgiInfo.Body = req.getBody();
+	resp.cgiInfo.PathInfo = req.getPathInfo();
+	
+	// DEBUG: Print CGI information
+	std::cout << GREEN << "=== CGI Info Debug ===" << RESET << std::endl;
+	std::cout << "FileName: " << resp.cgiInfo.FileName << std::endl;
+	std::cout << "Method: " << resp.cgiInfo.Method << std::endl;
+	std::cout << "QueryString: " << resp.cgiInfo.QueryString << std::endl;
+	std::cout << "Path Info: " << resp.cgiInfo.PathInfo << std::endl;
+	std::cout << "ContentLength: " << resp.cgiInfo.ContentLenght << std::endl;
+	std::cout << "Body: " << resp.cgiInfo.Body << std::endl;
+	std::cout << "isCGI: " << (resp.isCGI ? "true" : "false") << std::endl;
+	std::cout << GREEN << "======================" << RESET << std::endl;
+	
+	return resp;
+}
+
+
+
+Response	RequestHandler::HandleMethod()
 {
 	if (req.status != Request::enVALID)
 		return BuildErrorResponse(400);
+	
+	if (isCGi(req.getUri())) {
+		std::cout << GREEN << "yes CGI " << RESET << std::endl;
+		LocationConfig loc = GetMatchingLocation(config.locations, req.getUri());
+		if (!_haseAllowed(loc.methods, (enHttpMethod)getMethod(req.getMethod())))
+			return BuildErrorResponse(405);
+		std::string root = loc.root.empty() ? config.root : loc.root;
+
+		std::string path = _BuildFileSystemPath(root, req.getUri());
+		if (!_ResourceExists(path))
+			return BuildErrorResponse(404);
+		std::cout << LIGHT_BLUE << "Path is: " + path << RESET << std::endl;
+		std::cout << GREEN << "About to call BuildCGIResponse" << RESET << std::endl;
+		Response cgiResp = BuildCGIResponse(path);
+		std::cout << GREEN << "BuildCGIResponse completed" << RESET << std::endl;
+		return cgiResp;
+	}
+
 	switch (getMethod(req.getMethod()))
 	{
 	case HTTP_GET:
