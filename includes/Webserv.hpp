@@ -62,14 +62,12 @@
 #include "Config.hpp"
 #include "Msg.hpp"
 #include "Parser.hpp"
-//#include "../src/server/Server.hpp"
-//#include "../src/request/Request.hpp"
-//#include "../src/response/Response.hpp"
-//#include "../src/request/RequestHandler.hpp"
+# include "../src/request/Request.hpp"
+# include "../src/server/Server.hpp"
 
 class ConfigFileReader {
 public:
-static std::string read(const std::string &path);
+	static std::string read(const std::string &path);
 };
 
 class Tokenizer {
@@ -86,14 +84,26 @@ std::string to_string(T &value) {
     return oss.str();
 }
 
+struct	stCgiInfo
+{
+	stCgiInfo() : FileName(""), QueryString(""), PathInfo(""),
+		Method(""), ContentLenght(-1), Body("") {}
+    stCgiInfo (const stCgiInfo &Other ) : FileName(Other.FileName), QueryString(Other.QueryString),
+        PathInfo(Other.PathInfo), Method(Other.Method), ContentLenght(Other.ContentLenght), Body(Other.Body) {}
+	std::string	FileName;
+	std::string	QueryString;
+	std::string	PathInfo;
+	std::string	Method;
+	ssize_t		ContentLenght;
+	std::string	Body;
+};
+
+# include "../src/CGI/cgi.hpp"
+
 class Request;
 class RequestHandler;
-
-# include "../src/request/Request.hpp"
-# include "../src/server/Server.hpp"
 
 std::string getCookieValue(const Request &req, std::string key);
 void createNewSession(Request &req, ServerConfig &config);
 std::string generateSessionId();
 std::string buildDirectoryListing(const std::string &directoryPath);
-// void PrintCookies( std::map<std::string, std::string> header);
