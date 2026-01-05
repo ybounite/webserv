@@ -27,14 +27,18 @@ public:
 	~Request();
 	
 	enStatusRequest						status;
-	std::map<std::string, std::string> cookies;
+	std::map<std::string, std::string>	cookies;
+	bool								isQueryString;
 
 	const std::string							&getMethod( void ) const;
 	const std::string							&getUri( void ) const;
 	const std::string							&getHTTPversion( void ) const;
+	const std::string							&getQueryString( void ) const;
 	const std::map<std::string, std::string>	&getHeaders( void ) const;
 	const std::string							&getBody( void ) const;
 	const std::string							&getPath( void ) const;
+	const std::string							&getPathInfo( void ) const;
+
 	void								setHeader(const std::string &key, const std::string &value);
 	void								handleRequest( std::string &raw );
 	void								CreateSessioncookies();
@@ -46,6 +50,7 @@ public:
 	void								ParseChunked( std::istringstream &stream ); //
 	std::string							getHeader(const std::string &key) const;
 	size_t								getContentLength() const;
+	std::string							extractPathInfo(const std::string &uri) const;
 
 private:
 	std::string							_Method;
@@ -54,6 +59,8 @@ private:
 	std::map<std::string, std::string>	_Headers;
 	std::string							_Body;
 	std::string							_Path;
+	std::string							_PathInfo;
+	std::string							_QueryString;
 
 	bool								is_ValidRequest() const;
 

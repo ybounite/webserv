@@ -10,7 +10,7 @@
 
 Request::Request(void) {}
 
-Request::Request(std::string &raw, Config &ConfigFile) : _config(ConfigFile)
+Request::Request(std::string &raw, Config &ConfigFile) : _PathInfo(""), _QueryString(""), _config(ConfigFile)
 {
 	this->handleRequest(raw);
 }
@@ -31,6 +31,8 @@ Request &Request::operator=(const Request &Other)
 		_Headers = Other._Headers;
 		_Body = Other._Body;
 		_Path = Other._Path;
+		_PathInfo = Other._PathInfo;
+		_QueryString = Other._QueryString;
 		_config = Other._config;
 	}
 	return *this;
@@ -44,6 +46,8 @@ const std::string &Request::getHTTPversion(void) const { return _Protocol; }
 const std::map<std::string, std::string> &Request::getHeaders(void) const { return _Headers; }
 const std::string &Request::getBody(void) const { return _Body; }
 const std::string &Request::getPath(void) const { return _Path; }
+const std::string &Request::getPathInfo(void) const { return _PathInfo; }
+const std::string &Request::getQueryString(void) const { return _QueryString; }
 
 void		Request::setHeader(const std::string &key, const std::string &value) {
 	_Headers[key] = value;
@@ -73,14 +77,37 @@ bool Request::is_ValidRequest() const {
     return !_Method.empty() && !_URI.empty() && !_Protocol.empty();
 }
 
+std::string	Request::extractPathInfo(const std::string &uri) const
+{
+	//std::string scriptExt[] = {"py", "php", "sh", "pl", "rb", "lua"};
+	size_t dotPos = uri.find_last_of('.');
+	if (dotPos == std::string::npos)
+		return "";
+
+	size_t endOfScript = uri.find('/', dotPos);
+	if (endOfScript == std::string::npos)
+		return "";
+	
+	return uri.substr(endOfScript);
+}
+
 void	Request::parseRequestLine(const std::string &line)
 {
 	std::istringstream ss(line);
 	ss >> _Method >> _URI >> _Protocol;
 
+	size_t queryPos = _URI.find('?');
+	if (queryPos != std::string::npos) {
+		_QueryString = _URI.substr(queryPos + 1);
+		_URI = _URI.substr(0, queryPos);
+	}
+
+	_PathInfo = extractPathInfo(_URI);
+	if (!_PathInfo.empty())
+		_URI = _URI.substr(0, _URI.size() - _PathInfo.size());
+	_Path = _URI;
 	if (!is_ValidRequest()) {
 		status = enMISSING_LINE;
-		
 		throw std::runtime_error("invalid or missing request line");
 	}
 }
@@ -139,7 +166,6 @@ void	Request::ParseBody( std::istringstream &stream ) {
 			ParseChunked(stream);
 			return ;
 		}
-		// No body expected (e.g., GET, HEAD requests)
 		return ;
 	}
 	size_t	len = std::atoi(ContentLength.c_str());
@@ -184,9 +210,8 @@ void	Request::handleRequest(std::string &raw)
 {
 
 	try{
-			
-		std::istringstream stream(raw);
-		std::string line;
+		std::istringstream	stream(raw);
+		std::string			line;
 		if (!std::getline(stream, line)){
 			status = enMISSING_HEADER;
 			throw std::runtime_error("invalid request");

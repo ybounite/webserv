@@ -13,7 +13,19 @@
 /*                          Response Class                                    */
 /* ************************************************************************** */
 
-class Request;  // Forward declaration
+class	Request;
+
+struct	stCgiInfo
+{
+	stCgiInfo() : FileName(""), QueryString(""), PathInfo(""),
+		Method(""), ContentLenght(-1), Body("") {}
+	std::string	FileName;
+	std::string	QueryString;
+	std::string	PathInfo;
+	std::string	Method;
+	ssize_t		ContentLenght;
+	std::string	Body;
+};
 
 class Response : protected Request {
 public:
@@ -21,7 +33,7 @@ public:
 	Response( const Request &req )
 		: Request(req), StatusCode(200), Headers(), Fd(-1), BodySize(0), Header(""),
 			Body(""), uri(""), FilePath(""), isCGI(false), cgi_path(""){}
-	
+	stCgiInfo								cgiInfo;
 	short									StatusCode;
 	std::map<std::string, std::string>		Headers;
 	int										Fd;
@@ -30,9 +42,10 @@ public:
 	std::string								Body;
 	std::string								uri;
 	std::string								FilePath;
-	bool										isCGI;
+	bool									isCGI;
 
 	std::string								cgi_path;
+	std::string								query_string;
 
 	
 	Response(const Response &Other);
