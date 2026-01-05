@@ -2,41 +2,32 @@
 #include "../response/Response.hpp"
 #include "../request/RequestHandler.hpp"
 
-bool running = 0;
-
 void sighandler(int status)
 {
     if (status)
         throwing("");
 }
 
-void Server::addNblock(unsigned int fd)
-{
-    int flags = fcntl(fd, F_GETFL, 0);
-    if (flags < 0)
-        throwing("fcntl(F_GETFL)");
-    if (fcntl(fd, F_SETFL, flags | O_NONBLOCK) < 0)
-        throwing("fcntl(F_SETFL)");
-}
 
 Server::Server(Config &data) : _data(data)
 {
     int opt = 1;
     signal(SIGINT, sighandler);
+    signal(SIGPIPE, SIG_IGN);
     _data = data;
     _ServerFd = socket(AF_INET, SOCK_STREAM, 0);
     setsockopt(_ServerFd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+    if (_ServerFd < 0)
+        throwing("socket()");
+
     addNblock(_ServerFd);
     memset((void *)&_address, 0, sizeof(sockaddr_in));
     _address.sin_family = AF_INET;
     _address.sin_addr.s_addr = INADDR_ANY;
     _address.sin_port = htons(_data.servers[0].listen_ports[0]);
-
-    if (_ServerFd < 0)
-        throwing("socket()");
-    if (bind(_ServerFd, (const struct sockaddr *)&_address, sizeof(struct sockaddr_in)) < 0) // now we assign to this socket a port and an address family to get conection with.
+    if (bind(_ServerFd, (const struct sockaddr *)&_address, sizeof(struct sockaddr_in)) < 0)
         throwing("bind()");
-    if (listen(_ServerFd, 1000) < 0) // now the server is listening for new requests.
+    if (listen(_ServerFd, 1000) < 0)
         throwing("listen()");
 }
 
@@ -63,19 +54,25 @@ void Server::run()
             throwing("epoll_wait() failed: ");
         for (int i = 0; i < readyClients; i++)
         {
-            if (_clients[i].data.fd == _ServerFd) // a new client request need to be accepted.
+            int fd = _clients[i].data.fd;
+            if (fd == _ServerFd)
                 addClientInEppol();
+            else if (_ClientsMap.find(fd) != _ClientsMap.end() &&
+                     _ClientsMap[fd].CGIfd == fd)
+                readCGIPipe(fd);
             else
             {
-
-                if (_clients[i].events & EPOLLIN) // do client ready to  send data to the server ?
-                    readClientRequest(_clients[i].data.fd);
-                if (_clients[i].events & EPOLLOUT) // if the clinet send a request this condition would be true and i will respond here
-                    sendHttpResponse(_clients[i].data.fd);
+                if (_clients[i].events & EPOLLIN)
+                    readClientRequest(fd);
+                if (_clients[i].events & EPOLLOUT)
+                    sendHttpResponse(fd);
             }
         }
     }
 }
+
+// New function to handle CGI pipe reads
+
 
 std::map<int, t_clients> Server::getClients() const
 {

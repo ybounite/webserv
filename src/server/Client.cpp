@@ -5,25 +5,29 @@
 void Server::addClientInEppol()
 {
 	int clientFd;
-	// accept the client (that create for him a new socket and return a FD for it)
 	clientFd = accept(_ServerFd, NULL, NULL);
-	// make this socket a nonblocked one so the recv wont block
-	addNblock(clientFd);
 	if (clientFd < 0)
-		throwing("accept()");
+	{
+		std::cerr << "Cant accept Client" << std::endl;
+		return;
+	}
+	addNblock(clientFd);
 	epoll_event newClient;
 	newClient.data.fd = clientFd;
 	newClient.events = EPOLLIN;
 	if (epoll_ctl(_epollInstance, EPOLL_CTL_ADD, clientFd, &newClient) < 0)
-		throwing("epoll_ctl()");
+	{
+		std::cout << "epoll_ctl";
+		close(clientFd);
+		SendErrorPage(clientFd, "500");
+		return;
+	}
 	t_clients client;
 	client.fd = clientFd;
+	client.event = newClient;
 	_ClientsMap[clientFd] = client;
 }
 
-
-
-// this function add the EPOLLOUT flag to the socket in the epoll instance to watch also if the client is ready to recv data
 void Server::readClientRequest(unsigned int clientFd)
 {
 	int bytesRead;
@@ -40,14 +44,15 @@ void Server::readClientRequest(unsigned int clientFd)
 	if (contentLenght(_ClientsMap[clientFd].request) > _ClientsMap[clientFd].request.length() - headerEnd - 4)
 		return;
 	_ClientsMap[clientFd].last_activity = time(NULL);
+	std::cout << GREEN << _ClientsMap[clientFd].request << RESET << std::endl;
 	modifySockEvents(_epollInstance, clientFd);
 }
 
-
-void Server::sendHttpResponse(unsigned int clientFd)
+void Server::sendHttpResponse(int clientFd)
 {
-	time_t current_time = time(NULL);
-	if (current_time - _ClientsMap[clientFd].last_activity > 10) // 30 seconds timeout
+	if (_ClientsMap[clientFd].CGIfd > -1)
+		return;
+	if (time(NULL) - _ClientsMap[clientFd].last_activity > 10)
 	{
 		std::cout << "Client timeout, closing connection\n";
 		deleteClientFromEpoll(clientFd);
@@ -55,6 +60,9 @@ void Server::sendHttpResponse(unsigned int clientFd)
 	}
 	if (_ClientsMap[clientFd].firstTime)
 		return getReadInfos(clientFd);
+
+	if (_ClientsMap[clientFd].clsResponse->isCGI)
+		return;
 
 	if (_ClientsMap[clientFd].clsResponse->Fd == -1)
 		return errorSending(clientFd);

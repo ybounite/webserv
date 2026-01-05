@@ -363,7 +363,7 @@ std::string clean(const std::string &str)
 
 ////////////////////
 
-Response RequestHandler::handlePOST()
+Response	RequestHandler::handlePOST()
 {
 	Response resp(req);
 	std::string bodyData = req.getBody();
@@ -401,8 +401,10 @@ Response RequestHandler::handlePOST()
 		{
 			std::ofstream outfile("src/data/data.txt", std::ios::app);
 			outfile << std::endl;
-			if (!outfile.is_open())
-				throw "Cannot open data.txt file!";
+			if (!outfile.is_open()){
+				std::cerr << "Cannot open data.txt file!" << std::endl;
+    			return BuildErrorResponse(500);
+			}
 
 			std::string sessionId = "none";
 			if (!req.cookies.empty())
@@ -414,9 +416,10 @@ Response RequestHandler::handlePOST()
 		if (req.getUri() == "/pages/login.html")
 		{
 			std::ifstream infile("src/data/data.txt");
-			if (!infile.is_open())
-				throw "Cannot open data.txt for login check!";
-
+			if (!infile.is_open()) {
+				std::cerr << "Cannot open data.txt to update session!" << std::endl;
+				return BuildErrorResponse(500);
+			}
 			std::vector<std::string> lines;
 			std::string line;
 			bool loginUpdated = false;
@@ -452,9 +455,10 @@ Response RequestHandler::handlePOST()
 			if (loginUpdated)
 			{
 				std::ofstream outfile("src/data/data.txt", std::ios::trunc);
-				if (!outfile.is_open())
-					throw "Cannot open data.txt to update session!";
-
+				if (!outfile.is_open()) {
+					std::cerr << "Cannot open data.txt to update session!" << std::endl;
+					return BuildErrorResponse(500);
+				}
 				for (size_t i = 0; i < lines.size(); ++i)
 				{
 					outfile << lines[i];

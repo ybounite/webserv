@@ -8,46 +8,6 @@
 
 #include "Request.hpp"
 
-Request::Request(void) {}
-
-Request::Request(std::string &raw, Config &ConfigFile) : _config(ConfigFile)
-{
-	this->handleRequest(raw);
-}
-
-
-Request::Request(const Request &Other)
-{
-	_Method = Other._Method;
-	_URI = Other._URI;
-	_Protocol = Other._Protocol;
-	_Headers = Other._Headers;
-	_Body = Other._Body;
-	_Path = Other._Path;
-	_config = Other._config;
-	cookies = Other.cookies;
-	status = Other.status;
-}
-
-Request &Request::operator=(const Request &Other)
-{
-	if (this != &Other)
-	{
-		_Method = Other._Method;
-		_URI = Other._URI;
-		_Protocol = Other._Protocol;
-		_Headers = Other._Headers;
-		_Body = Other._Body;
-		_Path = Other._Path;
-		_config = Other._config;
-		cookies = Other.cookies;
-		status = Other.status;
-	}
-	return *this;
-}
-
-Request::~Request(void) {}
-
 const std::string &Request::getMethod(void) const { return _Method; }
 const std::string &Request::getUri(void) const { return _URI; }
 const std::string &Request::getHTTPversion(void) const { return _Protocol; }
@@ -78,6 +38,19 @@ void trim(std::string &s) {
 }
 /* my library */
 
+std::string	Request::extractPathInfo(const std::string &uri) const
+{
+	//std::string scriptExt[] = {"py", "php", "sh", "pl", "rb", "lua"};
+	size_t dotPos = uri.find_last_of('.');
+	if (dotPos == std::string::npos)
+		return "";
+
+	size_t endOfScript = uri.find('/', dotPos);
+	if (endOfScript == std::string::npos)
+		return "";
+	
+	return uri.substr(endOfScript);
+}
 
 bool Request::is_ValidRequest() const {
     return !_Method.empty() && !_URI.empty() && !_Protocol.empty();
@@ -88,9 +61,18 @@ void	Request::parseRequestLine(const std::string &line)
 	std::istringstream ss(line);
 	ss >> _Method >> _URI >> _Protocol;
 
+	size_t queryPos = _URI.find('?');
+	if (queryPos != std::string::npos) {
+		_QueryString = _URI.substr(queryPos + 1);
+		_URI = _URI.substr(0, queryPos);
+	}
+
+	_PathInfo = extractPathInfo(_URI);
+	if (!_PathInfo.empty())
+		_URI = _URI.substr(0, _URI.size() - _PathInfo.size());
+	_Path = _URI;
 	if (!is_ValidRequest()) {
 		status = enMISSING_LINE;
-		
 		throw std::runtime_error("invalid or missing request line");
 	}
 }
@@ -149,7 +131,6 @@ void	Request::ParseBody( std::istringstream &stream ) {
 			ParseChunked(stream);
 			return ;
 		}
-		// No body expected (e.g., GET, HEAD requests)
 		return ;
 	}
 	size_t	len = std::atoi(ContentLength.c_str());
@@ -163,44 +144,42 @@ void	Request::ParseBody( std::istringstream &stream ) {
 	}
 }
 
-std::string Request::createNewSession(ServerConfig &config)
+void Request::createNewSession(ServerConfig &config)
 {
-    std::string id = generateSessionId();
-    config.sessions[id]["username"] = "Soufiane";
-    return id;
+	std::string id = generateSessionId();
+
+	config.sessions[id]["username"] = "Soufiane";
+
+	setHeader("Set-Cookie", "session_id=" + id + "; HttpOnly; Path=/; Max-Age=30");
+	cookies["session_id"] = id;
 }
 
-
-void Request::CreateSessioncookies()
+void	Request::CreateSessioncookies()
 {
-    if (_URI == "/pages/login.html" || _URI == "/pages/register.html")
-    {
-        if (cookies.find("session_id") != cookies.end())
-            return;
-
-        std::string newId = createNewSession(_config.servers[0]);
-        cookies["session_id"] = newId;
-    }
+	if (_URI == "/pages/login.html") {
+		std::string Id;
+		if (cookies.count("session_id")) {
+			Id = getHeader("Set-Cookie");
+			Id = Id.substr(Id.find("=") + 1, 16);
+		}
+		else {
+			createNewSession(_config.servers[0]);
+			Msg::error("Create session cookies");
+		}
+	}
 }
-
-
 
 void	Request::handleRequest(std::string &raw)
 {
-	std::istringstream stream(raw);
-	std::string line;
-
-	// printRequest(raw); // print request
-
-	if (!std::getline(stream, line))
-		throw std::runtime_error("invalid request");
-
-	if (!line.empty() && line[line.length() - 1] == '\r')
-		line.erase(line.length() - 1);
 	try{
+		std::istringstream	stream(raw);
+		std::string			line;
+
+		if (!std::getline(stream, line)) throw std::runtime_error("invalid request");
+
+		if (!line.empty() && line[line.length() - 1] == '\r') line.erase(line.length() - 1);
 		parseRequestLine(line);
 		ParseHeaders(stream);
-		ParseCookies();
 		ParseBody(stream);
 		CreateSessioncookies();
 		this->status = enVALID;
@@ -224,12 +203,7 @@ size_t Request::getContentLength() const
 	return std::atoi(len.c_str());
 }
 
-
-//////////////////
-
-
-
-void Request::ParseCookies()
+void	Request::ParseCookies()
 {
     std::string cookieHeader = getHeader("Cookie");
     if (cookieHeader.empty())

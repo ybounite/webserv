@@ -1,7 +1,10 @@
 # Build artifacts
+# Build artifacts
 .build/
 build/
 obj/*
+obj/
+*.o
 .vscode
 # Executables
 webserv

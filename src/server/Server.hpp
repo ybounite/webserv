@@ -10,16 +10,18 @@ class Config;
 
 typedef struct s_clients
 {
-    s_clients() : fd(-1), firstTime(true), leftData(false), bytesread(0), clsResponse(NULL) {}
+    s_clients() : fd(-1), firstTime(true), CGIfd(-1), leftData(false), bytesread(0), clsResponse(NULL) {}
     int fd;
     std::string request;
     std::string response;
     bool firstTime;
+    int CGIfd;
     bool leftData;
     ssize_t bytesread;
     std::string DataLeft;
     Response *clsResponse;
     time_t last_activity; // ADD THIS LINE
+    epoll_event event;
 } t_clients;
 
 class Server
@@ -38,14 +40,19 @@ public:
     int getServerFd();
     void addClientInEppol();
     void readClientRequest(unsigned int clientFd);
-    void sendHttpResponse(unsigned int clientFd);
+    void readCGIPipe(unsigned int pipeFd);
+    void sendHttpResponse(int clientFd);
     void CreateEpollInstance();
     void deleteClientFromEpoll(unsigned int clientFd);
     void addNblock(unsigned int clientFd);
     void getReadInfos(unsigned int fd);
     void errorSending(unsigned int fd);
     void ReadSend(unsigned int fd);
+    void ifCGI(int fd);
     void modifySockEvents(int epollfd, int fd);
+    // void Server::isCGIPipe(int fd);
+    void readCGIPipe(int pipeFd);
+    void SendErrorPage(int fd, std::string code);
     size_t contentLenght(std::string header);
     void run();
     std::map<int, t_clients> getClients() const;
