@@ -87,6 +87,7 @@ public:
 class LocationConfig {
 public:
     std::string path;
+    std::string list;
     std::string root;
     std::string index;
     bool autoindex;
@@ -102,7 +103,7 @@ public:
 class ServerConfig {
 public:
     std::map<std::string, std::map<std::string, std::string> > sessions;
-    int listen_port;
+    std::vector<int> listen_ports;
     std::string index;
     std::string server_name;
     std::string root;
@@ -149,3 +150,4 @@ class RequestHandler;
 std::string getCookieValue(const Request &req, std::string key);
 void createNewSession(Request &req, ServerConfig &config);
 std::string generateSessionId();
+std::string buildDirectoryListing(const std::string &directoryPath);

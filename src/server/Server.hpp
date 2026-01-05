@@ -21,6 +21,7 @@ typedef struct s_clients
     std::string DataLeft;
     Response *clsResponse;
     time_t last_activity; // ADD THIS LINE
+    epoll_event event;
 } t_clients;
 
 class Server
@@ -47,10 +48,11 @@ public:
     void getReadInfos(unsigned int fd);
     void errorSending(unsigned int fd);
     void ReadSend(unsigned int fd);
+    void ifCGI(int fd);
     void modifySockEvents(int epollfd, int fd);
     // void Server::isCGIPipe(int fd);
     void readCGIPipe(int pipeFd);
-    void CGIerror(int code, int fd, RequestHandler &ReqH);
+    void SendErrorPage(int fd, std::string code);
     size_t contentLenght(std::string header);
     void run();
     std::map<int, t_clients> getClients() const;

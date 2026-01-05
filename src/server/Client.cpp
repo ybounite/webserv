@@ -5,55 +5,28 @@
 void Server::addClientInEppol()
 {
 	int clientFd;
-	// accept the client (that create for him a new socket and return a FD for it)
 	clientFd = accept(_ServerFd, NULL, NULL);
-	// make this socket a nonblocked one so the recv wont block
-	addNblock(clientFd);
 	if (clientFd < 0)
-		throwing("accept()");
+	{
+		std::cerr << "Cant accept Client" << std::endl;
+		return;
+	}
+	addNblock(clientFd);
 	epoll_event newClient;
 	newClient.data.fd = clientFd;
 	newClient.events = EPOLLIN;
 	if (epoll_ctl(_epollInstance, EPOLL_CTL_ADD, clientFd, &newClient) < 0)
-		throwing("epoll_ctl()");
+	{
+		close(clientFd);
+		SendErrorPage(clientFd, "500");
+		return;
+	}
 	t_clients client;
 	client.fd = clientFd;
+	client.event = newClient;
 	_ClientsMap[clientFd] = client;
 }
 
-void Server::readCGIPipe(unsigned int pipeFd)
-{
-	// This function handles reading from a CGI pipe
-	// The socket fd is stored in _ClientsMap[pipeFd].fd
-	int sock = _ClientsMap[pipeFd].fd;
-	char buffer[1024];
-	ssize_t b_read = read(pipeFd, buffer, sizeof(buffer));
-	
-	if (b_read < 0)
-	{
-		deleteClientFromEpoll(pipeFd);
-		deleteClientFromEpoll(sock);
-		throwing("read()");
-	}
-	if (b_read == 0)
-	{
-		// EOF from pipe, close both FDs
-		deleteClientFromEpoll(pipeFd);
-		deleteClientFromEpoll(sock);
-		return;
-	}
-	
-	// Send the data to the client
-	ssize_t sendBytes = send(sock, buffer, b_read, 0);
-	if (sendBytes < 0)
-	{
-		deleteClientFromEpoll(pipeFd);
-		deleteClientFromEpoll(sock);
-		throwing("send()");
-	}
-}
-
-// this function add the EPOLLOUT flag to the socket in the epoll instance to watch also if the client is ready to recv data
 void Server::readClientRequest(unsigned int clientFd)
 {
 	int bytesRead;
@@ -75,9 +48,9 @@ void Server::readClientRequest(unsigned int clientFd)
 
 void Server::sendHttpResponse(int clientFd)
 {
-	if (_ClientsMap[clientFd].CGIfd == 1)
+	if (_ClientsMap[clientFd].CGIfd > -1)
 		return;
-	if (time(NULL) - _ClientsMap[clientFd].last_activity > 10) // 30 seconds timeout
+	if (time(NULL) - _ClientsMap[clientFd].last_activity > 10)
 	{
 		std::cout << "Client timeout, closing connection\n";
 		deleteClientFromEpoll(clientFd);
@@ -91,7 +64,7 @@ void Server::sendHttpResponse(int clientFd)
 
 	if (_ClientsMap[clientFd].clsResponse->Fd == -1)
 		return errorSending(clientFd);
-	
+
 	ReadSend(clientFd);
 
 	if (_ClientsMap[clientFd].bytesread >= _ClientsMap[clientFd].clsResponse->BodySize)

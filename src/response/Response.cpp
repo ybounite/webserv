@@ -17,20 +17,24 @@ Response::Response(const Response &Other)
 Response::~Response() {}
 
 std::string Response::BuildHeaderResponse() {
-	std::cout << "Build Header Response\n";
-	std::ostringstream oss;
-	oss << "HTTP/1.1 " << StatusCode << " " << getStatusMessage(StatusCode) << "\r\n";
-	oss << "Content-Type: " << guessContentType(FilePath) << "\r\n";
-	if (isCGI == 1) {
-		oss << "Connection: close\r\n";
-		oss << "\r\n";
-		return oss.str();
-	}
-	for (std::map<std::string, std::string>::const_iterator it = Headers.begin(); it != Headers.end(); ++it)
-		oss << it->first << ": " << it->second << "\r\n";
-	oss << "Content-Length: " << BodySize << "\r\n";
-	oss << "\r\n";
-	return oss.str();
+    std::cout << "Build Header Response\n";
+    std::ostringstream oss;
+    
+    // For CGI: don't send any headers, let CGI script send complete response
+    if (isCGI == 1) {
+        return "";  // Empty string - CGI will send everything
+    }
+    
+    // For non-CGI responses
+    oss << "HTTP/1.1 " << StatusCode << " " << getStatusMessage(StatusCode) << "\r\n";
+    oss << "Content-Type: " << guessContentType(FilePath) << "\r\n";
+    std::cerr << guessContentType(FilePath) << std::endl;
+    
+    for (std::map<std::string, std::string>::const_iterator it = Headers.begin(); it != Headers.end(); ++it)
+        oss << it->first << ": " << it->second << "\r\n";
+    oss << "Content-Length: " << BodySize << "\r\n";
+    oss << "\r\n";
+    return oss.str();
 }
 
 void		Response::setStatusCode(short code) {
@@ -69,5 +73,5 @@ std::string	Response::guessContentType(const std::string &path) {
 	if (!_config.MimeTypes.empty()) 
 		return _config.MimeTypes[ext];
 
-	return "application/octet-stream";
+	return "text/html";
 }

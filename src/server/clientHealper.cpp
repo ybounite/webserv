@@ -44,29 +44,39 @@ size_t Server::contentLenght(std::string header)
 	return atoi(Clenght.c_str());
 }
 
-void Server::CGIerror(int code, int fd, RequestHandler &ReqH)
+void Server::ifCGI(int fd)
 {
-	ssize_t sendBytes;
+	// ssize_t sendBytes;
+	cgi Cgi;
+	Cgi.CGIhandler(_ClientsMap[fd].clsResponse->FilePath);
+	int pipeFd = Cgi._pipeFd;
 
-	if (_ClientsMap[fd].clsResponse)
-		delete _ClientsMap[fd].clsResponse;
-	_ClientsMap[fd].clsResponse = new Response(ReqH.BuildErrorResponse(code));
-	if (_ClientsMap[fd].clsResponse->Fd == -1)
+	if (pipeFd < 0)
 	{
-		sendBytes = send(fd, _ClientsMap[fd].clsResponse->Body.c_str(),
-						 _ClientsMap[fd].clsResponse->Body.length(), 0);
+		SendErrorPage(fd, "500");
+		deleteClientFromEpoll(fd);
+		return;
 	}
-	else
-	{
-		std::string header = _ClientsMap[fd].clsResponse->BuildHeaderResponse();
-		std::ifstream file(_ClientsMap[fd].clsResponse->FilePath.c_str(), std::ios::binary);
-		std::ostringstream ss;
-		ss << file.rdbuf();
-		std::string body = ss.str();
-		header += body;
-		send(fd, header.c_str(), header.length(), 0);
-		return deleteClientFromEpoll(fd);
-	}
+	epoll_event events;
+	events.data.fd = pipeFd;
+	events.events = EPOLLIN;
+	epoll_ctl(_epollInstance, EPOLL_CTL_ADD, pipeFd, &events);
+	t_clients client;
+	client.fd = fd;
+	client.CGIfd = pipeFd;
+	_ClientsMap[pipeFd] = client;
+	client.last_activity = time(NULL);
+	// _ClientsMap[fd].clsResponse->setStatusCode(200);
+	// std::string header = _ClientsMap[fd].clsResponse->BuildHeaderResponse();
+	// sendBytes = send(fd, header.c_str(), header.length(), 0);
+	// if (sendBytes < 0)
+	// {
+	// 	SendErrorPage(fd, "500");
+	// 	return (deleteClientFromEpoll(fd), deleteClientFromEpoll(pipeFd));
+	// }
+	// Msg::error("REACH ICI");
+	epoll_ctl(_epollInstance, EPOLL_CTL_DEL, fd, &_ClientsMap[fd].event);
+	return;
 }
 
 void Server::getReadInfos(unsigned int fd)
@@ -77,37 +87,16 @@ void Server::getReadInfos(unsigned int fd)
 	_ClientsMap[fd].clsResponse = new Response(ReqH.HandleMethod());
 	if (_ClientsMap[fd].clsResponse->isCGI == 1)
 	{
-		Msg::debug("start epolling ...");
-		cgi Cgi;
-		Cgi.CGIhandler(_ClientsMap[fd].clsResponse->FilePath);
-		int pipeFd = Cgi._pipeFd;
-
-		if (pipeFd < 0)
-		{
-			CGIerror(500, fd, ReqH);
-			return;
-		}
-		epoll_event events;
-		events.data.fd = pipeFd;
-		events.events = EPOLLIN;
-		epoll_ctl(_epollInstance, EPOLL_CTL_ADD, pipeFd, &events);
-		t_clients client;
-		client.fd = fd;
-		client.CGIfd = pipeFd;
-		client.last_activity = time(NULL);
-		_ClientsMap[pipeFd] = client;
-		_ClientsMap[fd].clsResponse->setStatusCode(200);
-		std::string header = _ClientsMap[fd].clsResponse->BuildHeaderResponse();
-		sendBytes = send(fd, header.c_str(), header.length(), 0);
-		if (sendBytes < 0)
-			return (deleteClientFromEpoll(fd), deleteClientFromEpoll(pipeFd));
-		_ClientsMap[fd].CGIfd = 1;
+		ifCGI(fd);
 		return;
 	}
 	_ClientsMap[fd].response = _ClientsMap[fd].clsResponse->BuildHeaderResponse();
 	sendBytes = send(fd, _ClientsMap[fd].response.c_str(), _ClientsMap[fd].response.length(), 0);
 	if (sendBytes < 0)
+	{
+		SendErrorPage(fd, "500");
 		return deleteClientFromEpoll(fd);
+	}
 	_ClientsMap[fd].firstTime = false;
 }
 
