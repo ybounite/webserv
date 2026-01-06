@@ -52,7 +52,6 @@ void Server::ifCGI(int fd)
 
 	if (pipeFd < 0)
 	{
-		std::cout << "pipfd";
 		SendErrorPage(fd, "500");
 		deleteClientFromEpoll(fd);
 		return;

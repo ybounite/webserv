@@ -47,7 +47,6 @@ void Server::readCGIPipe(int pipeFd)
     ssize_t b_read = read(pipeFd, buffer, sizeof(buffer));
     if (b_read < 0)
     {
-        std::cout << "send\n";
         SendErrorPage(sock, "500");
         deleteClientFromEpoll(pipeFd);
         deleteClientFromEpoll(sock);
@@ -56,7 +55,6 @@ void Server::readCGIPipe(int pipeFd)
 
     if (b_read == 0)
     {
-        std::cout << "sendread\n";
         deleteClientFromEpoll(pipeFd);
         deleteClientFromEpoll(sock);
         return;
@@ -101,7 +99,6 @@ void Server::readCGIPipe(int pipeFd)
 
     if (send(sock, buffer, b_read, MSG_NOSIGNAL) < 0)
     {
-        std::cout << "send2\n";
         kill(_ClientsMap[pipeFd].pid, SIGKILL);
         deleteClientFromEpoll(pipeFd);
         deleteClientFromEpoll(sock);
