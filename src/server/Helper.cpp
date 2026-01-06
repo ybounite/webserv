@@ -58,6 +58,7 @@ void Server::readCGIPipe(int pipeFd)
 
     if (b_read == 0)
     {
+<<<<<<< HEAD
         if (send(sock, _ClientsMap[pipeFd].response.c_str(), _ClientsMap[pipeFd].response.size(), MSG_NOSIGNAL) < 0)
         {
             std::cout << "send2\n";
@@ -66,6 +67,8 @@ void Server::readCGIPipe(int pipeFd)
             deleteClientFromEpoll(sock);
             return;
         }
+=======
+>>>>>>> 650a0f02c02f8d6c05e91314096234388e4a6608
         deleteClientFromEpoll(pipeFd);
         deleteClientFromEpoll(sock);
         return;
@@ -108,4 +111,15 @@ void Server::readCGIPipe(int pipeFd)
         _ClientsMap[pipeFd].cgi_headers_parsed = true;
         return;
     }
+<<<<<<< HEAD
+=======
+
+    if (send(sock, buffer, b_read, MSG_NOSIGNAL) < 0)
+    {
+        kill(_ClientsMap[pipeFd].pid, SIGKILL);
+        deleteClientFromEpoll(pipeFd);
+        deleteClientFromEpoll(sock);
+        return;
+    }
+>>>>>>> 650a0f02c02f8d6c05e91314096234388e4a6608
 }

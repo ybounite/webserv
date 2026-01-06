@@ -1,91 +1,75 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>File Upload</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; }
-        .container { background: white; border-radius: 10px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); padding: 60px 40px; max-width: 600px; width: 100%; }
-        h1 { color: #333; margin-bottom: 24px; text-align: center; }
-        .form-group { margin-bottom: 20px; }
-        label { display:block; margin-bottom:8px; color:#555; font-weight:500; }
-        input[type="file"] { width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 6px; background: #fafafa; }
-        .button-group { display:flex; gap:10px; margin-top:20px; }
-        button { flex:1; padding:12px; font-size:16px; border:none; border-radius:6px; cursor:pointer; font-weight:600; transition: all 0.2s; }
-        .upload-btn { background: #28a745; color:white; }
-        .upload-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(40,167,69,0.25); }
-        .cancel-btn { background:#95a5a6; color:white; }
-        #result { margin-top:16px; padding:12px; border-radius:6px; display:none; font-weight:500; text-align:center; }
-        #result.success { display:block; background:#d4edda; color:#155724; border:1px solid #c3e6cb; }
-        #result.error { display:block; background:#f8d7da; color:#721c24; border:1px solid #f5c6cb; }
-        .nav-buttons { margin-top:18px; display:flex; gap:8px; justify-content:center; align-items:center; }
-        .nav-buttons button { flex: none; padding:8px 12px; background:#3498db; color:white; border-radius:6px; }
-    </style>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Document</title>
+	<style>
+		@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
+
+		.container{
+			/*--max-width: 1215px;*/
+			--max-width: 1000px;
+			--padding: 1rem;
+
+			width: min(var(--max-width), 100% - (var(--padding) * 1.2));
+			margin-inline: auto;
+		}
+		body {
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			height: 100vh;
+			font-family: 'Inter', sans-serif;
+			background-color: #f0f0f0;
+		}
+		div {
+			font-size: 2rem;
+			font-weight: semibold;
+			color: #333;
+			text-align: center;
+		}
+		/* confetti */
+		canvas {
+			position: fixed;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+			z-index: 9999;
+		}
+
+		.button{
+			margin-top: 2rem;
+			border: none;
+			padding: 1rem 3rem;
+			background-color: #333;
+			border-radius: 15px;
+			font-weight: semibold;
+			color: #f0f0f0;
+		}
+
+		form{
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+		}
+	</style>
 </head>
 <body>
-    <div class="container">
-        <h1>📤 Upload a File</h1>
-
-        <div class="form-group">
-            <label for="file">Choose file to upload</label>
-            <input id="fileInput" type="file" name="file">
-        </div>
-
-        <div class="button-group">
-            <button id="uploadBtn" class="upload-btn" onclick="uploadFile()">Upload</button>
-            <button class="cancel-btn" onclick="goHome()">Cancel</button>
-        </div>
-
-        <div id="result"></div>
-
-        <div class="nav-buttons">
-            <button onclick="window.location.href='/pages/about.html'">About</button>
-            <button onclick="window.location.href='/pages/home.html'">Home</button>
-            <button onclick="window.location.href='/pages/index.html'">Index</button>
-        </div>
-    </div>
-
-    <script>
-        function showResult(message, isSuccess) {
-            var r = document.getElementById('result');
-            r.textContent = message;
-            r.className = isSuccess ? 'success' : 'error';
-        }
-
-        function goHome() { window.location.href = '/pages/home.html'; }
-
-        function uploadFile() {
-            var input = document.getElementById('fileInput');
-            var file = input.files[0];
-            var uploadBtn = document.getElementById('uploadBtn');
-            if (!file) { showResult('❌ Please choose a file', false); return; }
-
-            uploadBtn.disabled = true; uploadBtn.textContent = 'Uploading...';
-
-            var formData = new FormData();
-            formData.append('file', file);
-
-            fetch('/upload', { method: 'POST', body: formData })
-            .then(function(res) {
-                if (res.status === 201 || res.status === 200) {
-                    showResult('✅ Upload successful!', true);
-                    setTimeout(function(){ window.location.href = '/pages/uploaded.html'; }, 700);
-                } else if (res.status === 413) {
-                    showResult('❌ File too large (413)', false);
-                    uploadBtn.disabled = false; uploadBtn.textContent = 'Upload';
-                } else if (res.status === 405) {
-                    showResult('❌ POST not allowed (405) - check config', false);
-                    uploadBtn.disabled = false; uploadBtn.textContent = 'Upload';
-                } else {
-                    res.text().then(function(t){ showResult('❌ Error ' + res.status + ': ' + (res.statusText || t), false); uploadBtn.disabled = false; uploadBtn.textContent = 'Upload'; });
-                }
-            })
-            .catch(function(err) {
-                showResult('❌ Upload failed: ' + err.message, false);
-                uploadBtn.disabled = false; uploadBtn.textContent = 'Upload';
-            });
-        }
-    </script>
+	<div class="container">
+		<h2>Create file.txt on the server</h2>
+		<form action="/cgi-bin/create_file.py" method="post">
+			<label for="filename">File name:</label>
+			<input type="text" id="filename" name="filename" required>
+			<br>
+			<label for="content">File content:</label>
+			<textarea id="content" name="content" rows="2" cols="50" required></textarea>
+			<br>
+			<input class="button" type="submit" value="Create file">
+		</form>
+	</div>
 </body>
+<script src="confetti.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/js-confetti@latest/dist/js-confetti.browser.js"></script>
 </html>

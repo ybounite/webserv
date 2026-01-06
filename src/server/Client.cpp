@@ -17,7 +17,6 @@ void Server::addClientInEppol(int fd)
 	newClient.events = EPOLLIN;
 	if (epoll_ctl(_epollInstance, EPOLL_CTL_ADD, clientFd, &newClient) < 0)
 	{
-		std::cout << "epoll_ctl";
 		close(clientFd);
 		SendErrorPage(clientFd, "500");
 		return;
@@ -54,7 +53,7 @@ void Server::sendHttpResponse(int clientFd)
 
 	if (time(NULL) - _ClientsMap[clientFd].last_activity > 10)
 	{
-		std::cout << "Client timeout, closing connection\n";
+		std::cerr << "Client timeout, closing connection\n";
 		deleteClientFromEpoll(clientFd);
 		return;
 	}
