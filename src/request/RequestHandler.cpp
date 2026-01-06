@@ -257,7 +257,7 @@ Response RequestHandler::handleGET()
             return BuildErrorResponse(403);
     }
 
-    bool isPublicPage = (path == config.root + "/pages/uploads.html" || path == config.root + "/pages/delete.html" || path == config.root + "/pages/home.html");
+    bool isPublicPage = ( path == config.root + "/pages/delete.html" || path == config.root + "/pages/home.html");
     
     if (isPublicPage && !search_Cookies(req.cookies)) {
         Response resp(req);

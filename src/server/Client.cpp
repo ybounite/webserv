@@ -45,6 +45,7 @@ void Server::readClientRequest(unsigned int clientFd)
 		return;
 	_ClientsMap[clientFd].last_activity = time(NULL);
 	modifySockEvents(_epollInstance, clientFd);
+	Msg::debug(_ClientsMap[clientFd].request);
 }
 
 void Server::sendHttpResponse(int clientFd)
