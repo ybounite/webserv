@@ -177,6 +177,7 @@ void	Request::handleRequest(std::string &raw)
 		ParseHeaders(stream);
 		ParseBody(stream);
 		CreateSessioncookies();
+		Msg::info(_Method  +" "+ _URI);
 		this->status = enVALID;
 	}
 	catch(std::exception &e) { std::cerr << e.what() << std::endl; }

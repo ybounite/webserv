@@ -3,9 +3,9 @@
 void Msg::print(const std::string& mode, const std::string& msg, const std::string& color)
 {
     if (mode == "[ERROR] ")
-        std::cerr << color << msg << RESET << std::endl;
+        std::cerr << mode << color << msg << RESET << std::endl;
     else 
-        std::cout << color << msg << RESET << std::endl;
+        std::cout << color << mode << msg << RESET << std::endl;
 }
 
 void Msg::info(const std::string& msg) {
