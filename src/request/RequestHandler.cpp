@@ -622,7 +622,7 @@ Response RequestHandler::handleDELETE()
 	std::cout << RED << "DELETE called for URI: " << req.getUri() << RESET << std::endl;
 	if (!_haseAllowed(loc.methods, HTTP_DELETE))
 	{
-		std::cout << RED << "DELETE method not allowed for this location" << RESET << std::endl;
+		std::cerr << RED << "DELETE method not allowed for this location" << RESET << std::endl;
 		return BuildErrorResponse(405);
 	}
 	std::string root = loc.root.empty() ? config.root : loc.root;
@@ -631,13 +631,13 @@ Response RequestHandler::handleDELETE()
 	struct stat st;
 	if (stat(path.c_str(), &st) != 0)
 	{
-		std::cout << RED << "File not found: " << path << RESET << std::endl;
+		std::cerr << RED << "File not found: " << path << RESET << std::endl;
 		return BuildErrorResponse(404);
 	}
 
 	if (std::remove(path.c_str()) != 0)
 	{
-		std::cout << RED << "Failed to delete file" << RESET << std::endl;
+		std::cerr << RED << "Failed to delete file" << RESET << std::endl;
 		return BuildErrorResponse(500);
 	}
 	std::cout << GREEN << "DELETE SUCCESS for: " << path << RESET << std::endl;

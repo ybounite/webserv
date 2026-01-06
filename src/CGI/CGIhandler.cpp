@@ -85,7 +85,6 @@ void cgi::CGIhandler(stCgiInfo &info)
     if (access(info.FileName.c_str(), X_OK) == -1)
     {
         Msg::error("ENTERED");
-        //std::cout << info.FileName << std::endl;
         _pipeFd = -1;
         return;
     }

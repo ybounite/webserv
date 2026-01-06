@@ -44,7 +44,6 @@ void Server::readClientRequest(unsigned int clientFd)
 	if (contentLenght(_ClientsMap[clientFd].request) > _ClientsMap[clientFd].request.length() - headerEnd - 4)
 		return;
 	_ClientsMap[clientFd].last_activity = time(NULL);
-	std::cout << GREEN << _ClientsMap[clientFd].request << RESET << std::endl;
 	modifySockEvents(_epollInstance, clientFd);
 }
 
@@ -68,10 +67,4 @@ void Server::sendHttpResponse(int clientFd)
 		return errorSending(clientFd);
 
 	ReadSend(clientFd);
-
-	if (_ClientsMap[clientFd].bytesread >= _ClientsMap[clientFd].clsResponse->BodySize)
-	{
-		deleteClientFromEpoll(clientFd);
-		_ClientsMap[clientFd].last_activity = time(NULL);
-	}
 }
