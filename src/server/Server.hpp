@@ -10,7 +10,7 @@ class Config;
 
 typedef struct s_clients
 {
-    s_clients() : fd(-1), firstTime(true), CGIfd(-1), leftData(false), bytesread(0), clsResponse(NULL) {}
+    s_clients() : fd(-1), firstTime(true), CGIfd(-1), leftData(false), bytesread(0), clsResponse(NULL), last_activity(0), cgi_headers_parsed(false), pid(-1) {}
     int fd;
     std::string request;
     std::string response;
@@ -22,13 +22,15 @@ typedef struct s_clients
     Response *clsResponse;
     time_t last_activity; // ADD THIS LINE
     epoll_event event;
+    bool cgi_headers_parsed;
+    int pid;
 } t_clients;
 
 class Server
 {
 private:
     int _epollInstance;
-    int _ServerFd;
+    std::vector<int> _ServerFd;
     Config &_data;
     struct sockaddr_in _address;
     std::map<int, t_clients> _ClientsMap;
@@ -37,10 +39,11 @@ private:
 public:
     int readyClients;
     Server(Config &data);
-    int getServerFd();
-    void addClientInEppol();
+    std::vector<int> getServerFd();
+    void addClientInEppol(int fd);
     void readClientRequest(unsigned int clientFd);
     void readCGIPipe(unsigned int pipeFd);
+    void AddSocketToEpoll(int fd);
     void sendHttpResponse(int clientFd);
     void CreateEpollInstance();
     void deleteClientFromEpoll(unsigned int clientFd);
@@ -48,6 +51,7 @@ public:
     void getReadInfos(unsigned int fd);
     void errorSending(unsigned int fd);
     void ReadSend(unsigned int fd);
+    int IsSocketFd(int fd);
     void ifCGI(int fd);
     void modifySockEvents(int epollfd, int fd);
     // void Server::isCGIPipe(int fd);

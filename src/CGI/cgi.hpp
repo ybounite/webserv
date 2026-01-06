@@ -6,6 +6,7 @@ class cgi
 
 public:
     int _pipeFd;
+    int _Pid;
     void CGIhandler(stCgiInfo &info);
     int runCGI(stCgiInfo &info);
 

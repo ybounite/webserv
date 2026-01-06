@@ -52,11 +52,11 @@ int cgi::runCGI(stCgiInfo &info)
     if (pipe(pfd) < 0)
         return -1;
 
-    int fd = fork();
-    if (fd < 0)
+    _Pid = fork();
+    if (_Pid < 0)
         return -1;
 
-    if (fd == 0)
+    if (_Pid == 0)
     {
         close(pfd[0]);
 
@@ -76,7 +76,7 @@ int cgi::runCGI(stCgiInfo &info)
 
     close(pfd[1]);
     int status;
-    waitpid(fd, &status, WNOHANG);
+    waitpid(_Pid, &status, WNOHANG);
     return pfd[0];
 }
 

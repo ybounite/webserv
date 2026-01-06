@@ -46,7 +46,6 @@ size_t Server::contentLenght(std::string header)
 
 void Server::ifCGI(int fd)
 {
-	// ssize_t sendBytes;
 	cgi Cgi;
 	Cgi.CGIhandler(_ClientsMap[fd].clsResponse->cgiInfo);
 	int pipeFd = Cgi._pipeFd;
@@ -65,17 +64,9 @@ void Server::ifCGI(int fd)
 	t_clients client;
 	client.fd = fd;
 	client.CGIfd = pipeFd;
-	_ClientsMap[pipeFd] = client;
 	client.last_activity = time(NULL);
-	// _ClientsMap[fd].clsResponse->setStatusCode(200);
-	// std::string header = _ClientsMap[fd].clsResponse->BuildHeaderResponse();
-	// sendBytes = send(fd, header.c_str(), header.length(), 0);
-	// if (sendBytes < 0)
-	// {
-	// 	SendErrorPage(fd, "500");
-	// 	return (deleteClientFromEpoll(fd), deleteClientFromEpoll(pipeFd));
-	// }
-	// Msg::error("REACH ICI");
+	client.pid = Cgi._Pid;
+	_ClientsMap[pipeFd] = client;
 	epoll_ctl(_epollInstance, EPOLL_CTL_DEL, fd, &_ClientsMap[fd].event);
 	return;
 }
@@ -95,7 +86,6 @@ void Server::getReadInfos(unsigned int fd)
 	sendBytes = send(fd, _ClientsMap[fd].response.c_str(), _ClientsMap[fd].response.length(), 0);
 	if (sendBytes < 0)
 	{
-		std::cout << "send";
 		SendErrorPage(fd, "500");
 		return deleteClientFromEpoll(fd);
 	}

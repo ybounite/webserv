@@ -2,10 +2,10 @@
 #include "../response/Response.hpp"
 #include "../request/RequestHandler.hpp"
 
-void Server::addClientInEppol()
+void Server::addClientInEppol(int fd)
 {
 	int clientFd;
-	clientFd = accept(_ServerFd, NULL, NULL);
+	clientFd = accept(fd, NULL, NULL);
 	if (clientFd < 0)
 	{
 		std::cerr << "Cant accept Client" << std::endl;
@@ -51,6 +51,7 @@ void Server::sendHttpResponse(int clientFd)
 {
 	if (_ClientsMap[clientFd].CGIfd > -1)
 		return;
+
 	if (time(NULL) - _ClientsMap[clientFd].last_activity > 10)
 	{
 		std::cout << "Client timeout, closing connection\n";
