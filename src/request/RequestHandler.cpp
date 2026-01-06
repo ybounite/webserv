@@ -316,7 +316,7 @@ Response	RequestHandler::HandleMethod()
 	if (req.status != Request::enVALID)
 		return BuildErrorResponse(403);
 
-	if (isCGi(req.getUri())) {
+	if (isCGi(req.getUri()) &&  req.getMethod() != "DELETE") {
 		LocationConfig loc = GetMatchingLocation(config.locations, req.getUri());
 		if (!_haseAllowed(loc.methods, (enHttpMethod)getMethod(req.getMethod())))
 			return BuildErrorResponse(405);

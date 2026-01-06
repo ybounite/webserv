@@ -89,4 +89,5 @@ void cgi::CGIhandler(stCgiInfo &info)
         return;
     }
     _pipeFd = runCGI(info);
+    Msg::error(to_string(_pipeFd));
 }

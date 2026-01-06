@@ -78,7 +78,9 @@ void Server::run()
                 addClientInEppol(check);
             else if (_ClientsMap.find(fd) != _ClientsMap.end() &&
                      _ClientsMap[fd].CGIfd == fd)
+            {
                 readCGIPipe(fd);
+            }
             else
             {
                 if (_clients[i].events & EPOLLIN)
@@ -89,8 +91,6 @@ void Server::run()
         }
     }
 }
-
-// New function to handle CGI pipe reads
 
 std::map<int, t_clients> Server::getClients() const
 {

@@ -59,7 +59,7 @@ void Server::ifCGI(int fd)
 	}
 	epoll_event events;
 	events.data.fd = pipeFd;
-	events.events = EPOLLIN;
+	events.events = EPOLLIN | EPOLLOUT;
 	epoll_ctl(_epollInstance, EPOLL_CTL_ADD, pipeFd, &events);
 	t_clients client;
 	client.fd = fd;
@@ -67,7 +67,9 @@ void Server::ifCGI(int fd)
 	client.last_activity = time(NULL);
 	client.pid = Cgi._Pid;
 	_ClientsMap[pipeFd] = client;
-	epoll_ctl(_epollInstance, EPOLL_CTL_DEL, fd, &_ClientsMap[fd].event);
+    std::cout << "CGI started with PID: " << _ClientsMap[pipeFd].pid << " Pipe FD: " << _ClientsMap[pipeFd].CGIfd << std::endl;
+	_ClientsMap[fd].event.events = 0;
+	epoll_ctl(_epollInstance, EPOLL_CTL_MOD, fd, &_ClientsMap[fd].event);
 	return;
 }
 
