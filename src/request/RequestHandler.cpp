@@ -217,7 +217,6 @@ bool search_Cookies(const std::map<std::string, std::string> &cookies)
 Response	RequestHandler::_Rdirect(LocationConfig loc){
 
 	Response resp(req);
-	//std::cout << RED << "Path Rdirect: " << loc.return_url  << " code  : " << loc.return_code << RESET << std::endl;
 
 	resp.setStatusCode(loc.return_code);
     resp.setHeader("Location", loc.return_url);
@@ -318,7 +317,6 @@ Response	RequestHandler::HandleMethod()
 		return BuildErrorResponse(403);
 
 	if (isCGi(req.getUri())) {
-		std::cout << GREEN << "yes CGI " << RESET << std::endl;
 		LocationConfig loc = GetMatchingLocation(config.locations, req.getUri());
 		if (!_haseAllowed(loc.methods, (enHttpMethod)getMethod(req.getMethod())))
 			return BuildErrorResponse(405);
@@ -327,10 +325,7 @@ Response	RequestHandler::HandleMethod()
 		std::string path = _BuildFileSystemPath(root, req.getUri());
 		if (!_ResourceExists(path))
 			return BuildErrorResponse(404);
-		std::cout << LIGHT_BLUE << "Path is: " + path << RESET << std::endl;
-		std::cout << GREEN << "About to call BuildCGIResponse" << RESET << std::endl;
 		Response cgiResp = _BuildCGIResponse(path);
-		std::cout << GREEN << "BuildCGIResponse completed" << RESET << std::endl;
 		return cgiResp;
 	}
 
