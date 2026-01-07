@@ -90,15 +90,21 @@ std::string to_string(T &value)
 struct stCgiInfo
 {
 	stCgiInfo() : FileName(""), QueryString(""), PathInfo(""),
-				  Method(""), ContentLenght(-1), Body("") {}
+				  Method(""), ContentLenght(-1), Body(""), ContentType(""), HttpV(""),
+				  ServerName(""), Port(0) {}
 	stCgiInfo(const stCgiInfo &Other) : FileName(Other.FileName), QueryString(Other.QueryString),
-										PathInfo(Other.PathInfo), Method(Other.Method), ContentLenght(Other.ContentLenght), Body(Other.Body) {}
+										PathInfo(Other.PathInfo), Method(Other.Method), ContentLenght(Other.ContentLenght),
+										Body(Other.Body), ContentType(Other.ContentType), HttpV(Other.HttpV), ServerName(Other.ServerName), Port(Other.Port) {}
 	std::string FileName;
 	std::string QueryString;
 	std::string PathInfo;
 	std::string Method;
 	ssize_t ContentLenght;
 	std::string Body;
+	std::string	ContentType;
+	std::string	HttpV;
+	std::string	ServerName;
+	int			Port;
 };
 
 #include "../src/CGI/cgi.hpp"

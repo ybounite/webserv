@@ -12,15 +12,16 @@ char **buildCgiEnv(stCgiInfo &info)
     std::vector<std::string> env;
 
     env.push_back("GATEWAY_INTERFACE=CGI/1.1");
-    env.push_back("SERVER_PROTOCOL=HTTP/1.1");
+    env.push_back("SERVER_PROTOCOL=" + info.HttpV);
     env.push_back("REQUEST_METHOD=" + info.Method);
     env.push_back("SCRIPT_FILENAME=" + info.FileName);
     env.push_back("SCRIPT_NAME=" + info.FileName);
     env.push_back("QUERY_STRING=" + info.QueryString);
     env.push_back("CONTENT_LENGTH=" + to_string(info.ContentLenght));
-    env.push_back("CONTENT_TYPE=" + std::string(""));
-    env.push_back("SERVER_NAME=localhost");
-    env.push_back("SERVER_PORT=8080");
+    env.push_back("CONTENT_TYPE=" + info.ContentType);
+    env.push_back("SERVER_NAME=" + info.ServerName);
+    env.push_back("PATH_INFO=" + info.PathInfo);
+    env.push_back("SERVER_PORT=" + to_string(info.Port));
     env.push_back("REDIRECT_STATUS=200"); // PHP needs this
 
     char **envp = new char *[env.size() + 1];
@@ -89,5 +90,4 @@ void cgi::CGIhandler(stCgiInfo &info)
         return;
     }
     _pipeFd = runCGI(info);
-    Msg::error(to_string(_pipeFd));
 }
