@@ -267,7 +267,7 @@ Response RequestHandler::handleGET()
 			return BuildErrorResponse(403);
 	}
 
-	bool isPublicPage = (path == config.root + "/home.html");
+	bool isPublicPage = (path == config.root + "/home.html" || path == config.root + "pages/testWebserv.html");
 
 	for (std::map<std::string, std::string>::const_iterator it = req.cookies.begin(); it != req.cookies.end(); ++it)
 	{

@@ -13,54 +13,8 @@
     <title>login</title>
 </head>
 
-<body class="p-0 m-0 font-[Fredoka] bg-gradient-to-b from-[#3d6abb] to-[#111827] gap-10 flex flex-col">
-    <nav
-        class="w-full flex justify-between items-center text-[#111827] bg-gradient-to-r from-[#3d6abb] to-[#111827]  px-10 md:px-25 lg:px-40 py-5">
-        <div class="text-4xl font-bold">
-            <button>WebServ</button>
-        </div>
-        <ul class="gap-10 text-xl hidden lg:flex font-semibold">
-            <button class="hover:text-white transition-color duration-500" onclick="window.location.href='home.html'">
-                <li>Home</li>
-            </button>
-            <button class="hover:text-white transition-color duration-500" onclick="window.location.href='about.html'">
-                <li>About</li>
-            </button>
-        </ul>
-        <div class="flex gap-5 items-center">
-            <div class="text-xl md:flex gap-3 font-semibold group hidden 
-                    bg-blue-600
-                    px-2 py-1 rounded-2xl">
-                <button onclick="window.location.href='register.html'" class="text-white">
-                    register
-                </button>
-                <div class="w-8 h-8 group-hover:hidden">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w-8 h-8 fill-white">
-                        <path
-                            d="M16.0037 9.41421L7.39712 18.0208L5.98291 16.6066L14.5895 8H7.00373V6H18.0037V17H16.0037V9.41421Z">
-                        </path>
-                    </svg>
-                </div>
-                <div class="w-8 h-8 group-hover:block hidden">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w-8 h-8 fill-white">
-                        <path
-                            d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z">
-                        </path>
-                    </svg>
-                </div>
-            </div>
-            <div class="lg:hidden" onclick="createNav()">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="black"
-                    class="w-12 h-12 cursor-pointer">
-                    <path d="M3 4H21V6H3V4ZM9 11H21V13H9V11ZM3 18H21V20H3V18Z"></path>
-                </svg>
-            </div>
-        </div>
-    </nav>
-
-
-    <!-- Login Form -->
-    <div class="flex items-center justify-center min-h-[calc(100vh-80px)] p-4">
+<body class="p-0 m-0 font-[Fredoka] bg-gradient-to-b from-[#3d6abb] to-[#111827] w-screen">
+    <div class="flex items-center justify-center min-h-[calc(100vh)]">
         <div class="bg-white shadow-2xl max-w-6xl max-md:max-w-lg rounded-xl p-8 border border-gray-100">
             <div class="grid md:grid-cols-2 items-center gap-8">
                 <div class="max-md:order-1">
@@ -133,10 +87,10 @@
                         </button>
                         <p class="text-gray-600 text-sm text-center mt-6">
                             Don't have an account?
-                            <a href="/register.html"
+                            <button onclick="window.location.href='/pages/register.html'"
                                 class="text-blue-600 font-semibold hover:underline ml-1 whitespace-nowrap">
                                 Register here
-                            </a>
+                        </button>
                         </p>
                     </div>
                 </form>
@@ -144,22 +98,6 @@
         </div>
     </div>
 
-    <!-- Footer Navigation (Optional) -->
-    <footer class="bg-white border-t border-gray-200 mt-8">
-        <div class="max-w-7xl mx-auto px-4 py-4">
-            <div class="flex flex-wrap gap-2 justify-center">
-                <a href="/pages/cookies.html"
-                    class="text-gray-600 hover:text-blue-600 text-sm font-medium transition-colors">
-                    🍪 Cookies Policy
-                </a>
-                <span class="text-gray-300">|</span>
-                <!-- <a href="/ind.html"
-                    class="text-gray-600 hover:text-blue-600 text-sm font-medium transition-colors">
-                    🏡 Home
-                </a> -->
-            </div>
-        </div>
-    </footer>
 </body>
 
 </html>
