@@ -151,7 +151,7 @@ void Request::createNewSession(ServerConfig &config)
 
 void	Request::CreateSessioncookies()
 {
-	if (_URI == "/pages/login.html") {
+	if (_URI == "/pages/login.html" || _URI == "/pages/register.html") {
 		std::string Id;
 		if (cookies.count("session_id")) {
 			Id = getHeader("Set-Cookie");

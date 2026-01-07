@@ -10,50 +10,54 @@
 #include "Request.hpp"
 #include "../response/Response.hpp"
 
-size_t RequestHandler::GetBodySize(const std::string &path) {
+size_t RequestHandler::GetBodySize(const std::string &path)
+{
 	std::ifstream file(path.c_str(), std::ios::binary);
-	if (!file.is_open()) return 0;
+	if (!file.is_open())
+		return 0;
 
 	file.seekg(0, std::ios::end);
 	ssize_t file_size = file.tellg();
 	file.seekg(0, std::ios::beg);
 	file.close();
-	if (file_size < 0) return 0;
+	if (file_size < 0)
+		return 0;
 
 	return file_size;
 }
 
-std::string	RequestHandler::_BuildFileSystemPath(const std::string &root, const std::string &uri)
+std::string RequestHandler::_BuildFileSystemPath(const std::string &root, const std::string &uri)
 {
-    std::string path = root;
-    if (!path.empty() && path[path.size() -1 ] != '/')
-        path += "/";
-    path += (uri[0] == '/' ? uri.substr(1) : uri); // avoid double slash
-    return path;
+	std::string path = root;
+	if (!path.empty() && path[path.size() - 1] != '/')
+		path += "/";
+	path += (uri[0] == '/' ? uri.substr(1) : uri); // avoid double slash
+	return path;
 }
 
-bool		RequestHandler::_ResourceExists( std::string &Path ){
+bool RequestHandler::_ResourceExists(std::string &Path)
+{
 	struct stat Buffer;
 	return (stat(Path.c_str(), &Buffer) == 0);
 }
 
 std::string RequestHandler::_ResolveIndexFile(const std::string &path, const ServerConfig &server, const LocationConfig &loc)
 {
-    std::string indexName = !loc.index.empty() ? loc.index : server.index;
-    if (indexName.empty())
-        return "";
+	std::string indexName = !loc.index.empty() ? loc.index : server.index;
+	if (indexName.empty())
+		return "";
 
-    std::string fullPath = path;
-    if (fullPath[fullPath.size() - 1] != '/')
-        fullPath += '/';
-    fullPath += indexName;
-    if (_ResourceExists(fullPath))
-        return fullPath;
+	std::string fullPath = path;
+	if (fullPath[fullPath.size() - 1] != '/')
+		fullPath += '/';
+	fullPath += indexName;
+	if (_ResourceExists(fullPath))
+		return fullPath;
 
-    return "";
+	return "";
 }
 
-bool	_IsDirectory(const char *path)
+bool _IsDirectory(const char *path)
 {
 	struct stat st;
 	if (stat(path, &st) != 0)
@@ -61,7 +65,8 @@ bool	_IsDirectory(const char *path)
 	return S_ISDIR(st.st_mode);
 }
 
-Response	RequestHandler::BuildErrorResponse( short code ) {
+Response RequestHandler::BuildErrorResponse(short code)
+{
 
 	Response resp(req);
 
@@ -69,20 +74,24 @@ Response	RequestHandler::BuildErrorResponse( short code ) {
 
 	std::map<int, std::string>::const_iterator it = config.error_pages.find(code);
 	std::string errorPath;
-	
-	if (it != config.error_pages.end()) {
+
+	if (it != config.error_pages.end())
+	{
 		errorPath = it->second;
 		if (!errorPath.empty() && errorPath[0] == '/')
 			errorPath = errorPath.substr(1);
 		errorPath = config.root + "/" + errorPath;
-	} else {
+	}
+	else
+	{
 		std::ostringstream oss;
 		oss << "errors/" << code << ".html";
 		errorPath = oss.str();
 	}
 
 	resp.Fd = open(errorPath.c_str(), O_RDONLY);
-	if (resp.Fd == -1) {
+	if (resp.Fd == -1)
+	{
 		std::cerr << "Error opening error file: " << errorPath << std::endl;
 		resp.setHeader("Content-Type", "text/html");
 		std::ostringstream fallbackBody;
@@ -90,25 +99,26 @@ Response	RequestHandler::BuildErrorResponse( short code ) {
 		resp.setBody(fallbackBody.str());
 		resp.BodySize = fallbackBody.str().size();
 	}
-	else {
+	else
+	{
 		resp.BodySize = GetBodySize(errorPath);
 		resp.FilePath = errorPath;
 	}
 	return resp;
 }
 
-LocationConfig	GetMatchingLocation(const std::vector<LocationConfig>& locations, const std::string& uri)
+LocationConfig GetMatchingLocation(const std::vector<LocationConfig> &locations, const std::string &uri)
 {
-	LocationConfig* bestMatch = NULL;
+	LocationConfig *bestMatch = NULL;
 	size_t longestMatch = 0;
 	for (size_t i = 0; i < locations.size(); i++)
 	{
-		const std::string& locPath = locations[i].path;
+		const std::string &locPath = locations[i].path;
 		if (uri.find(locPath) == 0)
 		{
 			if (locPath.size() > longestMatch)
 			{
-				bestMatch = const_cast<LocationConfig*>(&locations[i]);
+				bestMatch = const_cast<LocationConfig *>(&locations[i]);
 				longestMatch = locPath.size();
 			}
 		}
@@ -118,56 +128,58 @@ LocationConfig	GetMatchingLocation(const std::vector<LocationConfig>& locations,
 	return LocationConfig();
 }
 
-Response	RequestHandler::serveFile(const std::string &path)
+Response RequestHandler::serveFile(const std::string &path)
 {
-    Response resp(req);
-	
+	Response resp(req);
+
 	resp.Fd = open(path.c_str(), O_RDONLY);
 	if (resp.Fd == -1)
-        return BuildErrorResponse(404);
+		return BuildErrorResponse(404);
 	resp.BodySize = GetBodySize(path);
-    resp.setStatusCode(200);
+	resp.setStatusCode(200);
 	resp.FilePath = path;
 	if (req.cookies.find("session_id") != req.cookies.end())
 	{
 		resp.setHeader(
 			"Set-Cookie",
 			"session_id=" + req.cookies.at("session_id") +
-			"; Path=/; HttpOnly; Max-Age=3600"
-		);
+				"; Path=/; HttpOnly; Max-Age=3600");
 	}
-    return resp;
+	return resp;
 }
 
-Response	RequestHandler::_GenerateAutoindex(const std::string &DirPath) {
+Response RequestHandler::_GenerateAutoindex(const std::string &DirPath)
+{
 	Response resp(req);
-	
+
 	DIR *dir = opendir(DirPath.c_str());
 	if (!dir)
 		return BuildErrorResponse(500);
-	
+
 	std::ostringstream html;
 	html << "<html><head><title>Index</title></head><body>";
 	html << "<h1>Index of " << req.getUri() << "</h1><ul>";
-	
+
 	struct dirent *entry;
-	while ((entry = readdir(dir)) != NULL) {
+	while ((entry = readdir(dir)) != NULL)
+	{
 		std::string name = entry->d_name;
 		if (name != "." && name != "..")
 			html << "<li><a href='" << name << "'>" << name << "</a></li>";
 	}
-	
+
 	html << "</ul></body></html>";
 	closedir(dir);
-	
+
 	resp.setStatusCode(200);
 	resp.setBody(html.str());
 	return resp;
 }
 
-bool		RequestHandler::_haseAllowed( std::vector<std::string> Methods, enHttpMethod AllowedMethod)
+bool RequestHandler::_haseAllowed(std::vector<std::string> Methods, enHttpMethod AllowedMethod)
 {
-	if (Methods.empty()) return true;
+	if (Methods.empty())
+		return true;
 	for (size_t i = 0; i < Methods.size(); i++)
 	{
 		if ((enHttpMethod)getMethod(Methods[i]) == AllowedMethod)
@@ -178,99 +190,103 @@ bool		RequestHandler::_haseAllowed( std::vector<std::string> Methods, enHttpMeth
 
 bool search_Cookies(const std::map<std::string, std::string> &cookies)
 {
-    std::ifstream file("src/data/data.txt");
-    if (!file.is_open())
-    {
-        std::cerr << "Cannot open data.txt file!" << std::endl;
-        return false;
-    }
+	std::ifstream file("src/data/data.txt");
+	if (!file.is_open())
+	{
+		std::cerr << "Cannot open data.txt file!" << std::endl;
+		return false;
+	}
 
-    std::string line;
-    while (std::getline(file, line))
-    {
-        if (line.empty())
-            continue;
+	std::string line;
+	while (std::getline(file, line))
+	{
+		if (line.empty())
+			continue;
+		for (std::map<std::string, std::string>::const_iterator it = cookies.begin(); it != cookies.end(); ++it)
+		{
+			std::string cookie_str = it->first + "=" + it->second;
+			std::string key = "session_id=";
+			size_t pos = line.find(key);
+			if (pos == std::string::npos)
+				continue;
 
-        for (std::map<std::string,std::string>::const_iterator it = cookies.begin(); it != cookies.end(); ++it)
-        {
-            std::string cookie_str = it->first + "=" + it->second;
-            std::string key = "session_id=";
+			std::string sessionPart = line.substr(pos);
 
-            size_t pos = line.find(key);
-            if (pos == std::string::npos)
-                continue;
+			if (sessionPart == cookie_str)
+			{
+				file.close();
+				return true;
+			}
+		}
+	}
 
-            std::string sessionPart = line.substr(pos);
-
-            if (sessionPart == cookie_str)
-            {
-                file.close();
-                return true;
-            }
-        }
-    }
-
-    file.close();
-    return false;
+	file.close();
+	return false;
 }
 
-Response	RequestHandler::_Rdirect(LocationConfig loc){
+Response RequestHandler::_Rdirect(LocationConfig loc)
+{
 
 	Response resp(req);
 
 	resp.setStatusCode(loc.return_code);
-    resp.setHeader("Location", loc.return_url);
+	resp.setHeader("Location", loc.return_url);
 	resp.BodySize = 0;
 	if (req.cookies.find("session_id") != req.cookies.end())
 	{
 		resp.setHeader(
 			"Set-Cookie",
 			"session_id=" + req.cookies.at("session_id") +
-			"; Path=/; HttpOnly; Max-Age=30"
-		);
+				"; Path=/; HttpOnly; Max-Age=30");
 	}
 	return resp;
 }
 
 Response RequestHandler::handleGET()
 {
-    LocationConfig loc = GetMatchingLocation(config.locations, req.getUri());
-    if (!_haseAllowed(loc.methods, HTTP_GET))
-        return BuildErrorResponse(405);
-    
-    std::string root = loc.root.empty() ? config.root : loc.root;
-    std::string path = _BuildFileSystemPath(root, req.getUri());
+	LocationConfig loc = GetMatchingLocation(config.locations, req.getUri());
+	if (!_haseAllowed(loc.methods, HTTP_GET))
+		return BuildErrorResponse(405);
 
-    if (!_ResourceExists(path))
-        return BuildErrorResponse(404);
-    
-    if (_IsDirectory(path.c_str()))
-    {
-        std::string indexPath = _ResolveIndexFile(path, config, loc);
-        if (!indexPath.empty())
-            return serveFile(indexPath);
-        else if (loc.return_code >= 300 && loc.return_code < 400)
-            return _Rdirect(loc);
-        else if (loc.autoindex) 
-            return _GenerateAutoindex(path);
-        else
-            return BuildErrorResponse(403);
-    }
+	std::string root = loc.root.empty() ? config.root : loc.root;
+	std::string path = _BuildFileSystemPath(root, req.getUri());
 
-    bool isPublicPage = ( path == config.root + "/pages/delete.html" || path == config.root + "/pages/home.html");
-    
-    if (isPublicPage && !search_Cookies(req.cookies)) {
-        Response resp(req);
-        resp.setStatusCode(302);
-        resp.setHeader("Location", "/pages/login.html");
-        resp.setBody("<html><body>Redirecting to login...</body></html>");
-        return resp;
-    }
+	if (!_ResourceExists(path))
+		return BuildErrorResponse(404);
 
-    return serveFile(path);
+	if (_IsDirectory(path.c_str()))
+	{
+		std::string indexPath = _ResolveIndexFile(path, config, loc);
+		if (!indexPath.empty())
+			return serveFile(indexPath);
+		else if (loc.return_code >= 300 && loc.return_code < 400)
+			return _Rdirect(loc);
+		else if (loc.autoindex)
+			return _GenerateAutoindex(path);
+		else
+			return BuildErrorResponse(403);
+	}
+
+	bool isPublicPage = (path == config.root + "/home.html");
+
+	for (std::map<std::string, std::string>::const_iterator it = req.cookies.begin(); it != req.cookies.end(); ++it)
+	{
+		Msg::debug(it->first + "=" + it->second);
+	}
+	if (isPublicPage && !search_Cookies(req.cookies))
+	{
+		std::cout << "rediraction : " << search_Cookies(req.cookies) << std::endl;
+		Response resp(req);
+		resp.setStatusCode(302);
+		resp.setHeader("Location", "/login.html");
+		resp.setBody("<html><body>Redirecting to login...</body></html>");
+		return resp;
+	}
+
+	return serveFile(path);
 }
 
-short		RequestHandler::getMethod(const std::string &method)
+short RequestHandler::getMethod(const std::string &method)
 {
 	if (method == "GET")
 		return HTTP_GET;
@@ -282,20 +298,21 @@ short		RequestHandler::getMethod(const std::string &method)
 		return HTTP_UNKNOWN;
 }
 
-bool	isCGi(const std::string &path)
+bool isCGi(const std::string &path)
 {
 	std::string::size_type dot = path.find_last_of('.');
 	std::string ext = (dot == std::string::npos) ? std::string("") : path.substr(dot + 1);
 
-	std::string	 ScriptBasedCGI[] = { "py", "php", "sh", "pl", "rb", "lua", "cgi" };
-	for (size_t i = 0; i < 7; i++){
+	std::string ScriptBasedCGI[] = {"py", "php", "sh", "pl", "rb", "lua", "cgi"};
+	for (size_t i = 0; i < 7; i++)
+	{
 		if (ScriptBasedCGI[i] == ext)
 			return true;
 	}
 	return false;
 }
 
-Response	RequestHandler::_BuildCGIResponse(const std::string &path)
+Response RequestHandler::_BuildCGIResponse(const std::string &path)
 {
 	Response resp(req);
 	resp.setStatusCode(200);
@@ -306,17 +323,21 @@ Response	RequestHandler::_BuildCGIResponse(const std::string &path)
 	resp.cgiInfo.QueryString = req.getQueryString();
 	resp.cgiInfo.ContentLenght = req.getContentLength();
 	resp.cgiInfo.Body = req.getBody();
+	resp.cgiInfo.ContentType = req.getHeader("Content-Type");
 	resp.cgiInfo.PathInfo = req.getPathInfo();
-	
+	resp.cgiInfo.HttpV = req.getHTTPversion();
+	resp.cgiInfo.Port = config.listen_ports[0];
+	resp.cgiInfo.ServerName = config.server_name;
 	return resp;
 }
 
-Response	RequestHandler::HandleMethod()
+Response RequestHandler::HandleMethod()
 {
 	if (req.status != Request::enVALID)
 		return BuildErrorResponse(403);
 
-	if (isCGi(req.getUri()) &&  req.getMethod() != "DELETE") {
+	if (isCGi(req.getUri()) && req.getMethod() != "DELETE")
+	{
 		LocationConfig loc = GetMatchingLocation(config.locations, req.getUri());
 		if (!_haseAllowed(loc.methods, (enHttpMethod)getMethod(req.getMethod())))
 			return BuildErrorResponse(405);
@@ -342,8 +363,6 @@ Response	RequestHandler::HandleMethod()
 	}
 }
 
-
-/////////////////////
 std::map<std::string, std::string> parseUrlEncoded(const std::string &body)
 {
 	std::map<std::string, std::string> data;
@@ -370,22 +389,23 @@ std::string getUploadPath(const ServerConfig &config)
 		if (!config.locations[i].upload_path.empty())
 			return config.locations[i].upload_path;
 	}
-	return ""; 
+	return "";
 }
 
 std::string clean(const std::string &str)
 {
-    std::string s = str;
-    while (!s.empty() && (s[s.size()-1] == '\n' || s[s.size()-1] == '\r'))
-        s.erase(s.size()-1);
-    return s;
+	std::string s = str;
+	while (!s.empty() && (s[s.size() - 1] == '\n' || s[s.size() - 1] == '\r'))
+		s.erase(s.size() - 1);
+	return s;
 }
 
-////////////////////
-
-Response	RequestHandler::handlePOST()
+Response RequestHandler::handlePOST()
 {
 	Response resp(req);
+	LocationConfig loc = GetMatchingLocation(config.locations, req.getUri());
+	if (!_haseAllowed(loc.methods, HTTP_GET))
+		return BuildErrorResponse(405);
 	std::string bodyData = req.getBody();
 	std::string contentType = req.getHeader("Content-Type");
 	if (bodyData.empty())
@@ -407,10 +427,10 @@ Response	RequestHandler::handlePOST()
 		std::string username = form.count("username") ? form["username"] : "";
 		std::string password = form.count("password") ? form["password"] : "";
 
-		if (!username.empty() && username[username.size()-1] == '\r')
-			username.erase(username.size()-1);
-		if (!password.empty() && password[password.size()-1] == '\r')
-			password.erase(password.size()-1);
+		if (!username.empty() && username[username.size() - 1] == '\r')
+			username.erase(username.size() - 1);
+		if (!password.empty() && password[password.size() - 1] == '\r')
+			password.erase(password.size() - 1);
 
 		bool loginSuccess = false;
 
@@ -418,41 +438,39 @@ Response	RequestHandler::handlePOST()
 		{
 			std::ofstream outfile("src/data/data.txt", std::ios::app);
 			outfile << std::endl;
-			if (!outfile.is_open()){
-				std::cerr << "Cannot open data.txt file!" << std::endl;
-    			return BuildErrorResponse(500);
-			}
-
+			if (!outfile.is_open())
+				return BuildErrorResponse(500);
 			std::string sessionId = "none";
 			if (!req.cookies.empty())
 				sessionId = "session_id=" + req.cookies.begin()->second;
 
 			outfile << username << " " << password << " " << sessionId << std::endl;
 		}
-
-		if (req.getUri() == "/pages/login.html")
+		else if (req.getUri() == "/pages/login.html")
 		{
 			std::ifstream infile("src/data/data.txt");
-			if (!infile.is_open()) {
-				std::cerr << "Cannot open data.txt to update session!" << std::endl;
+			if (!infile.is_open())
 				return BuildErrorResponse(500);
-			}
 			std::vector<std::string> lines;
 			std::string line;
 			bool loginUpdated = false;
 
-			std::string sessionId = "session_id=" + req.cookies.begin()->second;
+			std::string sessionId = "session_id=none";
+			if (!req.cookies.empty())
+				sessionId = "session_id=" + req.cookies.begin()->second;
 
 			while (std::getline(infile, line))
 			{
-				if (line.empty()) {
+				if (line.empty())
+				{
 					lines.push_back(line);
 					continue;
 				}
 
 				std::istringstream iss(line);
 				std::string fileUser, filePass, fileSession;
-				if (!(iss >> fileUser >> filePass >> fileSession)) {
+				if (!(iss >> fileUser >> filePass >> fileSession))
+				{
 					lines.push_back(line);
 					continue; // keep malformed lines as is
 				}
@@ -472,14 +490,14 @@ Response	RequestHandler::handlePOST()
 			if (loginUpdated)
 			{
 				std::ofstream outfile("src/data/data.txt", std::ios::trunc);
-				if (!outfile.is_open()) {
-					std::cerr << "Cannot open data.txt to update session!" << std::endl;
+				if (!outfile.is_open())
 					return BuildErrorResponse(500);
-				}
+
 				for (size_t i = 0; i < lines.size(); ++i)
 				{
 					outfile << lines[i];
-					if (i + 1 < lines.size()) outfile << "\n";
+					if (i + 1 < lines.size())
+						outfile << "\n";
 				}
 			}
 		}
@@ -489,42 +507,51 @@ Response	RequestHandler::handlePOST()
 		if (req.getUri() == "/pages/login.html" && !loginSuccess)
 		{
 			html =
-			"<html><head>"
-			"<meta charset='UTF-8'>"
-			"<script src='https://cdn.tailwindcss.com'></script>"
-			"</head><body class='bg-gray-100 flex items-center justify-center h-screen'>"
-			"<div class='fixed inset-0 flex items-center justify-center bg-black bg-opacity-50'>"
-			"<div class='bg-white rounded-xl shadow-lg p-6 text-center w-80'>"
-			"<h2 class='text-xl font-bold text-red-600 mb-4'>Login Failed ❌</h2>"
-			"<p class='text-gray-700 mb-6'>Invalid username or password</p>"
-			"<button onclick=\"window.location.href='/pages/login.html'\" "
-			"class='bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg w-full transition'>Try Again</button>"
-			"</div></div></body></html>";
+				"<html><head>"
+				"<meta charset='UTF-8'>"
+				"<script src='https://cdn.tailwindcss.com'></script>"
+				"</head><body class='bg-gray-100 flex items-center justify-center h-screen'>"
+				"<div class='fixed inset-0 flex items-center justify-center bg-black bg-opacity-50'>"
+				"<div class='bg-white rounded-xl shadow-lg p-6 text-center w-80'>"
+				"<h2 class='text-xl font-bold text-red-600 mb-4'>Login Failed ❌</h2>"
+				"<p class='text-gray-700 mb-6'>Invalid username or password</p>"
+				"<button onclick=\"window.location.href='/pages/login.html'\" "
+				"class='bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg w-full transition'>Try Again</button>"
+				"</div></div></body></html>";
 		}
-
-		else
+		else if (req.getUri() == "/pages/login.html")
 		{
 			html =
-			"<html><head>"
-			"<meta charset='UTF-8'>"
-			"<script src='https://cdn.tailwindcss.com'></script>"
-			"</head><body class='bg-gray-100 flex items-center justify-center h-screen'>"
-			"<div class='fixed inset-0 flex items-center justify-center bg-black bg-opacity-50'>"
-			"<div class='bg-white rounded-xl shadow-lg p-6 text-center w-80'>"
-			"<h2 class='text-xl font-bold text-green-600 mb-4'>Success 🎉</h2>"
-			"<p class='text-gray-700 mb-6'>Welcome!</p>"
-			"<button onclick=\"window.location.href='/pages/home.html'\" "
-			"class='bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg w-full transition'>OK</button>"
-			"</div></div></body></html>";
+				"<html><head>"
+				"<meta charset='UTF-8'>"
+				"<script src='https://cdn.tailwindcss.com'></script>"
+				"</head><body class='bg-gray-100 flex items-center justify-center h-screen'>"
+				"<div class='fixed inset-0 flex items-center justify-center bg-black bg-opacity-50'>"
+				"<div class='bg-white rounded-xl shadow-lg p-6 text-center w-80'>"
+				"<h2 class='text-xl font-bold text-green-600 mb-4'>Success 🎉</h2>"
+				"<p class='text-gray-700 mb-6'>Welcome!</p>"
+				"<button onclick=\"window.location.href='/pages/home.html'\" "
+				"class='bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg w-full transition'>OK</button>"
+				"</div></div></body></html>";
+		}else {
+				html =
+				"<html><head>"
+				"<meta charset='UTF-8'>"
+				"<script src='https://cdn.tailwindcss.com'></script>"
+				"</head><body class='bg-gray-100 flex items-center justify-center h-screen'>"
+				"<div class='fixed inset-0 flex items-center justify-center bg-black bg-opacity-50'>"
+				"<div class='bg-white rounded-xl shadow-lg p-6 text-center w-80'>"
+				"<h2 class='text-xl font-bold text-green-600 mb-4'>Success 🎉</h2>"
+				"<p class='text-gray-700 mb-6'>Welcome!</p>"
+				"<button onclick=\"window.location.href='/pages/login.html'\" "
+				"class='bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg w-full transition'>OK</button>"
+				"</div></div></body></html>";
 		}
 
 		resp.setStatusCode(200);
 		resp.setHeader("Content-Type", "text/html");
 		resp.setBody(html);
 	}
-
-
-
 	else if (contentType.find("multipart/form-data") != std::string::npos)
 	{
 		std::string boundaryKey = "boundary=";
@@ -537,7 +564,6 @@ Response	RequestHandler::handlePOST()
 		}
 		std::string boundary = "--" + contentType.substr(pos + boundaryKey.size());
 		std::string body = req.getBody();
-		// process each part
 		size_t start = 0;
 		while ((start = body.find(boundary, start)) != std::string::npos)
 		{
@@ -591,17 +617,18 @@ Response	RequestHandler::handlePOST()
 		resp.setHeader("Content-Type", "text/html");
 
 		std::string responseBody = "<html>"
-		"<head>"
-		"<meta charset='UTF-8'>"
-		"<meta name='viewport' content='width=device-width, initial-scale=1.0'>"
-		"<title>POST Result</title>"
-		"<link rel='stylesheet' href='/assets/css/main.css'>"
-		"</head>"
-		"<body>"
-		"<h1>POST received</h1>"
-		"<pre>" + bodyData + "</pre>"
-		"</body>"
-		"</html>";
+								   "<head>"
+								   "<meta charset='UTF-8'>"
+								   "<meta name='viewport' content='width=device-width, initial-scale=1.0'>"
+								   "<title>POST Result</title>"
+								   "<link rel='stylesheet' href='/assets/css/main.css'>"
+								   "</head>"
+								   "<body>"
+								   "<h1>POST received</h1>"
+								   "<pre>" +
+								   bodyData + "</pre>"
+											  "</body>"
+											  "</html>";
 
 		resp.setBody(responseBody);
 	}
@@ -621,7 +648,7 @@ Response RequestHandler::handleDELETE()
 		return BuildErrorResponse(405);
 	}
 	std::string root = loc.root.empty() ? config.root : loc.root;
-	std::string	path = _BuildFileSystemPath(root, req.getUri());
+	std::string path = _BuildFileSystemPath(root, req.getUri());
 	std::cout << YELLOW << "DELETE path: " << path << RESET << std::endl;
 	struct stat st;
 	if (stat(path.c_str(), &st) != 0)
@@ -640,7 +667,6 @@ Response RequestHandler::handleDELETE()
 	resp.setHeader("Content-Length", "0");
 	return resp;
 }
-
 
 std::string RequestHandler::readFile(const std::string &path)
 {
@@ -673,4 +699,3 @@ std::string RequestHandler::getErrorPage(int statusCode)
 	fallback << "<html><body><h1>" << statusCode << " " << statusCode << "</h1></body></html>";
 	return fallback.str();
 }
-
