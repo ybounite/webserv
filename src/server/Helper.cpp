@@ -39,7 +39,6 @@ void Server::readCGIPipe(int pipeFd)
 
     if (std::time(NULL) - _ClientsMap[pipeFd].last_activity > 2)
     {
-        std::cerr << "time-out hhhh\n";
         kill(_ClientsMap[pipeFd].pid, SIGKILL);
         SendErrorPage(sock, "408");
         deleteClientFromEpoll(pipeFd);
@@ -58,23 +57,17 @@ void Server::readCGIPipe(int pipeFd)
 
     if (b_read == 0)
     {
-<<<<<<< HEAD
         if (send(sock, _ClientsMap[pipeFd].response.c_str(), _ClientsMap[pipeFd].response.size(), MSG_NOSIGNAL) < 0)
         {
-            std::cout << "send2\n";
             kill(_ClientsMap[pipeFd].pid, SIGKILL);
             deleteClientFromEpoll(pipeFd);
             deleteClientFromEpoll(sock);
             return;
         }
-=======
->>>>>>> 650a0f02c02f8d6c05e91314096234388e4a6608
         deleteClientFromEpoll(pipeFd);
         deleteClientFromEpoll(sock);
         return;
     }
-
-    // _ClientsMap[pipeFd].last_activity = time(NULL);
 
     if (!_ClientsMap[pipeFd].cgi_headers_parsed)
     {
@@ -101,25 +94,7 @@ void Server::readCGIPipe(int pipeFd)
         size_t body_start = header_end + 2;
         http += data.c_str() + body_start;
         _ClientsMap[pipeFd].response.append(http);
-        // if (send(sock, http.c_str(), http.length(), MSG_NOSIGNAL) < 0)
-        // {
-        //     kill(_ClientsMap[pipeFd].pid, SIGKILL);
-        //     deleteClientFromEpoll(pipeFd);
-        //     deleteClientFromEpoll(sock);
-        //     return;
-        // }
         _ClientsMap[pipeFd].cgi_headers_parsed = true;
         return;
     }
-<<<<<<< HEAD
-=======
-
-    if (send(sock, buffer, b_read, MSG_NOSIGNAL) < 0)
-    {
-        kill(_ClientsMap[pipeFd].pid, SIGKILL);
-        deleteClientFromEpoll(pipeFd);
-        deleteClientFromEpoll(sock);
-        return;
-    }
->>>>>>> 650a0f02c02f8d6c05e91314096234388e4a6608
 }

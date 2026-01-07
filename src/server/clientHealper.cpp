@@ -7,7 +7,6 @@ void Server::modifySockEvents(int epollfd, int fd)
 	epoll_event newClient;
 	newClient.data.fd = fd;
 	newClient.events = EPOLLIN | EPOLLOUT;
-	// EPOLL_CTL_MOD this flag tell the kernel to modify the the event of the FD
 	epoll_ctl(epollfd, EPOLL_CTL_MOD, fd, &newClient);
 }
 
@@ -30,9 +29,8 @@ size_t Server::contentLenght(std::string header)
 	if (index == std::string::npos)
 		return 0;
 
-	index += 15; // "Content-Length:"
+	index += 15;
 
-	// Skip any spaces after the colon
 	while (index < header.length() && header[index] == ' ')
 		index++;
 
@@ -58,7 +56,7 @@ void Server::ifCGI(int fd)
 	}
 	epoll_event events;
 	events.data.fd = pipeFd;
-	events.events = EPOLLIN | EPOLLOUT;
+	events.events = EPOLLIN;
 	epoll_ctl(_epollInstance, EPOLL_CTL_ADD, pipeFd, &events);
 	t_clients client;
 	client.fd = fd;
@@ -66,7 +64,6 @@ void Server::ifCGI(int fd)
 	client.last_activity = time(NULL);
 	client.pid = Cgi._Pid;
 	_ClientsMap[pipeFd] = client;
-    std::cout << "CGI started with PID: " << _ClientsMap[pipeFd].pid << " Pipe FD: " << _ClientsMap[pipeFd].CGIfd << std::endl;
 	_ClientsMap[fd].event.events = 0;
 	epoll_ctl(_epollInstance, EPOLL_CTL_MOD, fd, &_ClientsMap[fd].event);
 	return;
