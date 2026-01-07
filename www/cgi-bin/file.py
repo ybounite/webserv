@@ -23,6 +23,7 @@ body = f"""<!DOCTYPE html>
 </html>
 """
 
+# while(true)
 body_bytes = body.encode("utf-8")
 
 # CGI headers ONLY (no HTTP/1.1 line)

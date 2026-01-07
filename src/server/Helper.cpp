@@ -57,6 +57,17 @@ void Server::readCGIPipe(int pipeFd)
 
     if (b_read == 0)
     {
+        int status = 0;
+        waitpid(_ClientsMap[pipeFd].pid, &status, WNOHANG);
+        bool child_failed = (!WIFEXITED(status) || WEXITSTATUS(status) != 0);
+        if (child_failed)
+        {
+            kill(_ClientsMap[pipeFd].pid, SIGKILL);
+            SendErrorPage(sock, "500");
+            deleteClientFromEpoll(pipeFd);
+            deleteClientFromEpoll(sock);
+            return;
+        }
         if (send(sock, _ClientsMap[pipeFd].response.c_str(), _ClientsMap[pipeFd].response.size(), MSG_NOSIGNAL) < 0)
         {
             kill(_ClientsMap[pipeFd].pid, SIGKILL);

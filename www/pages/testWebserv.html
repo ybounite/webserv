@@ -161,7 +161,10 @@
             event.preventDefault();
             const filename = event.target.filename.value;
 
-            fetch('/www', {
+            // Send DELETE to the absolute path under www/
+            const target = `/www/${filename}`;
+
+            fetch(target, {
                 method: 'DELETE',
                 body: JSON.stringify({ filename })
             });
