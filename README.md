@@ -248,6 +248,8 @@ This project is created for educational purposes. Check the repository for any s
 ## 👤 Author
 
 **ybounite** - [GitHub Profile](https://github.com/ybounite)
+**soufiane-dahani** - [GitHub Profile](https://github.com/soufiane-dahani)
+**mmilyass** - [GitHub Profile](https://github.com/mmilyass)
 
 ## 🤝 Contributing
 
